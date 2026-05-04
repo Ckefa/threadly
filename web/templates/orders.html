@@ -88,18 +88,8 @@
                 </div>
 
                 <!-- Stats Cards -->
-                <div class="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
-                    <div class="bg-white rounded-lg shadow p-6">
-                        <div class="flex items-center">
-                            <div class="p-3 bg-blue-100 rounded-full">
-                                <i class="fas fa-shopping-cart text-blue-600"></i>
-                            </div>
-                            <div class="ml-4">
-                                <p class="text-sm text-gray-600">Total Orders</p>
-                                <p class="text-2xl font-bold text-gray-900">{{len .Orders}}</p>
-                            </div>
-                        </div>
-                    </div>
+                <div class="grid grid-cols-1 md:grid-cols-6 gap-4 mb-8">
+                    <!-- Pending Orders -->
                     <div class="bg-white rounded-lg shadow p-6">
                         <div class="flex items-center">
                             <div class="p-3 bg-yellow-100 rounded-full">
@@ -107,29 +97,72 @@
                             </div>
                             <div class="ml-4">
                                 <p class="text-sm text-gray-600">Pending</p>
-                                <p class="text-2xl font-bold text-gray-900">{{range $i, $order := .Orders}}{{if eq $order.Status "pending"}}{{if $i}}+{{end}}1{{end}}{{end}}</p>
+                                <p class="text-2xl font-bold text-gray-900">{{.PendingCount}}</p>
                             </div>
                         </div>
                     </div>
+                    
+                    <!-- Confirmed Orders -->
+                    <div class="bg-white rounded-lg shadow p-6">
+                        <div class="flex items-center">
+                            <div class="p-3 bg-blue-100 rounded-full">
+                                <i class="fas fa-check-circle text-blue-600"></i>
+                            </div>
+                            <div class="ml-4">
+                                <p class="text-sm text-gray-600">Confirmed</p>
+                                <p class="text-2xl font-bold text-gray-900">{{.ConfirmedCount}}</p>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Fulfilled Orders -->
                     <div class="bg-white rounded-lg shadow p-6">
                         <div class="flex items-center">
                             <div class="p-3 bg-green-100 rounded-full">
                                 <i class="fas fa-check text-green-600"></i>
                             </div>
                             <div class="ml-4">
-                                <p class="text-sm text-gray-600">Completed</p>
-                                <p class="text-2xl font-bold text-gray-900">{{range $i, $order := .Orders}}{{if eq $order.Status "fulfilled"}}{{if $i}}+{{end}}1{{end}}{{end}}</p>
+                                <p class="text-sm text-gray-600">Fulfilled</p>
+                                <p class="text-2xl font-bold text-gray-900">{{.FulfilledCount}}</p>
                             </div>
                         </div>
                     </div>
+                    
+                    <!-- Canceled Orders -->
+                    <div class="bg-white rounded-lg shadow p-6">
+                        <div class="flex items-center">
+                            <div class="p-3 bg-red-100 rounded-full">
+                                <i class="fas fa-times text-red-600"></i>
+                            </div>
+                            <div class="ml-4">
+                                <p class="text-sm text-gray-600">Canceled</p>
+                                <p class="text-2xl font-bold text-gray-900">{{.CanceledCount}}</p>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Total Orders -->
                     <div class="bg-white rounded-lg shadow p-6">
                         <div class="flex items-center">
                             <div class="p-3 bg-purple-100 rounded-full">
-                                <i class="fas fa-dollar-sign text-purple-600"></i>
+                                <i class="fas fa-shopping-cart text-purple-600"></i>
+                            </div>
+                            <div class="ml-4">
+                                <p class="text-sm text-gray-600">Total Orders</p>
+                                <p class="text-2xl font-bold text-gray-900">{{.TotalOrders}}</p>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Total Revenue -->
+                    <div class="bg-white rounded-lg shadow p-6">
+                        <div class="flex items-center">
+                            <div class="p-3 bg-indigo-100 rounded-full">
+                                <i class="fas fa-dollar-sign text-indigo-600"></i>
                             </div>
                             <div class="ml-4">
                                 <p class="text-sm text-gray-600">Total Revenue</p>
-                                <p class="text-2xl font-bold text-gray-900">$0.00</p>
+                                <p class="text-2xl font-bold text-gray-900">${{printf "%.2f" .TotalRevenue}}</p>
                             </div>
                         </div>
                     </div>

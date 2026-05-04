@@ -420,9 +420,33 @@ func (h *BusinessHandler) GetOrders(c *gin.Context) {
 	var orders []models.Order
 	h.db.Where("user_id = ?", userID).Find(&orders)
 
+	// Calculate stats
+	var pendingCount, confirmedCount, fulfilledCount, canceledCount int64
+	var totalRevenue float64
+
+	for _, order := range orders {
+		switch order.Status {
+		case "pending":
+			pendingCount++
+		case "confirmed":
+			confirmedCount++
+		case "fulfilled":
+			fulfilledCount++
+		case "canceled":
+			canceledCount++
+		}
+		totalRevenue += order.TotalAmount
+	}
+
 	c.HTML(http.StatusOK, "orders.html", gin.H{
-		"User":   gin.H{},
-		"Orders": orders,
+		"User":           gin.H{},
+		"Orders":         orders,
+		"PendingCount":   pendingCount,
+		"ConfirmedCount": confirmedCount,
+		"FulfilledCount": fulfilledCount,
+		"CanceledCount":  canceledCount,
+		"TotalOrders":    len(orders),
+		"TotalRevenue":   totalRevenue,
 	})
 }
 
@@ -472,9 +496,33 @@ func (h *BusinessHandler) GetBookings(c *gin.Context) {
 	var bookings []models.Booking
 	h.db.Where("user_id = ?", userID).Find(&bookings)
 
+	// Calculate stats
+	var pendingCount, confirmedCount, completedCount, canceledCount int64
+	var totalRevenue float64
+
+	for _, booking := range bookings {
+		switch booking.Status {
+		case "pending":
+			pendingCount++
+		case "confirmed":
+			confirmedCount++
+		case "completed":
+			completedCount++
+		case "canceled":
+			canceledCount++
+		}
+		totalRevenue += booking.TotalAmount
+	}
+
 	c.HTML(http.StatusOK, "bookings.html", gin.H{
-		"User":     gin.H{},
-		"Bookings": bookings,
+		"User":           gin.H{},
+		"Bookings":       bookings,
+		"PendingCount":   pendingCount,
+		"ConfirmedCount": confirmedCount,
+		"CompletedCount": completedCount,
+		"CanceledCount":  canceledCount,
+		"TotalBookings":  len(bookings),
+		"TotalRevenue":   totalRevenue,
 	})
 }
 

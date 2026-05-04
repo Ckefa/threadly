@@ -49,9 +49,21 @@ func ShowCustomers(c *gin.Context) {
 		})
 	}
 
+	// Count pending orders and bookings
+	var pendingOrderCount int64
+	db.DB.Model(&models.Order{}).Where("user_id = ? AND status = ?", userID, "pending").Count(&pendingOrderCount)
+
+	var pendingBookingCount int64
+	db.DB.Model(&models.Booking{}).Where("user_id = ? AND status = ?", userID, "pending").Count(&pendingBookingCount)
+
+	totalPending := pendingOrderCount + pendingBookingCount
+
 	c.HTML(200, "index.html", gin.H{
-		"Title":   "Threadly",
-		"Clients": clientsWithProgress,
+		"Title":               "Threadly",
+		"Clients":             clientsWithProgress,
+		"PendingOrderCount":   pendingOrderCount,
+		"PendingBookingCount": pendingBookingCount,
+		"TotalPending":        totalPending,
 	})
 }
 

@@ -7,6 +7,16 @@
     <script src="https://unpkg.com/htmx.org@1.9.10"></script>
     <script src="https://cdn.tailwindcss.com"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        @keyframes shake {
+            0%, 30%, 100% { transform: translateX(0); }
+            5%, 15%, 25% { transform: translateX(-2px); }
+            10%, 20% { transform: translateX(2px); }
+        }
+        .shake-notification {
+            animation: shake 1s ease-in-out infinite;
+        }
+    </style>
 </head>
 <body class="bg-gray-100 h-screen overflow-hidden">
     <!-- Header -->
@@ -16,9 +26,14 @@
             <h1 class="text-xl font-semibold">Threadly</h1>
         </div>
         <div class="flex items-center space-x-4">
-            <a href="/business" class="bg-purple-600 hover:bg-purple-700 px-4 py-2 rounded-lg flex items-center space-x-2">
+            <a href="/business" class="bg-purple-600 hover:bg-purple-700 px-4 py-2 rounded-lg flex items-center space-x-2 relative">
                 <i class="fas fa-chart-line"></i>
                 <span>Business</span>
+                {{if gt .TotalPending 0}}
+                <span class="shake-notification absolute -top-2 -right-2 bg-red-500 text-white text-xs font-bold rounded-full h-5 w-5 flex items-center justify-center">
+                    {{.TotalPending}}
+                </span>
+                {{end}}
             </a>
             <button onclick="showNewClientModal()" class="bg-teal-700 hover:bg-teal-800 px-4 py-2 rounded-lg flex items-center space-x-2">
                 <i class="fas fa-plus"></i>

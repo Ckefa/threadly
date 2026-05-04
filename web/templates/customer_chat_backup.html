@@ -70,7 +70,6 @@
 
 <script>
     let heartbeatInterval = null;
-    const businessId = {{.Business.ID}};
 
     document.addEventListener('DOMContentLoaded', function() {
         // Start heartbeat to keep customer online
@@ -128,7 +127,7 @@
 
     async function loadClientProducts() {
         try {
-            const response = await fetch(`/customer/businesses/${businessId}/products`);
+            const response = await fetch(`/customer/businesses/{{.Business.ID}}/products`);
             const products = await response.json();
             const select = document.getElementById('clientOrderProduct');
             
@@ -146,7 +145,7 @@
 
     async function loadClientServices() {
         try {
-            const response = await fetch(`/customer/businesses/${businessId}/services`);
+            const response = await fetch(`/customer/businesses/{{.Business.ID}}/services`);
             const services = await response.json();
             const select = document.getElementById('clientBookingService');
             
@@ -171,7 +170,7 @@
             quantity: parseInt(document.getElementById('clientOrderQuantity').value),
             delivery_address: document.getElementById('clientOrderAddress').value,
             notes: document.getElementById('clientOrderNotes').value,
-            business_id: businessId
+            business_id: {{.Business.ID}}
         };
 
         fetch('/customer/orders', {
@@ -212,7 +211,7 @@
             service_id: parseInt(document.getElementById('clientBookingService').value),
             scheduled_date: bookingDateTime,
             notes: document.getElementById('clientBookingNotes').value,
-            business_id: businessId
+            business_id: {{.Business.ID}}
         };
 
         fetch('/customer/bookings', {
