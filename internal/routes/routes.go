@@ -1,6 +1,7 @@
 package routes
 
 import (
+	"threadly/internal/db"
 	"threadly/internal/handlers"
 	"threadly/internal/middleware"
 
@@ -8,6 +9,8 @@ import (
 )
 
 func Setup(r *gin.Engine) {
+	// Initialize business handler
+	businessHandler := handlers.NewBusinessHandler(db.DB)
 
 	// PUBLIC - Business Routes
 	r.GET("/login", handlers.ShowLogin)
@@ -26,7 +29,25 @@ func Setup(r *gin.Engine) {
 	protected := r.Group("/")
 	protected.Use(middleware.RequireAuth())
 	{
+		// Chat Dashboard (original)
 		protected.GET("/", handlers.ShowCustomers)
+
+		// Business Dashboard routes
+		protected.GET("/business", businessHandler.GetDashboard)
+		protected.GET("/products", businessHandler.GetProducts)
+		protected.POST("/products", businessHandler.CreateProduct)
+		protected.PUT("/products/:id", businessHandler.UpdateProduct)
+		protected.DELETE("/products/:id", businessHandler.DeleteProduct)
+		protected.GET("/services", businessHandler.GetServices)
+		protected.POST("/services", businessHandler.CreateService)
+		protected.PUT("/services/:id", businessHandler.UpdateService)
+		protected.DELETE("/services/:id", businessHandler.DeleteService)
+		protected.GET("/orders", businessHandler.GetOrders)
+		protected.POST("/orders", businessHandler.CreateOrder)
+		protected.PUT("/orders/:id/status", businessHandler.UpdateOrderStatus)
+		protected.GET("/bookings", businessHandler.GetBookings)
+		protected.POST("/bookings", businessHandler.CreateBooking)
+		protected.PUT("/bookings/:id/status", businessHandler.UpdateBookingStatus)
 
 		// Customer routes
 		protected.POST("/customers", handlers.CreateCustomer)

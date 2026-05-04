@@ -1,0 +1,472 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Orders - Business Dashboard</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        .table-row-hover:hover { background-color: #f9fafb; }
+        .badge-status { padding: 0.25rem 0.75rem; border-radius: 9999px; font-size: 0.75rem; font-weight: 600; }
+    </style>
+</head>
+<body class="bg-gray-50">
+    <!-- Header -->
+    <header class="bg-white shadow-sm border-b border-gray-200">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="flex justify-between items-center h-16">
+                <div class="flex items-center">
+                    <a href="/business" class="text-gray-600 hover:text-gray-900 mr-4">
+                        <i class="fas fa-arrow-left"></i>
+                    </a>
+                    <h1 class="text-xl font-semibold text-gray-900">Orders Management</h1>
+                </div>
+                <div class="flex items-center space-x-4">
+                    <a href="/" class="bg-gray-600 hover:bg-gray-700 text-white px-4 py-2 rounded-lg flex items-center space-x-2">
+                        <i class="fas fa-users"></i>
+                        <span>Clients</span>
+                    </a>
+                    <button onclick="showQuickOrderModal()" class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg flex items-center space-x-2">
+                        <i class="fas fa-shopping-cart"></i>
+                        <span>Quick Order</span>
+                    </button>
+                    <button onclick="showQuickBookingModal()" class="bg-purple-600 hover:bg-purple-700 text-white px-4 py-2 rounded-lg flex items-center space-x-2">
+                        <i class="fas fa-calendar-plus"></i>
+                        <span>Quick Booking</span>
+                    </button>
+                    <button class="text-gray-500 hover:text-gray-700">
+                        <i class="fas fa-bell"></i>
+                    </button>
+                    <div class="flex items-center space-x-2">
+                        <img src="https://picsum.photos/seed/user/32/32.jpg" alt="User" class="w-8 h-8 rounded-full">
+                        <span class="text-sm font-medium text-gray-700">{{.User.FirstName}} {{.User.LastName}}</span>
+                    </div>
+                    <a href="/logout" class="text-sm text-red-600 hover:text-red-800">Logout</a>
+                </div>
+            </div>
+        </div>
+    </header>
+
+    <div class="flex h-screen pt-16">
+        <!-- Sidebar -->
+        <aside class="w-64 bg-white shadow-lg">
+            <nav class="mt-8">
+                <div class="px-4 space-y-2">
+                    <a href="/business" class="sidebar-item flex items-center px-4 py-2 text-sm font-medium rounded-md text-gray-700 hover:bg-gray-100">
+                        <i class="fas fa-chart-line mr-3"></i>
+                        Dashboard Overview
+                    </a>
+                    <a href="/products" class="sidebar-item flex items-center px-4 py-2 text-sm font-medium rounded-md text-gray-700 hover:bg-gray-100">
+                        <i class="fas fa-box mr-3"></i>
+                        Products
+                    </a>
+                    <a href="/services" class="sidebar-item flex items-center px-4 py-2 text-sm font-medium rounded-md text-gray-700 hover:bg-gray-100">
+                        <i class="fas fa-concierge-bell mr-3"></i>
+                        Services
+                    </a>
+                    <a href="/orders" class="sidebar-item flex items-center px-4 py-2 text-sm font-medium rounded-md bg-teal-50 text-teal-700">
+                        <i class="fas fa-shopping-cart mr-3"></i>
+                        Orders
+                        <span class="ml-auto bg-teal-200 text-teal-700 text-xs px-2 py-1 rounded-full">{{len .Orders}}</span>
+                    </a>
+                    <a href="/bookings" class="sidebar-item flex items-center px-4 py-2 text-sm font-medium rounded-md text-gray-700 hover:bg-gray-100">
+                        <i class="fas fa-calendar-check mr-3"></i>
+                        Bookings
+                    </a>
+                </div>
+            </nav>
+        </aside>
+
+        <!-- Main Content -->
+        <main class="flex-1 p-6">
+            <div class="max-w-7xl mx-auto">
+                <!-- Page Header -->
+                <div class="mb-8">
+                    <h2 class="text-2xl font-bold text-gray-900">Orders Management</h2>
+                    <p class="text-gray-600 mt-2">Track and manage your customer orders</p>
+                </div>
+
+                <!-- Stats Cards -->
+                <div class="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
+                    <div class="bg-white rounded-lg shadow p-6">
+                        <div class="flex items-center">
+                            <div class="p-3 bg-blue-100 rounded-full">
+                                <i class="fas fa-shopping-cart text-blue-600"></i>
+                            </div>
+                            <div class="ml-4">
+                                <p class="text-sm text-gray-600">Total Orders</p>
+                                <p class="text-2xl font-bold text-gray-900">{{len .Orders}}</p>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="bg-white rounded-lg shadow p-6">
+                        <div class="flex items-center">
+                            <div class="p-3 bg-yellow-100 rounded-full">
+                                <i class="fas fa-clock text-yellow-600"></i>
+                            </div>
+                            <div class="ml-4">
+                                <p class="text-sm text-gray-600">Pending</p>
+                                <p class="text-2xl font-bold text-gray-900">{{range $i, $order := .Orders}}{{if eq $order.Status "pending"}}{{if $i}}+{{end}}1{{end}}{{end}}</p>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="bg-white rounded-lg shadow p-6">
+                        <div class="flex items-center">
+                            <div class="p-3 bg-green-100 rounded-full">
+                                <i class="fas fa-check text-green-600"></i>
+                            </div>
+                            <div class="ml-4">
+                                <p class="text-sm text-gray-600">Completed</p>
+                                <p class="text-2xl font-bold text-gray-900">{{range $i, $order := .Orders}}{{if eq $order.Status "fulfilled"}}{{if $i}}+{{end}}1{{end}}{{end}}</p>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="bg-white rounded-lg shadow p-6">
+                        <div class="flex items-center">
+                            <div class="p-3 bg-purple-100 rounded-full">
+                                <i class="fas fa-dollar-sign text-purple-600"></i>
+                            </div>
+                            <div class="ml-4">
+                                <p class="text-sm text-gray-600">Total Revenue</p>
+                                <p class="text-2xl font-bold text-gray-900">$0.00</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Orders Table -->
+                <div class="bg-white rounded-lg shadow">
+                    <div class="px-6 py-4 border-b border-gray-200">
+                        <h3 class="text-lg font-medium text-gray-900">Recent Orders</h3>
+                    </div>
+                    <div class="overflow-x-auto">
+                        <table class="min-w-full divide-y divide-gray-200">
+                            <thead class="bg-gray-50">
+                                <tr>
+                                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Order #</th>
+                                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Customer</th>
+                                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Items</th>
+                                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Total</th>
+                                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
+                                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Date</th>
+                                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody class="bg-white divide-y divide-gray-200">
+                                {{range .Orders}}
+                                <tr class="table-row-hover">
+                                    <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">{{.OrderNumber}}</td>
+                                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                                        <div class="flex items-center">
+                                            <img src="https://picsum.photos/seed/customer{{.CustomerID}}/32/32.jpg" alt="{{.Customer.Name}}" class="w-8 h-8 rounded-full mr-3">
+                                            <div>
+                                                <div class="font-medium">{{.Customer.Name}}</div>
+                                                <div class="text-gray-500">{{.Customer.Email}}</div>
+                                            </div>
+                                        </div>
+                                    </td>
+                                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                                        {{range .OrderItems}}{{.Quantity}}x {{.Product.Name}}{{end}}
+                                    </td>
+                                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">${{.TotalAmount}}</td>
+                                    <td class="px-6 py-4 whitespace-nowrap">
+                                        <span class="badge-status 
+                                            {{if eq .Status "pending"}}bg-yellow-100 text-yellow-800{{else if eq .Status "confirmed"}}bg-blue-100 text-blue-800{{else if eq .Status "fulfilled"}}bg-green-100 text-green-800{{else if eq .Status "cancelled"}}bg-red-100 text-red-800{{else}}bg-gray-100 text-gray-800{{end}}">
+                                            {{.Status}}
+                                        </span>
+                                    </td>
+                                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{{.CreatedAt.Format "Jan 02, 2006"}}</td>
+                                    <td class="px-6 py-4 whitespace-nowrap text-sm font-medium">
+                                        <div class="flex space-x-2">
+                                            <select data-order-id="{{.ID}}" onchange="updateOrderStatus(this)" class="text-sm border border-gray-300 rounded px-2 py-1">
+                                                <option value="pending" {{if eq .Status "pending"}}selected{{end}}>Pending</option>
+                                                <option value="confirmed" {{if eq .Status "confirmed"}}selected{{end}}>Confirmed</option>
+                                                <option value="fulfilled" {{if eq .Status "fulfilled"}}selected{{end}}>Fulfilled</option>
+                                                <option value="cancelled" {{if eq .Status "cancelled"}}selected{{end}}>Cancelled</option>
+                                            </select>
+                                        </div>
+                                    </td>
+                                </tr>
+                                {{else}}
+                                <tr>
+                                    <td colspan="7" class="px-6 py-12 text-center text-gray-500">
+                                        <i class="fas fa-shopping-cart text-4xl mb-4"></i>
+                                        <p class="text-lg">No orders yet</p>
+                                        <p class="text-sm mt-2">Create your first order using the Quick Order button above</p>
+                                    </td>
+                                </tr>
+                                {{end}}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <!-- Quick Order Modal -->
+    <div id="quickOrderModal" class="fixed inset-0 bg-gray-600 bg-opacity-50 hidden overflow-y-auto h-full w-full z-50">
+        <div class="relative top-20 mx-auto p-5 border w-96 shadow-lg rounded-md bg-white">
+            <div class="mt-3">
+                <h3 class="text-lg font-medium text-gray-900">Quick Order</h3>
+                <form id="quickOrderForm" class="mt-4 space-y-4">
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700">Select Product</label>
+                        <select id="orderProduct" required class="mt-1 block w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-teal-500 focus:border-teal-500">
+                            <option value="">Choose a product...</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700">Quantity</label>
+                        <input type="number" id="orderQuantity" min="1" required class="mt-1 block w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-teal-500 focus:border-teal-500">
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700">Customer Name</label>
+                        <input type="text" id="orderCustomerName" required class="mt-1 block w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-teal-500 focus:border-teal-500">
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700">Customer Email</label>
+                        <input type="email" id="orderCustomerEmail" class="mt-1 block w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-teal-500 focus:border-teal-500">
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700">Customer Phone</label>
+                        <input type="tel" id="orderCustomerPhone" class="mt-1 block w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-teal-500 focus:border-teal-500">
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700">Delivery Address</label>
+                        <textarea id="orderDeliveryAddress" rows="2" class="mt-1 block w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-teal-500 focus:border-teal-500"></textarea>
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700">Notes</label>
+                        <textarea id="orderNotes" rows="2" class="mt-1 block w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-teal-500 focus:border-teal-500"></textarea>
+                    </div>
+                    <div class="flex justify-end space-x-3 pt-4">
+                        <button type="button" onclick="hideQuickOrderModal()" class="bg-gray-300 hover:bg-gray-400 text-gray-800 px-4 py-2 rounded">
+                            Cancel
+                        </button>
+                        <button type="submit" class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded">
+                            Create Order
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <!-- Quick Booking Modal -->
+    <div id="quickBookingModal" class="fixed inset-0 bg-gray-600 bg-opacity-50 hidden overflow-y-auto h-full w-full z-50">
+        <div class="relative top-20 mx-auto p-5 border w-96 shadow-lg rounded-md bg-white">
+            <div class="mt-3">
+                <h3 class="text-lg font-medium text-gray-900">Quick Booking</h3>
+                <form id="quickBookingForm" class="mt-4 space-y-4">
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700">Select Service</label>
+                        <select id="bookingService" required class="mt-1 block w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-teal-500 focus:border-teal-500">
+                            <option value="">Choose a service...</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700">Customer Name</label>
+                        <input type="text" id="bookingCustomerName" required class="mt-1 block w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-teal-500 focus:border-teal-500">
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700">Customer Email</label>
+                        <input type="email" id="bookingCustomerEmail" class="mt-1 block w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-teal-500 focus:border-teal-500">
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700">Customer Phone</label>
+                        <input type="tel" id="bookingCustomerPhone" class="mt-1 block w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-teal-500 focus:border-teal-500">
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700">Booking Date & Time</label>
+                        <input type="datetime-local" id="bookingDateTime" required class="mt-1 block w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-teal-500 focus:border-teal-500">
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700">Notes</label>
+                        <textarea id="bookingNotes" rows="2" class="mt-1 block w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-teal-500 focus:border-teal-500"></textarea>
+                    </div>
+                    <div class="flex justify-end space-x-3 pt-4">
+                        <button type="button" onclick="hideQuickBookingModal()" class="bg-gray-300 hover:bg-gray-400 text-gray-800 px-4 py-2 rounded">
+                            Cancel
+                        </button>
+                        <button type="submit" class="bg-purple-600 hover:bg-purple-700 text-white px-4 py-2 rounded">
+                            Create Booking
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Load products for quick order
+        async function loadProductsForOrder() {
+            try {
+                const response = await fetch('/products');
+                const data = await response.text();
+                const parser = new DOMParser();
+                const doc = parser.parseFromString(data, 'text/html');
+                const productCards = doc.querySelectorAll('[data-product-id]');
+                const select = document.getElementById('orderProduct');
+                
+                select.innerHTML = '<option value="">Choose a product...</option>';
+                productCards.forEach(card => {
+                    const productId = card.dataset.productId;
+                    const productName = card.querySelector('h3')?.textContent || 'Unknown Product';
+                    const option = document.createElement('option');
+                    option.value = productId;
+                    option.textContent = productName;
+                    select.appendChild(option);
+                });
+            } catch (error) {
+                console.error('Failed to load products:', error);
+            }
+        }
+
+        // Load services for quick booking
+        async function loadServicesForBooking() {
+            try {
+                const response = await fetch('/services');
+                const data = await response.text();
+                const parser = new DOMParser();
+                const doc = parser.parseFromString(data, 'text/html');
+                const serviceCards = doc.querySelectorAll('[data-service-id]');
+                const select = document.getElementById('bookingService');
+                
+                select.innerHTML = '<option value="">Choose a service...</option>';
+                serviceCards.forEach(card => {
+                    const serviceId = card.dataset.serviceId;
+                    const serviceName = card.querySelector('h3')?.textContent || 'Unknown Service';
+                    const option = document.createElement('option');
+                    option.value = serviceId;
+                    option.textContent = serviceName;
+                    select.appendChild(option);
+                });
+            } catch (error) {
+                console.error('Failed to load services:', error);
+            }
+        }
+
+        // Modal functions
+        function showQuickOrderModal() {
+            document.getElementById('quickOrderModal').classList.remove('hidden');
+            loadProductsForOrder();
+        }
+
+        function hideQuickOrderModal() {
+            document.getElementById('quickOrderModal').classList.add('hidden');
+            document.getElementById('quickOrderForm').reset();
+        }
+
+        function showQuickBookingModal() {
+            document.getElementById('quickBookingModal').classList.remove('hidden');
+            loadServicesForBooking();
+        }
+
+        function hideQuickBookingModal() {
+            document.getElementById('quickBookingModal').classList.add('hidden');
+            document.getElementById('quickBookingForm').reset();
+        }
+
+        // Update order status
+        function updateOrderStatus(selectElement) {
+            const orderId = selectElement.dataset.orderId;
+            const status = selectElement.value;
+            
+            fetch(`/orders/${orderId}/status`, {
+                method: 'PUT',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({ status: status })
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    // Reload the page to show updated status
+                    location.reload();
+                } else {
+                    alert('Failed to update order status');
+                }
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                alert('Failed to update order status');
+            });
+        }
+
+        // Form submissions
+        document.getElementById('quickOrderForm').addEventListener('submit', function(e) {
+            e.preventDefault();
+            
+            const orderData = {
+                product_id: parseInt(document.getElementById('orderProduct').value),
+                quantity: parseInt(document.getElementById('orderQuantity').value),
+                customer_name: document.getElementById('orderCustomerName').value,
+                customer_email: document.getElementById('orderCustomerEmail').value,
+                customer_phone: document.getElementById('orderCustomerPhone').value,
+                delivery_address: document.getElementById('orderDeliveryAddress').value,
+                notes: document.getElementById('orderNotes').value
+            };
+
+            fetch('/orders', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify(orderData)
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    hideQuickOrderModal();
+                    alert(data.message || 'Order created successfully!');
+                    location.reload();
+                } else {
+                    alert(data.error || 'Failed to create order');
+                }
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                alert('Failed to create order');
+            });
+        });
+
+        document.getElementById('quickBookingForm').addEventListener('submit', function(e) {
+            e.preventDefault();
+            
+            const bookingData = {
+                service_id: parseInt(document.getElementById('bookingService').value),
+                customer_name: document.getElementById('bookingCustomerName').value,
+                customer_email: document.getElementById('bookingCustomerEmail').value,
+                customer_phone: document.getElementById('bookingCustomerPhone').value,
+                booking_date: document.getElementById('bookingDateTime').value,
+                notes: document.getElementById('bookingNotes').value
+            };
+
+            fetch('/bookings', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify(bookingData)
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    hideQuickBookingModal();
+                    alert(data.message || 'Booking created successfully!');
+                    location.reload();
+                } else {
+                    alert(data.error || 'Failed to create booking');
+                }
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                alert('Failed to create booking');
+            });
+        });
+    </script>
+</body>
+</html>

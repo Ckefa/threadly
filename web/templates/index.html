@@ -16,6 +16,10 @@
             <h1 class="text-xl font-semibold">Threadly</h1>
         </div>
         <div class="flex items-center space-x-4">
+            <a href="/business" class="bg-purple-600 hover:bg-purple-700 px-4 py-2 rounded-lg flex items-center space-x-2">
+                <i class="fas fa-chart-line"></i>
+                <span>Business</span>
+            </a>
             <button onclick="showNewClientModal()" class="bg-teal-700 hover:bg-teal-800 px-4 py-2 rounded-lg flex items-center space-x-2">
                 <i class="fas fa-plus"></i>
                 <span>New Customer</span>
@@ -120,6 +124,104 @@
         </div>
     </div>
 
+    <!-- Quick Order Modal -->
+    <div id="quickOrderModal" class="fixed inset-0 bg-gray-600 bg-opacity-50 hidden overflow-y-auto h-full w-full z-50">
+        <div class="relative top-20 mx-auto p-5 border w-96 shadow-lg rounded-md bg-white">
+            <div class="mt-3">
+                <h3 class="text-lg font-medium text-gray-900">Quick Order</h3>
+                <form id="quickOrderForm" class="mt-4 space-y-4">
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700">Select Product</label>
+                        <select id="orderProduct" required class="mt-1 block w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-teal-500 focus:border-teal-500">
+                            <option value="">Choose a product...</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700">Quantity</label>
+                        <input type="number" id="orderQuantity" min="1" required class="mt-1 block w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-teal-500 focus:border-teal-500">
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700">Customer Name</label>
+                        <input type="text" id="orderCustomerName" required class="mt-1 block w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-teal-500 focus:border-teal-500" readonly>
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700">Customer Email</label>
+                        <input type="email" id="orderCustomerEmail" class="mt-1 block w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-teal-500 focus:border-teal-500" readonly>
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700">Customer Phone</label>
+                        <input type="tel" id="orderCustomerPhone" class="mt-1 block w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-teal-500 focus:border-teal-500" readonly>
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700">Delivery Address</label>
+                        <textarea id="orderDeliveryAddress" rows="2" class="mt-1 block w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-teal-500 focus:border-teal-500"></textarea>
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700">Notes</label>
+                        <textarea id="orderNotes" rows="2" class="mt-1 block w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-teal-500 focus:border-teal-500"></textarea>
+                    </div>
+                    <div class="flex justify-end space-x-3 pt-4">
+                        <button type="button" onclick="hideQuickOrderModal()" class="bg-gray-300 hover:bg-gray-400 text-gray-800 px-4 py-2 rounded">
+                            Cancel
+                        </button>
+                        <button type="submit" class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded">
+                            Create Order
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <!-- Quick Booking Modal -->
+    <div id="quickBookingModal" class="fixed inset-0 bg-gray-600 bg-opacity-50 hidden overflow-y-auto h-full w-full z-50">
+        <div class="relative top-20 mx-auto p-5 border w-96 shadow-lg rounded-md bg-white">
+            <div class="mt-3">
+                <h3 class="text-lg font-medium text-gray-900">Quick Booking</h3>
+                <form id="quickBookingForm" class="mt-4 space-y-4">
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700">Select Service</label>
+                        <select id="bookingService" required class="mt-1 block w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-teal-500 focus:border-teal-500">
+                            <option value="">Choose a service...</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700">Customer Name</label>
+                        <input type="text" id="bookingCustomerName" required class="mt-1 block w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-teal-500 focus:border-teal-500" readonly>
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700">Customer Email</label>
+                        <input type="email" id="bookingCustomerEmail" class="mt-1 block w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-teal-500 focus:border-teal-500" readonly>
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700">Customer Phone</label>
+                        <input type="tel" id="bookingCustomerPhone" class="mt-1 block w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-teal-500 focus:border-teal-500" readonly>
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700">Booking Date</label>
+                        <input type="date" id="bookingDate" required class="mt-1 block w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-teal-500 focus:border-teal-500">
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700">Booking Time</label>
+                        <input type="time" id="bookingTime" required class="mt-1 block w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-teal-500 focus:border-teal-500">
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700">Notes</label>
+                        <textarea id="bookingNotes" rows="2" class="mt-1 block w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-teal-500 focus:border-teal-500"></textarea>
+                    </div>
+                    <div class="flex justify-end space-x-3 pt-4">
+                        <button type="button" onclick="hideQuickBookingModal()" class="bg-gray-300 hover:bg-gray-400 text-gray-800 px-4 py-2 rounded">
+                            Cancel
+                        </button>
+                        <button type="submit" class="bg-purple-600 hover:bg-purple-700 text-white px-4 py-2 rounded">
+                            Create Booking
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
     <script>
         let currentClientId = null;
 
@@ -133,13 +235,17 @@
         }
 
         function openQuickBookingModal(customerId) {
-            // TODO: Implement booking modal
-            showNotification('Quick booking feature coming soon!', 'info');
+            // Show booking modal and populate customer data
+            populateCustomerData(customerId);
+            loadServicesForBooking();
+            document.getElementById('quickBookingModal').classList.remove('hidden');
         }
 
         function openQuickOrderModal(customerId) {
-            // TODO: Implement order modal
-            showNotification('Quick order feature coming soon!', 'info');
+            // Show order modal and populate customer data
+            populateCustomerData(customerId);
+            loadProductsForOrder();
+            document.getElementById('quickOrderModal').classList.remove('hidden');
         }
 
         function openQuotationModal(customerId) {
@@ -155,6 +261,26 @@
         function openGoalModal(customerId) {
             // TODO: Implement goal modal
             showNotification('Goal setting feature coming soon!', 'info');
+        }
+
+        function showNotification(message, type = 'info') {
+            // Create notification element
+            const notification = document.createElement('div');
+            notification.className = `fixed top-4 right-4 p-4 rounded-lg shadow-lg z-50 ${
+                type === 'success' ? 'bg-green-500 text-white' :
+                type === 'error' ? 'bg-red-500 text-white' :
+                type === 'warning' ? 'bg-yellow-500 text-white' :
+                'bg-blue-500 text-white'
+            }`;
+            notification.textContent = message;
+            
+            // Add to body
+            document.body.appendChild(notification);
+            
+            // Remove after 3 seconds
+            setTimeout(() => {
+                notification.remove();
+            }, 3000);
         }
 
         function loadCustomer(customerId) {
@@ -173,6 +299,168 @@
                 swap: 'innerHTML'
             });
         }
+
+        // Helper functions for quick order and booking modals
+        function populateCustomerData(customerId) {
+            // Find the customer element and extract data
+            const customerElement = document.querySelector(`[data-client-id="${customerId}"]`);
+            if (customerElement) {
+                const customerName = customerElement.querySelector('h3')?.textContent || '';
+                const customerEmail = customerElement.querySelector('.text-gray-500')?.textContent || '';
+                
+                // Populate order modal
+                document.getElementById('orderCustomerName').value = customerName;
+                document.getElementById('orderCustomerEmail').value = customerEmail;
+                
+                // Populate booking modal
+                document.getElementById('bookingCustomerName').value = customerName;
+                document.getElementById('bookingCustomerEmail').value = customerEmail;
+            }
+        }
+
+        async function loadProductsForOrder() {
+            try {
+                const response = await fetch('/products');
+                const data = await response.text();
+                // Parse the HTML to extract products
+                const parser = new DOMParser();
+                const doc = parser.parseFromString(data, 'text/html');
+                const productCards = doc.querySelectorAll('[data-product-id]');
+                const select = document.getElementById('orderProduct');
+                
+                select.innerHTML = '<option value="">Choose a product...</option>';
+                productCards.forEach(card => {
+                    const productId = card.dataset.productId;
+                    const productName = card.querySelector('h3')?.textContent || 'Unknown Product';
+                    const option = document.createElement('option');
+                    option.value = productId;
+                    option.textContent = productName;
+                    select.appendChild(option);
+                });
+            } catch (error) {
+                console.error('Failed to load products:', error);
+                showNotification('Failed to load products', 'error');
+            }
+        }
+
+        async function loadServicesForBooking() {
+            try {
+                const response = await fetch('/services');
+                const data = await response.text();
+                // Parse the HTML to extract services
+                const parser = new DOMParser();
+                const doc = parser.parseFromString(data, 'text/html');
+                const serviceCards = doc.querySelectorAll('[data-service-id]');
+                const select = document.getElementById('bookingService');
+                
+                select.innerHTML = '<option value="">Choose a service...</option>';
+                serviceCards.forEach(card => {
+                    const serviceId = card.dataset.serviceId;
+                    const serviceName = card.querySelector('h3')?.textContent || 'Unknown Service';
+                    const option = document.createElement('option');
+                    option.value = serviceId;
+                    option.textContent = serviceName;
+                    select.appendChild(option);
+                });
+            } catch (error) {
+                console.error('Failed to load services:', error);
+                showNotification('Failed to load services', 'error');
+            }
+        }
+
+        function hideQuickOrderModal() {
+            document.getElementById('quickOrderModal').classList.add('hidden');
+            document.getElementById('quickOrderForm').reset();
+        }
+
+        function hideQuickBookingModal() {
+            document.getElementById('quickBookingModal').classList.add('hidden');
+            document.getElementById('quickBookingForm').reset();
+        }
+
+        // Form submission handlers
+        document.getElementById('quickOrderForm').addEventListener('submit', function(e) {
+            e.preventDefault();
+            
+            const orderData = {
+                product_id: parseInt(document.getElementById('orderProduct').value),
+                quantity: parseInt(document.getElementById('orderQuantity').value),
+                customer_name: document.getElementById('orderCustomerName').value,
+                customer_email: document.getElementById('orderCustomerEmail').value,
+                customer_phone: document.getElementById('orderCustomerPhone').value,
+                delivery_address: document.getElementById('orderDeliveryAddress').value,
+                notes: document.getElementById('orderNotes').value
+            };
+
+            fetch('/orders', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify(orderData)
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    hideQuickOrderModal();
+                    showNotification(data.message || 'Order created successfully!', 'success');
+                } else {
+                    showNotification(data.error || 'Failed to create order', 'error');
+                }
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                showNotification('Failed to create order', 'error');
+            });
+        });
+
+        document.getElementById('quickBookingForm').addEventListener('submit', function(e) {
+            e.preventDefault();
+            
+            // Combine date and time values
+            const bookingDate = document.getElementById('bookingDate').value;
+            const bookingTime = document.getElementById('bookingTime').value;
+            // Ensure time is in HH:MM format by padding with leading zeros if needed
+            const [hours, minutes] = bookingTime.split(':');
+            const formattedTime = `${hours.padStart(2, '0')}:${minutes.padStart(2, '0')}`;
+            const bookingDateTime = `${bookingDate}T${formattedTime}`;
+            
+            // Debug logging
+            console.log('Booking Date:', bookingDate);
+            console.log('Booking Time:', bookingTime);
+            console.log('Formatted Time:', formattedTime);
+            console.log('Final DateTime:', bookingDateTime);
+            
+            const bookingData = {
+                service_id: parseInt(document.getElementById('bookingService').value),
+                customer_name: document.getElementById('bookingCustomerName').value,
+                customer_email: document.getElementById('bookingCustomerEmail').value,
+                customer_phone: document.getElementById('bookingCustomerPhone').value,
+                booking_date: bookingDateTime,
+                notes: document.getElementById('bookingNotes').value
+            };
+
+            fetch('/bookings', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify(bookingData)
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    hideQuickBookingModal();
+                    showNotification(data.message || 'Booking created successfully!', 'success');
+                } else {
+                    showNotification(data.error || 'Failed to create booking', 'error');
+                }
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                showNotification('Failed to create booking', 'error');
+            });
+        });
 
         function toggleActionButtons() {
             const actionButtons = document.getElementById('action-buttons');

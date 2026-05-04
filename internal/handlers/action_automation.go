@@ -64,7 +64,7 @@ func CreateActionWithProgress(c *gin.Context) {
 	// Create action
 	action := models.Action{
 		MessageID:   uint(messageID),
-		Type:        actionType,
+		Type:        models.ActionType(actionType),
 		Title:       title,
 		Description: description,
 		Priority:    priority,

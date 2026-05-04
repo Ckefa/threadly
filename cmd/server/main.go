@@ -26,25 +26,18 @@ func main() {
 		&models.Action{},
 		&models.CustomerAuth{},
 		&models.ConversationProgress{},
+		&models.Product{},
+		&models.Service{},
+		&models.Order{},
+		&models.OrderItem{},
+		&models.Booking{},
+		&models.BookingItem{},
+		&models.Payment{},
+		&models.InventoryLog{},
 	)
 
 	r := gin.Default()
-	r.LoadHTMLFiles(
-		"web/templates/index.html",
-		"web/templates/login.html",
-		"web/templates/register.html",
-		"web/templates/chat.html",
-		"web/templates/message_partial.html",
-		"web/templates/customer_login.html",
-		"web/templates/customer_otp.html",
-		"web/templates/customer_dashboard.html",
-		"web/templates/customer_chat.html",
-		"web/templates/customer_message_partial.html",
-		"web/templates/action_modal.html",
-		"web/templates/test.html",
-		"web/templates/partials/items.html",
-		"web/templates/partials/ping.html",
-	)
+	r.LoadHTMLGlob("web/templates/*.html")
 	r.Static("/static", "./web/static")
 
 	routes.Setup(r)
