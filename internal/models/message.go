@@ -1,0 +1,15 @@
+package models
+
+import "time"
+
+type Message struct {
+	ID             uint      `gorm:"primaryKey" json:"id"`
+	ConversationID uint      `gorm:"not null;index" json:"conversation_id"`
+	Content        string    `gorm:"not null" json:"content"`
+	Sender         string    `gorm:"not null" json:"sender"` // "user" or "client"
+	CreatedAt      time.Time `json:"created_at"`
+	UpdatedAt      time.Time `json:"updated_at"`
+	
+	Conversation Conversation `gorm:"foreignKey:ConversationID" json:"conversation,omitempty"`
+	Actions      []Action    `gorm:"foreignKey:MessageID" json:"actions,omitempty"`
+}

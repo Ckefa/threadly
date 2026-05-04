@@ -1,0 +1,30 @@
+<div class="items-list">
+    <div class="items-header">
+        <h4>📦 Items ({{.Count}})</h4>
+    </div>
+    {{if .Items}}
+        <div class="items-grid">
+            {{range .Items}}
+            <div class="item-card">
+                <div class="item-content">
+                    <span class="item-name">{{.Name}}</span>
+                    <span class="item-id">#{{.ID}}</span>
+                </div>
+                <button 
+                    hx-delete="/test/items/{{ .ID }}" 
+                    hx-target="#items-list" 
+                    hx-swap="innerHTML" 
+                    class="btn btn-danger btn-sm"
+                    onclick="return confirm('Delete this item?')"
+                >
+                    🗑️
+                </button>
+            </div>
+            {{end}}
+        </div>
+    {{else}}
+        <div class="empty-state">
+            <p>📭 No items yet. Add your first item above!</p>
+        </div>
+    {{end}}
+</div>

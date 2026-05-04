@@ -1,0 +1,143 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{{.Title}}</title>
+    <script src="https://unpkg.com/htmx.org@1.9.10"></script>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+</head>
+<body class="bg-gray-100 h-screen overflow-hidden">
+    <!-- Header -->
+    <header class="bg-teal-600 text-white p-4 flex items-center justify-between">
+        <div class="flex items-center space-x-4">
+            <i class="fas fa-user text-2xl"></i>
+            <h1 class="text-xl font-semibold">Threadly</h1>
+            <span class="text-sm opacity-90">Customer Portal</span>
+        </div>
+        <div class="flex items-center space-x-4">
+            <span class="text-sm">{{.Email}}</span>
+            <a href="/customer/logout" class="hover:bg-teal-700 px-3 py-2 rounded-lg">
+                <i class="fas fa-sign-out-alt"></i>
+            </a>
+        </div>
+    </header>
+
+    <div class="flex h-[calc(100vh-72px)]">
+        <!-- Sidebar - Business List -->
+        <aside class="w-80 bg-white border-r border-gray-200 flex flex-col">
+            <div class="p-4 border-b border-gray-200">
+                <h2 class="font-semibold text-gray-900">Your Businesses</h2>
+                <p class="text-sm text-gray-500">Select a business to chat</p>
+            </div>
+            
+            <div class="flex-1 overflow-y-auto" id="business-list">
+                {{range .Businesses}}
+                <div class="business-item px-4 py-3 hover:bg-gray-50 cursor-pointer border-b border-gray-100" 
+                     data-business-id="{{.ID}}">
+                    <div class="flex items-center space-x-3">
+                        <div class="w-12 h-12 bg-teal-100 rounded-full flex items-center justify-center">
+                            <i class="fas fa-store text-teal-600"></i>
+                        </div>
+                        <div class="flex-1">
+                            <h3 class="font-semibold text-gray-900">{{.Name}}</h3>
+                            <p class="text-sm text-gray-500">{{.Type}}</p>
+                        </div>
+                        <div class="flex flex-col items-end">
+                            <span class="inline-block w-2 h-2 bg-green-500 rounded-full"></span>
+                        </div>
+                    </div>
+                </div>
+                {{else}}
+                <div class="p-8 text-center text-gray-500">
+                    <i class="fas fa-store text-4xl mb-4"></i>
+                    <p>No businesses found</p>
+                    <p class="text-sm mt-2">You haven't connected with any businesses yet</p>
+                </div>
+                {{end}}
+            </div>
+        </aside>
+
+        <!-- Main Chat Area -->
+        <main class="flex-1 flex flex-col bg-gray-50" id="chat-area">
+            <div class="flex-1 flex items-center justify-center text-gray-400">
+                <div class="text-center">
+                    <i class="fas fa-comments text-6xl mb-4"></i>
+                    <p class="text-xl">Select a business to start chatting</p>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <script>
+        let currentBusinessId = null;
+        let heartbeatInterval = null;
+
+        document.addEventListener('DOMContentLoaded', function() {
+            // Handle business item clicks
+            document.addEventListener('click', function(e) {
+                const businessItem = e.target.closest('.business-item');
+                if (businessItem) {
+                    const businessId = businessItem.getAttribute('data-business-id');
+                    loadBusiness(businessId);
+                }
+            });
+
+            // Start heartbeat to keep customer online
+            startHeartbeat();
+        });
+
+        function startHeartbeat() {
+            // Send heartbeat every 30 seconds
+            heartbeatInterval = setInterval(function() {
+                fetch('/customer/heartbeat', {
+                    method: 'POST',
+                    headers: {
+                        'Authorization': 'Bearer ' + getCookie('customer_token')
+                    }
+                }).catch(console.error);
+            }, 30000);
+        }
+
+        function getCookie(name) {
+            const value = `; ${document.cookie}`;
+            const parts = value.split(`; ${name}=`);
+            if (parts.length === 2) return parts.pop().split(';').shift();
+        }
+
+        function stopHeartbeat() {
+            if (heartbeatInterval) {
+                clearInterval(heartbeatInterval);
+                heartbeatInterval = null;
+            }
+        }
+
+        // Clean up heartbeat when page is unloaded
+        window.addEventListener('beforeunload', stopHeartbeat);
+
+        function loadBusiness(businessId) {
+            currentBusinessId = businessId;
+            
+            // Update active business styling
+            document.querySelectorAll('.business-item').forEach(item => {
+                item.classList.remove('bg-teal-50', 'border-l-4', 'border-teal-600');
+            });
+            document.querySelector(`[data-business-id="${businessId}"]`).classList.add('bg-teal-50', 'border-l-4', 'border-teal-600');
+            
+            // Load chat interface
+            htmx.ajax('GET', `/customer/businesses/${businessId}/messages`, {
+                target: '#chat-area',
+                swap: 'innerHTML'
+            });
+        }
+
+        function sendMessage() {
+            const form = document.getElementById('message-form');
+            if (form) {
+                form.submit();
+            }
+        }
+    </script>
+</body>
+</html>

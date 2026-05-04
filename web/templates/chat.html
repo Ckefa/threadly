@@ -1,0 +1,346 @@
+<!-- Progress Controls -->
+<div class="bg-gray-50 border-b border-gray-200 px-6 py-3">
+    <div class="flex items-center justify-between">
+        <div class="flex items-center space-x-3">
+            <span class="text-sm font-medium text-gray-700">Conversation Progress:</span>
+            <select class="conversation-progress-dropdown px-3 py-1 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-teal-500"
+                    data-conversation-id="{{.Customer.ConversationID}}">
+                <option value="initial" {{if eq .Progress.CurrentStage "initial"}}selected{{end}}>Initial Contact</option>
+                <option value="qualification" {{if eq .Progress.CurrentStage "qualification"}}selected{{end}}>Qualification</option>
+                <option value="negotiation" {{if eq .Progress.CurrentStage "negotiation"}}selected{{end}}>Negotiation</option>
+                <option value="confirmation" {{if eq .Progress.CurrentStage "confirmation"}}selected{{end}}>Confirmation</option>
+                <option value="in_progress" {{if eq .Progress.CurrentStage "in_progress"}}selected{{end}}>In Progress</option>
+                <option value="completed" {{if eq .Progress.CurrentStage "completed"}}selected{{end}}>Completed</option>
+                <option value="follow_up" {{if eq .Progress.CurrentStage "follow_up"}}selected{{end}}>Follow Up</option>
+            </select>
+            <button class="save-chat-progress-btn px-3 py-1 bg-teal-600 text-white rounded-lg text-sm hover:bg-teal-700"
+                    data-conversation-id="{{.Customer.ConversationID}}">
+                <i class="fas fa-save mr-1"></i>Save Progress
+            </button>
+        </div>
+        <div class="text-xs text-gray-500">
+            Progress Score: {{.Progress.ProgressScore}}%
+        </div>
+    </div>
+</div>
+
+<!-- Chat Header -->
+<div class="bg-white border-b border-gray-200 px-6 py-4">
+    <div class="flex items-center justify-between">
+        <div class="flex items-center space-x-3">
+            <div class="w-10 h-10 bg-teal-100 rounded-full flex items-center justify-center">
+                <i class="fas fa-user text-teal-600"></i>
+            </div>
+            <div>
+                <h2 class="font-semibold text-gray-900">{{.Customer.Name}}</h2>
+                <p class="text-sm text-gray-500">{{.Customer.Email}}</p>
+            </div>
+        </div>
+        <div class="flex items-center space-x-3">
+            <div class="flex items-center space-x-1">
+                {{if .Customer.IsOnline}}
+                <div class="w-2 h-2 bg-green-500 rounded-full"></div>
+                <span class="text-xs text-green-600">Online</span>
+                {{else}}
+                <div class="w-2 h-2 bg-gray-400 rounded-full"></div>
+                <span class="text-xs text-gray-500">Offline</span>
+                {{if .Customer.LastSeenAt}}
+                <span class="text-xs text-gray-400">• {{.Customer.LastSeenAt.Format "3:04 PM"}}</span>
+                {{end}}
+                {{end}}
+            </div>
+            <button data-customer-id="{{.Customer.ID}}" 
+                    class="progress-btn px-3 py-1 bg-blue-100 text-blue-700 rounded-lg text-sm hover:bg-blue-200">
+                <i class="fas fa-chart-line mr-1"></i>Analytics
+            </button>
+        </div>
+    </div>
+</div>
+
+<!-- Messages Area -->
+<div class="flex-1 overflow-y-auto p-4 space-y-4" id="messages-container">
+    {{range .Messages}}
+    <div class="flex {{if eq .Sender "user"}}justify-end{{else}}justify-start{{end}}">
+        <div class="max-w-xs lg:max-w-md">
+            <div class="{{if eq .Sender "user"}}bg-teal-600 text-white{{else}}bg-gray-200 text-gray-800{{end}} rounded-lg px-4 py-2">
+                <p class="text-sm">{{.Content}}</p>
+            </div>
+            <div class="flex items-center justify-between mt-1">
+                <p class="text-xs text-gray-500">{{.CreatedAt.Format "3:04 PM"}}</p>
+                {{if eq .Sender "client"}}
+                <div class="flex space-x-1">
+                    <button data-message-id="{{.ID}}" data-action-type="task"
+                            class="action-btn text-xs text-blue-600 hover:text-blue-800" title="Create Task">
+                        <i class="fas fa-tasks"></i>
+                    </button>
+                    <button data-message-id="{{.ID}}" data-action-type="reminder"
+                            class="action-btn text-xs text-yellow-600 hover:text-yellow-800" title="Create Reminder">
+                        <i class="fas fa-bell"></i>
+                    </button>
+                    <button data-message-id="{{.ID}}" data-action-type="booking"
+                            class="action-btn text-xs text-green-600 hover:text-green-800" title="Create Booking">
+                        <i class="fas fa-calendar"></i>
+                    </button>
+                </div>
+                {{end}}
+            </div>
+        </div>
+    </div>
+    {{else}}
+    <div class="text-center text-gray-500 py-8">
+        <i class="fas fa-inbox text-4xl mb-2"></i>
+        <p>No messages yet. Start the conversation!</p>
+    </div>
+    {{end}}
+</div>
+
+<!-- Message Input -->
+<div class="bg-white border-t border-gray-200 p-4">
+    <form id="message-form" hx-post="/customers/{{.Customer.ID}}/messages" 
+          hx-target="#messages-container" hx-swap="beforeend"
+          hx-on::after-request="this.reset()">
+        <div class="flex space-x-3">
+            <!-- Action Button -->
+            <div class="relative" data-customer-id="{{.Customer.ID}}">
+                <button type="button" onclick="toggleActionButtons()" class="bg-purple-600 hover:bg-purple-700 text-white w-10 h-10 rounded-full flex items-center justify-center">
+                    <i class="fas fa-plus" id="action-icon"></i>
+                </button>
+                <!-- Action Buttons (hidden by default) -->
+                <div id="action-buttons" class="absolute bottom-12 left-0 space-y-2 hidden">
+                    <button onclick="openQuickBookingModal(this.closest('[data-customer-id]').dataset.customerId)" class="bg-green-500 hover:bg-green-600 text-white px-3 py-2 rounded-lg shadow-lg flex items-center space-x-1 text-sm">
+                        <i class="fas fa-calendar-plus"></i>
+                        <span>Booking</span>
+                    </button>
+                    <button onclick="openQuickOrderModal(this.closest('[data-customer-id]').dataset.customerId)" class="bg-blue-500 hover:bg-blue-600 text-white px-3 py-2 rounded-lg shadow-lg flex items-center space-x-1 text-sm">
+                        <i class="fas fa-shopping-cart"></i>
+                        <span>Order</span>
+                    </button>
+                    <button onclick="openPaymentModal(this.closest('[data-customer-id]').dataset.customerId)" class="bg-yellow-500 hover:bg-yellow-600 text-white px-3 py-2 rounded-lg shadow-lg flex items-center space-x-1 text-sm">
+                        <i class="fas fa-credit-card"></i>
+                        <span>Payment</span>
+                    </button>
+                    <button onclick="openGoalModal(this.closest('[data-customer-id]').dataset.customerId)" class="bg-purple-500 hover:bg-purple-600 text-white px-3 py-2 rounded-lg shadow-lg flex items-center space-x-1 text-sm">
+                        <i class="fas fa-bullseye"></i>
+                        <span>Goal</span>
+                    </button>
+                </div>
+            </div>
+            <input type="text" name="content" placeholder="Type a message..." 
+                   class="flex-1 px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-teal-500"
+                   required>
+            <input type="hidden" name="sender" value="user">
+            <button type="submit" class="bg-teal-600 text-white px-6 py-2 rounded-lg hover:bg-teal-700">
+                <i class="fas fa-paper-plane"></i>
+            </button>
+        </div>
+    </form>
+</div>
+
+<script>
+// Handle action button clicks
+document.addEventListener('click', function(e) {
+    const actionBtn = e.target.closest('.action-btn');
+    if (actionBtn) {
+        const messageId = actionBtn.getAttribute('data-message-id');
+        const actionType = actionBtn.getAttribute('data-action-type');
+        createQuickAction(messageId, actionType);
+    }
+    
+    const progressBtn = e.target.closest('.progress-btn');
+    if (progressBtn) {
+        const customerId = progressBtn.getAttribute('data-customer-id');
+        showConversationProgress(customerId);
+    }
+    
+    const statusDropdown = e.target.closest('.conversation-status-dropdown');
+    if (statusDropdown && statusDropdown.value) {
+        const conversationId = statusDropdown.getAttribute('data-conversation-id');
+        updateConversationStatus(conversationId, statusDropdown.value);
+    }
+    
+    const saveProgressBtn = e.target.closest('.save-chat-progress-btn');
+    if (saveProgressBtn) {
+        const conversationId = saveProgressBtn.getAttribute('data-conversation-id');
+        const dropdown = document.querySelector('.conversation-progress-dropdown[data-conversation-id="' + conversationId + '"]');
+        if (dropdown && dropdown.value) {
+            saveChatProgress(conversationId, dropdown.value);
+        }
+    }
+});
+
+function updateCustomerStatus(customerId, status) {
+    console.log('Updating customer status:', customerId, status);
+    const formData = new FormData();
+    formData.append('status', status);
+    
+    fetch('/customers/' + customerId + '/status', {
+        method: 'PUT',
+        body: formData
+    })
+    .then(response => {
+        console.log('Customer status response status:', response.status);
+        if (!response.ok) {
+            throw new Error('HTTP error! status: ' + response.status);
+        }
+        return response.json();
+    })
+    .then(data => {
+        console.log('Customer status response data:', data);
+        if (data.customer) {
+            // Show success notification
+            showNotification('Customer status updated to ' + status, 'success');
+            // Update dropdown to show new status
+            const dropdown = document.querySelector('select[data-customer-id="' + customerId + '"]');
+            if (dropdown) {
+                dropdown.value = status;
+                console.log('Updated customer dropdown to:', status);
+            }
+        } else {
+            console.error('No customer data in response');
+            showNotification('Failed to update customer status', 'error');
+        }
+    })
+    .catch(error => {
+        console.error('Error updating customer status:', error);
+        showNotification('Failed to update customer status: ' + error.message, 'error');
+    });
+}
+
+    function showEnhancedActionModal(messageId) {
+        htmx.ajax('GET', '/actions/modal/' + messageId, {
+            target: 'body',
+            swap: 'beforeend'
+        });
+    }
+
+    function showConversationProgress(customerId) {
+        // Get conversation ID from customer
+        fetch('/customers/' + customerId + '/conversation')
+            .then(response => response.json())
+            .then(data => {
+                if (data.conversation_id) {
+                    htmx.ajax('GET', '/conversations/' + data.conversation_id + '/progress', {
+                        target: '#progress-modal',
+                        swap: 'innerHTML'
+                    });
+                    showProgressModal();
+                }
+            })
+            .catch(console.error);
+    }
+
+    function showProgressModal() {
+        // Create progress modal if it doesn't exist
+        if (!document.getElementById('progress-modal')) {
+            const modal = document.createElement('div');
+            modal.id = 'progress-modal';
+            modal.className = 'fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50';
+            document.body.appendChild(modal);
+        }
+    }
+
+    function createQuickAction(messageId, actionType) {
+        const formData = new FormData();
+        formData.append('message_id', messageId);
+        formData.append('type', actionType);
+        formData.append('title', actionType.charAt(0).toUpperCase() + actionType.slice(1) + ' from message');
+        
+        htmx.ajax('POST', '/messages/' + messageId + '/actions', {
+            values: formData,
+            target: '#action-result',
+            swap: 'innerHTML'
+        });
+    }
+
+    function updateConversationStatus(conversationId, stage) {
+        console.log('Updating conversation status:', conversationId, stage);
+        const formData = new FormData();
+        formData.append('stage', stage);
+        formData.append('reason', 'Manual status update by business');
+        
+        fetch('/conversations/' + conversationId + '/status', {
+            method: 'PUT',
+            body: formData
+        })
+        .then(response => {
+            console.log('Response status:', response.status);
+            if (!response.ok) {
+                throw new Error('HTTP error! status: ' + response.status);
+            }
+            return response.json();
+        })
+        .then(data => {
+            console.log('Response data:', data);
+            if (data.progress) {
+                // Show success notification
+                showNotification('Conversation stage updated to ' + stage, 'success');
+                // Update dropdown to show new stage
+                const dropdown = document.querySelector('.conversation-status-dropdown');
+                if (dropdown) {
+                    dropdown.value = stage;
+                    console.log('Updated dropdown to:', stage);
+                }
+            } else {
+                console.error('No progress data in response');
+                showNotification('Failed to update conversation stage', 'error');
+            }
+        })
+        .catch(error => {
+            console.error('Error updating conversation status:', error);
+            showNotification('Failed to update conversation status: ' + error.message, 'error');
+        });
+    }
+
+    function saveChatProgress(conversationId, stage) {
+        console.log('Saving chat progress:', conversationId, stage);
+        const formData = new FormData();
+        formData.append('stage', stage);
+        formData.append('reason', 'Manual progress update from chat');
+        
+        fetch('/conversations/' + conversationId + '/status', {
+            method: 'PUT',
+            body: formData
+        })
+        .then(response => {
+            console.log('Chat progress response status:', response.status);
+            if (!response.ok) {
+                throw new Error('HTTP error! status: ' + response.status);
+            }
+            return response.json();
+        })
+        .then(data => {
+            console.log('Chat progress response data:', data);
+            if (data.progress) {
+                showNotification('Conversation progress saved: ' + stage, 'success');
+                // Update progress score display
+                const progressScoreElement = document.querySelector('.text-xs.text-gray-500');
+                if (progressScoreElement && data.progress.progress_score) {
+                    progressScoreElement.textContent = 'Progress Score: ' + data.progress.progress_score + '%';
+                }
+            } else {
+                console.error('No progress data in response');
+                showNotification('Failed to save conversation progress', 'error');
+            }
+        })
+        .catch(error => {
+            console.error('Error saving chat progress:', error);
+            showNotification('Failed to save conversation progress: ' + error.message, 'error');
+        });
+    }
+
+    function showNotification(message, type) {
+        // Create notification element
+        const notification = document.createElement('div');
+        notification.className = `fixed top-4 right-4 px-4 py-2 rounded-lg text-white z-50 ${
+            type === 'success' ? 'bg-green-500' : 'bg-red-500'
+        }`;
+        notification.textContent = message;
+        
+        document.body.appendChild(notification);
+        
+        // Remove after 3 seconds
+        setTimeout(() => {
+            notification.remove();
+        }, 3000);
+    }
+</script>

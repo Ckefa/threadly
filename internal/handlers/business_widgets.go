@@ -1,0 +1,282 @@
+package handlers
+
+import (
+	"strconv"
+	"time"
+
+	"threadly/internal/db"
+	"threadly/internal/models"
+
+	"github.com/gin-gonic/gin"
+)
+
+// QuickBooking creates a booking for current customer
+func QuickBooking(c *gin.Context) {
+	userID := c.GetUint("user_id")
+	customerID, err := strconv.ParseUint(c.Param("id"), 10, 32)
+	if err != nil {
+		c.String(400, "Invalid customer ID")
+		return
+	}
+
+	// Verify customer belongs to user
+	var customer models.Client
+	if err := db.DB.Where("id = ? AND user_id = ?", customerID, userID).First(&customer).Error; err != nil {
+		c.String(404, "Customer not found")
+		return
+	}
+
+	// Get conversation
+	var conversation models.Conversation
+	if err := db.DB.Where("client_id = ?", customerID).First(&conversation); err != nil {
+		c.String(404, "Conversation not found")
+		return
+	}
+
+	// Create booking action
+	title := "Quick Booking: " + customer.Name
+	description := "Created from business dashboard"
+	
+	action := models.Action{
+		MessageID:     0, // Will be updated after message creation
+		Type:         "booking",
+		Title:         title,
+		Description:   description,
+		Priority:      "high",
+		Status:        "pending",
+		DueDate:      &time.Time{}, // Will be set by user
+		CreatedAt:     time.Now(),
+	}
+
+	if err := db.DB.Create(&action).Error; err != nil {
+		c.String(500, "Failed to create booking")
+		return
+	}
+
+	// Create initial message for booking
+	message := models.Message{
+		ConversationID: conversation.ID,
+		Content:        "📅 **Booking Created**\n\nCustomer: " + customer.Name + "\nTitle: " + title + "\n\nClick to set date and details.",
+		Sender:         "user",
+	}
+
+	if err := db.DB.Create(&message).Error; err != nil {
+		c.String(500, "Failed to create booking message")
+		return
+	}
+
+	// Update action with message ID
+	action.MessageID = message.ID
+	db.DB.Save(&action)
+
+	c.HTML(200, "booking_confirmation.html", gin.H{
+		"Customer": customer,
+		"Action":   action,
+		"Message":  message,
+	})
+}
+
+// QuickOrder creates an order for current customer
+func QuickOrder(c *gin.Context) {
+	userID := c.GetUint("user_id")
+	customerID, err := strconv.ParseUint(c.Param("id"), 10, 32)
+	if err != nil {
+		c.String(400, "Invalid customer ID")
+		return
+	}
+
+	// Verify customer belongs to user
+	var customer models.Client
+	if err := db.DB.Where("id = ? AND user_id = ?", customerID, userID).First(&customer).Error; err != nil {
+		c.String(404, "Customer not found")
+		return
+	}
+
+	// Get conversation
+	var conversation models.Conversation
+	if err := db.DB.Where("client_id = ?", customerID).First(&conversation); err != nil {
+		c.String(404, "Conversation not found")
+		return
+	}
+
+	// Create order action
+	title := "Quick Order: " + customer.Name
+	description := "Created from business dashboard"
+	
+	action := models.Action{
+		MessageID:     0,
+		Type:         "order",
+		Title:         title,
+		Description:   description,
+		Priority:      "medium",
+		Status:        "pending",
+		CreatedAt:     time.Now(),
+	}
+
+	if err := db.DB.Create(&action).Error; err != nil {
+		c.String(500, "Failed to create order")
+		return
+	}
+
+	// Create initial message for order
+	message := models.Message{
+		ConversationID: conversation.ID,
+		Content:        "🛒 **Order Created**\n\nCustomer: " + customer.Name + "\nTitle: " + title + "\n\nClick to set order details.",
+		Sender:         "user",
+	}
+
+	if err := db.DB.Create(&message).Error; err != nil {
+		c.String(500, "Failed to create order message")
+		return
+	}
+
+	// Update action with message ID
+	action.MessageID = message.ID
+	db.DB.Save(&action)
+
+	c.HTML(200, "order_confirmation.html", gin.H{
+		"Customer": customer,
+		"Action":   action,
+		"Message":  message,
+	})
+}
+
+// RequestPayment creates a payment request for current customer
+func RequestPayment(c *gin.Context) {
+	userID := c.GetUint("user_id")
+	customerID, err := strconv.ParseUint(c.Param("id"), 10, 32)
+	if err != nil {
+		c.String(400, "Invalid customer ID")
+		return
+	}
+
+	// Verify customer belongs to user
+	var customer models.Client
+	if err := db.DB.Where("id = ? AND user_id = ?", customerID, userID).First(&customer).Error; err != nil {
+		c.String(404, "Customer not found")
+		return
+	}
+
+	// Get conversation
+	var conversation models.Conversation
+	if err := db.DB.Where("client_id = ?", customerID).First(&conversation); err != nil {
+		c.String(404, "Conversation not found")
+		return
+	}
+
+	// Create payment request action
+	title := "Payment Request: " + customer.Name
+	description := "Created from business dashboard"
+	
+	action := models.Action{
+		MessageID:     0,
+		Type:         "payment",
+		Title:         title,
+		Description:   description,
+		Priority:      "high",
+		Status:        "pending",
+		CreatedAt:     time.Now(),
+	}
+
+	if err := db.DB.Create(&action).Error; err != nil {
+		c.String(500, "Failed to create payment request")
+		return
+	}
+
+	// Create initial message for payment request
+	message := models.Message{
+		ConversationID: conversation.ID,
+		Content:        "💳 **Payment Requested**\n\nCustomer: " + customer.Name + "\nTitle: " + title + "\n\nClick to set payment details.",
+		Sender:         "user",
+	}
+
+	if err := db.DB.Create(&message).Error; err != nil {
+		c.String(500, "Failed to create payment message")
+		return
+	}
+
+	// Update action with message ID
+	action.MessageID = message.ID
+	db.DB.Save(&action)
+
+	c.HTML(200, "payment_confirmation.html", gin.H{
+		"Customer": customer,
+		"Action":   action,
+		"Message":  message,
+	})
+}
+
+// SetGoal creates a goal for current customer
+func SetGoal(c *gin.Context) {
+	userID := c.GetUint("user_id")
+	customerID, err := strconv.ParseUint(c.Param("id"), 10, 32)
+	if err != nil {
+		c.String(400, "Invalid customer ID")
+		return
+	}
+
+	// Verify customer belongs to user
+	var customer models.Client
+	if err := db.DB.Where("id = ? AND user_id = ?", customerID, userID).First(&customer).Error; err != nil {
+		c.String(404, "Customer not found")
+		return
+	}
+
+	// Get conversation
+	var conversation models.Conversation
+	if err := db.DB.Where("client_id = ?", customerID).First(&conversation); err != nil {
+		c.String(404, "Conversation not found")
+		return
+	}
+
+	// Parse goal data
+	goalText := c.PostForm("goal")
+	targetDateStr := c.PostForm("target_date")
+	
+	// Create goal action
+	title := "Goal Set: " + customer.Name
+	description := "Goal: " + goalText
+	
+	action := models.Action{
+		MessageID:     0,
+		Type:         "goal",
+		Title:         title,
+		Description:   description,
+		Priority:      "medium",
+		Status:        "pending",
+		CreatedAt:     time.Now(),
+	}
+
+	if targetDateStr != "" {
+		if targetDate, err := time.Parse("2006-01-02", targetDateStr); err == nil {
+			action.DueDate = &targetDate
+		}
+	}
+
+	if err := db.DB.Create(&action).Error; err != nil {
+		c.String(500, "Failed to create goal")
+		return
+	}
+
+	// Create initial message for goal
+	message := models.Message{
+		ConversationID: conversation.ID,
+		Content:        "🎯 **Goal Set**\n\nCustomer: " + customer.Name + "\nGoal: " + goalText + "\n\nClick to track progress.",
+		Sender:         "user",
+	}
+
+	if err := db.DB.Create(&message).Error; err != nil {
+		c.String(500, "Failed to create goal message")
+		return
+	}
+
+	// Update action with message ID
+	action.MessageID = message.ID
+	db.DB.Save(&action)
+
+	c.HTML(200, "goal_confirmation.html", gin.H{
+		"Customer": customer,
+		"Action":   action,
+		"Message":  message,
+	})
+}
