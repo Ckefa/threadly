@@ -10,16 +10,16 @@ import (
 
 func DevPage(c *gin.Context) {
 	// Get user info from context
-	userID, exists := c.Get("user_id")
+	businessID, exists := c.Get("business_id")
 	var isLoggedIn bool
 	if exists {
-		isLoggedIn = userID != nil
+		isLoggedIn = businessID != nil
 	}
 
 	// Get clients for display
 	var clients []models.Client
 	if exists {
-		db.DB.Where("user_id = ?", userID).Find(&clients)
+		db.DB.Where("business_id = ?", businessID).Find(&clients)
 	}
 
 	c.HTML(200, "test.html", gin.H{
@@ -37,9 +37,9 @@ func Ping(c *gin.Context) {
 }
 
 func ListItems(c *gin.Context) {
-	userID := c.GetUint("user_id")
+	userID := c.GetUint("business_id")
 	var clients []models.Client
-	db.DB.Where("user_id = ?", userID).Find(&clients)
+	db.DB.Where("business_id = ?", userID).Find(&clients)
 	c.HTML(200, "items.html", gin.H{
 		"Items": clients,
 		"Count": len(clients),
@@ -47,10 +47,10 @@ func ListItems(c *gin.Context) {
 }
 
 func CreateItem(c *gin.Context) {
-	userID := c.GetUint("user_id")
+	clientID := c.GetUint("client_id")
 	name := c.PostForm("name")
 	client := models.Client{
-		UserID: userID,
+		ID:     clientID,
 		Name:   name,
 		Status: models.StatusNew,
 	}
@@ -59,8 +59,8 @@ func CreateItem(c *gin.Context) {
 }
 
 func DeleteItem(c *gin.Context) {
-	userID := c.GetUint("user_id")
+	userID := c.GetUint("business_id")
 	id := c.Param("id")
-	db.DB.Where("id = ? AND user_id = ?", id, userID).Delete(&models.Client{})
+	db.DB.Where("id = ? AND business_id = ?", id, userID).Delete(&models.Client{})
 	ListItems(c)
 }

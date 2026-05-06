@@ -53,7 +53,7 @@
         </button>
     </div>
     
-    <form id="message-form" hx-post="/customer/businesses/{{.Business.ID}}/messages" 
+    <form id="message-form" hx-post="/client/businesses/{{.Business.ID}}/messages"
           hx-target="#messages-container" hx-swap="beforeend"
           hx-on::after-request="this.reset()">
         <div class="flex space-x-3">
@@ -79,10 +79,10 @@
     function startHeartbeat() {
         // Send heartbeat every 30 seconds
         heartbeatInterval = setInterval(function() {
-            fetch('/customer/heartbeat', {
+            fetch('/client/heartbeat', {
                 method: 'POST',
                 headers: {
-                    'Authorization': 'Bearer ' + getCookie('customer_token')
+                    'Authorization': 'Bearer ' + getCookie('client_token')
                 }
             }).catch(console.error);
         }, 30000);
@@ -127,7 +127,7 @@
 
     async function loadClientProducts() {
         try {
-            const response = await fetch(`/customer/businesses/{{.Business.ID}}/products`);
+            const response = await fetch(`/client/businesses/{{.Business.ID}}/products`);
             const products = await response.json();
             const select = document.getElementById('clientOrderProduct');
             
@@ -145,7 +145,7 @@
 
     async function loadClientServices() {
         try {
-            const response = await fetch(`/customer/businesses/{{.Business.ID}}/services`);
+            const response = await fetch(`/client/businesses/{{.Business.ID}}/services`);
             const services = await response.json();
             const select = document.getElementById('clientBookingService');
             
@@ -173,11 +173,11 @@
             business_id: {{.Business.ID}}
         };
 
-        fetch('/customer/orders', {
+        fetch('/client/orders', {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json',
-                'Authorization': 'Bearer ' + getCookie('customer_token')
+                'Authorization': 'Bearer ' + getCookie('client_token')
             },
             body: JSON.stringify(orderData)
         })
@@ -214,11 +214,11 @@
             business_id: {{.Business.ID}}
         };
 
-        fetch('/customer/bookings', {
+        fetch('/client/bookings', {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json',
-                'Authorization': 'Bearer ' + getCookie('customer_token')
+                'Authorization': 'Bearer ' + getCookie('client_token')
             },
             body: JSON.stringify(bookingData)
         })
@@ -327,10 +327,10 @@
 
     function cancelOrder(orderId) {
         if (confirm('Are you sure you want to cancel this order?')) {
-            fetch(`/customer/orders/${orderId}/cancel`, {
+            fetch(`/client/orders/${orderId}/cancel`, {
                 method: 'POST',
                 headers: {
-                    'Authorization': 'Bearer ' + getCookie('customer_token')
+                    'Authorization': 'Bearer ' + getCookie('client_token')
                 }
             })
             .then(response => response.json())
@@ -356,10 +356,10 @@
 
     function cancelBooking(bookingId) {
         if (confirm('Are you sure you want to cancel this booking?')) {
-            fetch(`/customer/bookings/${bookingId}/cancel`, {
+            fetch(`/client/bookings/${bookingId}/cancel`, {
                 method: 'POST',
                 headers: {
-                    'Authorization': 'Bearer ' + getCookie('customer_token')
+                    'Authorization': 'Bearer ' + getCookie('client_token')
                 }
             })
             .then(response => response.json())

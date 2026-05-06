@@ -11,23 +11,23 @@ import (
 )
 
 func GetMessages(c *gin.Context) {
-	userID := c.GetUint("user_id")
-	customerID, err := strconv.ParseUint(c.Param("id"), 10, 32)
+	businessID := c.GetUint("business_id")
+	clientID, err := strconv.ParseUint(c.Param("id"), 10, 32)
 	if err != nil {
 		c.String(400, "Invalid customer ID")
 		return
 	}
 
-	// Verify customer belongs to user
-	var customer models.Client
-	if err := db.DB.Where("id = ? AND user_id = ?", customerID, userID).First(&customer).Error; err != nil {
+	// Verify client belongs to business
+	var client models.Client
+	if err := db.DB.Where("id = ? AND business_id = ?", clientID, businessID).First(&client).Error; err != nil {
 		c.String(404, "Customer not found")
 		return
 	}
 
 	// Get conversation
 	var conversation models.Conversation
-	if err := db.DB.Where("client_id = ?", customerID).First(&conversation).Error; err != nil {
+	if err := db.DB.Where("client_id = ?", clientID).First(&conversation).Error; err != nil {
 		c.String(404, "Conversation not found")
 		return
 	}
@@ -39,8 +39,8 @@ func GetMessages(c *gin.Context) {
 		return
 	}
 
-	// Add conversation ID to customer struct for template use
-	customer.ConversationID = conversation.ID
+	// Add conversation ID to client struct for template use
+	client.ConversationID = conversation.ID
 
 	// Load conversation progress
 	var progress models.ConversationProgress
@@ -58,34 +58,34 @@ func GetMessages(c *gin.Context) {
 	}
 
 	// Debug logging
-	fmt.Printf("Loading chat for customer %d, conversation ID: %d\n", customerID, conversation.ID)
+	fmt.Printf("Loading chat for client %d, conversation ID: %d\n", clientID, conversation.ID)
 	fmt.Printf("Progress data: %+v\n", progress)
 
 	c.HTML(200, "chat.html", gin.H{
-		"Customer": customer,
+		"Customer": client,
 		"Messages": messages,
 		"Progress": progress,
 	})
 }
 
 func CreateMessage(c *gin.Context) {
-	userID := c.GetUint("user_id")
-	customerID, err := strconv.ParseUint(c.Param("id"), 10, 32)
+	businessID := c.GetUint("business_id")
+	clientID, err := strconv.ParseUint(c.Param("id"), 10, 32)
 	if err != nil {
 		c.String(400, "Invalid customer ID")
 		return
 	}
 
-	// Verify customer belongs to user
-	var customer models.Client
-	if err := db.DB.Where("id = ? AND user_id = ?", customerID, userID).First(&customer).Error; err != nil {
+	// Verify client belongs to business
+	var client models.Client
+	if err := db.DB.Where("id = ? AND business_id = ?", clientID, businessID).First(&client).Error; err != nil {
 		c.String(404, "Customer not found")
 		return
 	}
 
 	// Get conversation
 	var conversation models.Conversation
-	if err := db.DB.Where("client_id = ?", customerID).First(&conversation).Error; err != nil {
+	if err := db.DB.Where("client_id = ?", clientID).First(&conversation).Error; err != nil {
 		c.String(404, "Conversation not found")
 		return
 	}
@@ -108,4 +108,35 @@ func CreateMessage(c *gin.Context) {
 	c.HTML(200, "message_partial.html", gin.H{
 		"Message": message,
 	})
+}
+
+func UpdateMessage(c *gin.Context) {
+	messageID, err := strconv.ParseUint(c.Param("message_id"), 10, 32)
+	if err != nil {
+		c.JSON(400, gin.H{"error": "Invalid message ID"})
+		return
+	}
+
+	var request struct {
+		Content string `json:"content" binding:"required"`
+	}
+
+	if err := c.ShouldBindJSON(&request); err != nil {
+		c.JSON(400, gin.H{"error": err.Error()})
+		return
+	}
+
+	var message models.Message
+	if err := db.DB.First(&message, messageID).Error; err != nil {
+		c.JSON(404, gin.H{"error": "Message not found"})
+		return
+	}
+
+	message.Content = request.Content
+	if err := db.DB.Save(&message).Error; err != nil {
+		c.JSON(500, gin.H{"error": "Failed to update message"})
+		return
+	}
+
+	c.JSON(200, gin.H{"success": true, "message": message})
 }

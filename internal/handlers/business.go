@@ -23,7 +23,7 @@ func NewBusinessHandler(db *gorm.DB) *BusinessHandler {
 
 // Dashboard data structure
 type DashboardData struct {
-	User                models.User
+	Business            models.Business
 	ProductCount        int64
 	ServiceCount        int64
 	PendingOrderCount   int64
@@ -31,59 +31,59 @@ type DashboardData struct {
 	TotalRevenue        float64
 	TotalOrders         int64
 	TotalBookings       int64
-	ActiveCustomers     int64
+	ActiveClients       int64
 	RecentOrders        []models.Order
 	RecentBookings      []models.Booking
 	LowStockProducts    []models.Product
 }
 
 func (h *BusinessHandler) GetDashboard(c *gin.Context) {
-	userID := c.GetUint("user_id")
-	if userID == 0 {
-		c.HTML(http.StatusUnauthorized, "login.html", gin.H{"error": "User not authenticated"})
+	businessID := c.GetUint("business_id")
+	if businessID == 0 {
+		c.HTML(http.StatusUnauthorized, "login.html", gin.H{"error": "Business not authenticated"})
 		return
 	}
 
 	// Get user from database
-	var currentUser models.User
-	if err := h.db.First(&currentUser, userID).Error; err != nil {
-		c.HTML(http.StatusInternalServerError, "login.html", gin.H{"error": "User not found"})
+	var currentBusiness models.Business
+	if err := h.db.First(&currentBusiness, businessID).Error; err != nil {
+		c.HTML(http.StatusInternalServerError, "login.html", gin.H{"error": "Business not found"})
 		return
 	}
 
 	// Get counts
 	var productCount, serviceCount, pendingOrderCount, pendingBookingCount int64
 	var totalRevenue float64
-	var totalOrders, totalBookings, activeCustomers int64
+	var totalOrders, totalBookings, activeClients int64
 
-	h.db.Model(&models.Product{}).Where("user_id = ? AND is_active = ?", userID, true).Count(&productCount)
-	h.db.Model(&models.Service{}).Where("user_id = ? AND is_active = ?", userID, true).Count(&serviceCount)
-	h.db.Model(&models.Order{}).Where("user_id = ? AND status = ?", userID, "pending").Count(&pendingOrderCount)
-	h.db.Model(&models.Booking{}).Where("user_id = ? AND status = ?", userID, "pending").Count(&pendingBookingCount)
-	h.db.Model(&models.Order{}).Where("user_id = ?", userID).Count(&totalOrders)
-	h.db.Model(&models.Booking{}).Where("user_id = ?", userID).Count(&totalBookings)
-	h.db.Model(&models.Client{}).Where("user_id = ?", userID).Count(&activeCustomers)
+	h.db.Model(&models.Product{}).Where("business_id = ? AND is_active = ?", businessID, true).Count(&productCount)
+	h.db.Model(&models.Service{}).Where("business_id = ? AND is_active = ?", businessID, true).Count(&serviceCount)
+	h.db.Model(&models.Order{}).Where("business_id = ? AND status = ?", businessID, "pending").Count(&pendingOrderCount)
+	h.db.Model(&models.Booking{}).Where("business_id = ? AND status = ?", businessID, "pending").Count(&pendingBookingCount)
+	h.db.Model(&models.Order{}).Where("business_id = ?", businessID).Count(&totalOrders)
+	h.db.Model(&models.Booking{}).Where("business_id = ?", businessID).Count(&totalBookings)
+	h.db.Model(&models.Client{}).Where("business_id = ?", businessID).Count(&activeClients)
 
 	// Calculate total revenue from completed orders and bookings
 	var ordersRevenue, bookingsRevenue float64
-	h.db.Model(&models.Order{}).Select("COALESCE(SUM(total_amount), 0)").Where("user_id = ? AND status IN ?", userID, []string{"confirmed", "fulfilled"}).Scan(&ordersRevenue)
-	h.db.Model(&models.Booking{}).Select("COALESCE(SUM(total_amount), 0)").Where("user_id = ? AND status IN ?", userID, []string{"confirmed", "fulfilled"}).Scan(&bookingsRevenue)
+	h.db.Model(&models.Order{}).Select("COALESCE(SUM(total_amount), 0)").Where("business_id = ? AND status IN ?", businessID, []string{"confirmed", "fulfilled"}).Scan(&ordersRevenue)
+	h.db.Model(&models.Booking{}).Select("COALESCE(SUM(total_amount), 0)").Where("business_id = ? AND status IN ?", businessID, []string{"confirmed", "fulfilled"}).Scan(&bookingsRevenue)
 	totalRevenue = ordersRevenue + bookingsRevenue
 
-	// Get recent orders with customer info
+	// Get recent orders with client info
 	var recentOrders []models.Order
-	h.db.Preload("Customer").Where("user_id = ?", userID).Order("created_at DESC").Limit(5).Find(&recentOrders)
+	h.db.Preload("Client").Where("business_id = ?", businessID).Order("created_at DESC").Limit(5).Find(&recentOrders)
 
-	// Get recent bookings with customer info
+	// Get recent bookings with client info
 	var recentBookings []models.Booking
-	h.db.Preload("Customer").Where("user_id = ?", userID).Order("created_at DESC").Limit(5).Find(&recentBookings)
+	h.db.Preload("Client").Where("business_id = ?", businessID).Order("created_at DESC").Limit(5).Find(&recentBookings)
 
 	// Get low stock products
 	var lowStockProducts []models.Product
-	h.db.Where("user_id = ? AND stock <= min_stock AND is_active = ?", userID, true).Find(&lowStockProducts)
+	h.db.Where("business_id = ? AND stock <= min_stock AND is_active = ?", businessID, true).Find(&lowStockProducts)
 
 	data := DashboardData{
-		User:                currentUser,
+		Business:            currentBusiness,
 		ProductCount:        productCount,
 		ServiceCount:        serviceCount,
 		PendingOrderCount:   pendingOrderCount,
@@ -91,7 +91,7 @@ func (h *BusinessHandler) GetDashboard(c *gin.Context) {
 		TotalRevenue:        totalRevenue,
 		TotalOrders:         totalOrders,
 		TotalBookings:       totalBookings,
-		ActiveCustomers:     activeCustomers,
+		ActiveClients:       activeClients,
 		RecentOrders:        recentOrders,
 		RecentBookings:      recentBookings,
 		LowStockProducts:    lowStockProducts,
@@ -100,34 +100,69 @@ func (h *BusinessHandler) GetDashboard(c *gin.Context) {
 	c.HTML(http.StatusOK, "business_dashboard.html", data)
 }
 
+// Helper function to get or create conversation by client and business ID
+func (h *BusinessHandler) getOrCreateConversation(clientID uint, businessID uint) (*models.Conversation, error) {
+	var conversation models.Conversation
+	err := h.db.Where("client_id = ? AND business_id = ?", clientID, businessID).First(&conversation).Error
+	if err != nil {
+		conversation = models.Conversation{
+			ClientID:   clientID,
+			BusinessID: businessID,
+		}
+		if err := h.db.Create(&conversation).Error; err != nil {
+			return nil, fmt.Errorf("failed to create conversation: %v", err)
+		}
+		fmt.Printf("DEBUG BusinessHandler: Created new conversation ID=%d for client_id=%d, business_id=%d\n",
+			conversation.ID, clientID, businessID)
+	}
+	return &conversation, nil
+}
+
+// Helper function to get or create client
+func (h *BusinessHandler) getOrCreateClient(email string, businessID uint) (*models.Client, error) {
+	var client models.Client
+	err := h.db.Where("email = ? OR client_id = ?", email, businessID).First(&client).Error
+	if err != nil {
+		client = models.Client{
+			ID:    businessID,
+			Email: email,
+			Name:  "Test client",
+		}
+		if err := h.db.Create(&client).Error; err != nil {
+			return nil, fmt.Errorf("failed to create client: %v", err)
+		}
+		fmt.Printf("Created new client ID=%d for email=%s", client.ID, email)
+	}
+	return &client, nil
+}
+
 // Products Management
 func (h *BusinessHandler) GetProducts(c *gin.Context) {
-	userID := c.GetUint("user_id")
-	if userID == 0 {
-		c.HTML(http.StatusUnauthorized, "login.html", gin.H{"error": "User not authenticated"})
+	businessID := c.GetUint("business_id")
+	if businessID == 0 {
+		c.HTML(http.StatusUnauthorized, "login.html", gin.H{"error": "Business not authenticated"})
 		return
 	}
 
-	// Get user from database
-	var currentUser models.User
-	if err := h.db.First(&currentUser, userID).Error; err != nil {
-		c.HTML(http.StatusInternalServerError, "login.html", gin.H{"error": "User not found"})
+	var currentBusiness models.Business
+	if err := h.db.First(&currentBusiness, businessID).Error; err != nil {
+		c.HTML(http.StatusInternalServerError, "login.html", gin.H{"error": "Business not found"})
 		return
 	}
 
 	var products []models.Product
-	h.db.Where("user_id = ?", userID).Order("created_at DESC").Find(&products)
+	h.db.Where("business_id = ?", businessID).Order("created_at DESC").Find(&products)
 
 	c.HTML(http.StatusOK, "products.html", gin.H{
-		"User":     currentUser,
+		"Business": currentBusiness,
 		"Products": products,
 	})
 }
 
 func (h *BusinessHandler) CreateProduct(c *gin.Context) {
-	userID := c.GetUint("user_id")
-	if userID == 0 {
-		c.JSON(http.StatusUnauthorized, gin.H{"error": "User not authenticated"})
+	businessID := c.GetUint("business_id")
+	if businessID == 0 {
+		c.JSON(http.StatusUnauthorized, gin.H{"error": "Business not authenticated"})
 		return
 	}
 
@@ -137,7 +172,7 @@ func (h *BusinessHandler) CreateProduct(c *gin.Context) {
 		return
 	}
 
-	product.UserID = userID
+	product.BusinessID = businessID
 	product.IsActive = true
 
 	if err := h.db.Create(&product).Error; err != nil {
@@ -148,10 +183,10 @@ func (h *BusinessHandler) CreateProduct(c *gin.Context) {
 	c.JSON(http.StatusOK, gin.H{"success": true, "product": product})
 }
 
-func (h *BusinessHandler) UpdateProduct(c *gin.Context) {
-	userID := c.GetUint("user_id")
-	if userID == 0 {
-		c.JSON(http.StatusUnauthorized, gin.H{"error": "User not authenticated"})
+func (h *BusinessHandler) GetProduct(c *gin.Context) {
+	businessID := c.GetUint("business_id")
+	if businessID == 0 {
+		c.JSON(http.StatusUnauthorized, gin.H{"error": "Business not authenticated"})
 		return
 	}
 
@@ -162,7 +197,29 @@ func (h *BusinessHandler) UpdateProduct(c *gin.Context) {
 	}
 
 	var product models.Product
-	if err := h.db.Where("id = ? AND user_id = ?", productID, userID).First(&product).Error; err != nil {
+	if err := h.db.Where("id = ? AND business_id = ?", productID, businessID).First(&product).Error; err != nil {
+		c.JSON(http.StatusNotFound, gin.H{"error": "Product not found"})
+		return
+	}
+
+	c.JSON(http.StatusOK, gin.H{"success": true, "product": product})
+}
+
+func (h *BusinessHandler) UpdateProduct(c *gin.Context) {
+	businessID := c.GetUint("business_id")
+	if businessID == 0 {
+		c.JSON(http.StatusUnauthorized, gin.H{"error": "Business not authenticated"})
+		return
+	}
+
+	productID, err := strconv.ParseUint(c.Param("id"), 10, 32)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid product ID"})
+		return
+	}
+
+	var product models.Product
+	if err := h.db.Where("id = ? AND business_id = ?", productID, businessID).First(&product).Error; err != nil {
 		c.JSON(http.StatusNotFound, gin.H{"error": "Product not found"})
 		return
 	}
@@ -181,9 +238,9 @@ func (h *BusinessHandler) UpdateProduct(c *gin.Context) {
 }
 
 func (h *BusinessHandler) DeleteProduct(c *gin.Context) {
-	userID := c.GetUint("user_id")
-	if userID == 0 {
-		c.JSON(http.StatusUnauthorized, gin.H{"error": "User not authenticated"})
+	businessID := c.GetUint("business_id")
+	if businessID == 0 {
+		c.JSON(http.StatusUnauthorized, gin.H{"error": "Business not authenticated"})
 		return
 	}
 
@@ -193,7 +250,7 @@ func (h *BusinessHandler) DeleteProduct(c *gin.Context) {
 		return
 	}
 
-	if err := h.db.Where("id = ? AND user_id = ?", productID, userID).Delete(&models.Product{}).Error; err != nil {
+	if err := h.db.Where("id = ? AND business_id = ?", productID, businessID).Delete(&models.Product{}).Error; err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to delete product"})
 		return
 	}
@@ -203,32 +260,31 @@ func (h *BusinessHandler) DeleteProduct(c *gin.Context) {
 
 // Services Management
 func (h *BusinessHandler) GetServices(c *gin.Context) {
-	userID := c.GetUint("user_id")
-	if userID == 0 {
-		c.HTML(http.StatusUnauthorized, "login.html", gin.H{"error": "User not authenticated"})
+	businessID := c.GetUint("business_id")
+	if businessID == 0 {
+		c.HTML(http.StatusUnauthorized, "login.html", gin.H{"error": "Business not authenticated"})
 		return
 	}
 
-	// Get user from database
-	var currentUser models.User
-	if err := h.db.First(&currentUser, userID).Error; err != nil {
-		c.HTML(http.StatusInternalServerError, "login.html", gin.H{"error": "User not found"})
+	var currentBusiness models.Business
+	if err := h.db.First(&currentBusiness, businessID).Error; err != nil {
+		c.HTML(http.StatusInternalServerError, "login.html", gin.H{"error": "Business not found"})
 		return
 	}
 
 	var services []models.Service
-	h.db.Where("user_id = ?", userID).Order("created_at DESC").Find(&services)
+	h.db.Where("business_id = ?", businessID).Order("created_at DESC").Find(&services)
 
 	c.HTML(http.StatusOK, "services.html", gin.H{
-		"User":     currentUser,
+		"Business": currentBusiness,
 		"Services": services,
 	})
 }
 
 func (h *BusinessHandler) CreateService(c *gin.Context) {
-	userID := c.GetUint("user_id")
-	if userID == 0 {
-		c.JSON(http.StatusUnauthorized, gin.H{"error": "User not authenticated"})
+	businessID := c.GetUint("business_id")
+	if businessID == 0 {
+		c.JSON(http.StatusUnauthorized, gin.H{"error": "Business not authenticated"})
 		return
 	}
 
@@ -238,7 +294,7 @@ func (h *BusinessHandler) CreateService(c *gin.Context) {
 		return
 	}
 
-	service.UserID = userID
+	service.BusinessID = businessID
 	service.IsActive = true
 
 	if err := h.db.Create(&service).Error; err != nil {
@@ -249,10 +305,10 @@ func (h *BusinessHandler) CreateService(c *gin.Context) {
 	c.JSON(http.StatusOK, gin.H{"success": true, "service": service})
 }
 
-func (h *BusinessHandler) UpdateService(c *gin.Context) {
-	userID := c.GetUint("user_id")
-	if userID == 0 {
-		c.JSON(http.StatusUnauthorized, gin.H{"error": "User not authenticated"})
+func (h *BusinessHandler) GetService(c *gin.Context) {
+	businessID := c.GetUint("business_id")
+	if businessID == 0 {
+		c.JSON(http.StatusUnauthorized, gin.H{"error": "Business not authenticated"})
 		return
 	}
 
@@ -263,7 +319,29 @@ func (h *BusinessHandler) UpdateService(c *gin.Context) {
 	}
 
 	var service models.Service
-	if err := h.db.Where("id = ? AND user_id = ?", serviceID, userID).First(&service).Error; err != nil {
+	if err := h.db.Where("id = ? AND business_id = ?", serviceID, businessID).First(&service).Error; err != nil {
+		c.JSON(http.StatusNotFound, gin.H{"error": "Service not found"})
+		return
+	}
+
+	c.JSON(http.StatusOK, gin.H{"success": true, "service": service})
+}
+
+func (h *BusinessHandler) UpdateService(c *gin.Context) {
+	businessID := c.GetUint("business_id")
+	if businessID == 0 {
+		c.JSON(http.StatusUnauthorized, gin.H{"error": "Business not authenticated"})
+		return
+	}
+
+	serviceID, err := strconv.ParseUint(c.Param("id"), 10, 32)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid service ID"})
+		return
+	}
+
+	var service models.Service
+	if err := h.db.Where("id = ? AND business_id = ?", serviceID, businessID).First(&service).Error; err != nil {
 		c.JSON(http.StatusNotFound, gin.H{"error": "Service not found"})
 		return
 	}
@@ -282,9 +360,9 @@ func (h *BusinessHandler) UpdateService(c *gin.Context) {
 }
 
 func (h *BusinessHandler) DeleteService(c *gin.Context) {
-	userID := c.GetUint("user_id")
-	if userID == 0 {
-		c.JSON(http.StatusUnauthorized, gin.H{"error": "User not authenticated"})
+	businessID := c.GetUint("business_id")
+	if businessID == 0 {
+		c.JSON(http.StatusUnauthorized, gin.H{"error": "Business not authenticated"})
 		return
 	}
 
@@ -294,7 +372,7 @@ func (h *BusinessHandler) DeleteService(c *gin.Context) {
 		return
 	}
 
-	if err := h.db.Where("id = ? AND user_id = ?", serviceID, userID).Delete(&models.Service{}).Error; err != nil {
+	if err := h.db.Where("id = ? AND business_id = ?", serviceID, businessID).Delete(&models.Service{}).Error; err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to delete service"})
 		return
 	}
@@ -304,18 +382,16 @@ func (h *BusinessHandler) DeleteService(c *gin.Context) {
 
 // Quick Order Creation
 func (h *BusinessHandler) CreateOrder(c *gin.Context) {
-	userID := c.GetUint("user_id")
-	if userID == 0 {
-		c.JSON(http.StatusUnauthorized, gin.H{"error": "User not authenticated"})
+	businessID := c.GetUint("business_id")
+	if businessID == 0 {
+		c.JSON(http.StatusUnauthorized, gin.H{"error": "Business not authenticated"})
 		return
 	}
 
 	var request struct {
+		ClientID        uint   `json:"client_id" binding:"required"`
 		ProductID       uint   `json:"product_id" binding:"required"`
 		Quantity        int    `json:"quantity" binding:"required"`
-		CustomerName    string `json:"customer_name" binding:"required"`
-		CustomerEmail   string `json:"customer_email"`
-		CustomerPhone   string `json:"customer_phone"`
 		DeliveryAddress string `json:"delivery_address"`
 		Notes           string `json:"notes"`
 	}
@@ -327,7 +403,7 @@ func (h *BusinessHandler) CreateOrder(c *gin.Context) {
 
 	// Get product details
 	var product models.Product
-	if err := h.db.Where("id = ? AND user_id = ?", request.ProductID, userID).First(&product).Error; err != nil {
+	if err := h.db.Where("id = ? AND business_id = ?", request.ProductID, businessID).First(&product).Error; err != nil {
 		c.JSON(http.StatusNotFound, gin.H{"error": "Product not found"})
 		return
 	}
@@ -338,33 +414,22 @@ func (h *BusinessHandler) CreateOrder(c *gin.Context) {
 		return
 	}
 
-	// Create or get customer
-	var customer models.Client
-	customerResult := h.db.Where("email = ? AND user_id = ?", request.CustomerEmail, userID).First(&customer)
-	if customerResult.Error != nil {
-		// Create new customer
-		customer = models.Client{
-			UserID: userID,
-			Name:   request.CustomerName,
-			Email:  request.CustomerEmail,
-			Phone:  request.CustomerPhone,
-			Status: "active",
-		}
-		if err := h.db.Create(&customer).Error; err != nil {
-			c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to create customer"})
-			return
-		}
+	// Create or get client
+	var client models.Client
+	if err := h.db.Where("client_id ? =", request.ClientID).First(&client).Error; err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to create client"})
+		return
 	}
 
 	// Create order
 	order := models.Order{
-		UserID:       userID,
-		CustomerID:   customer.ID,
+		BusinessID:   businessID,
+		ClientID:     client.ID,
 		OrderNumber:  generateOrderNumber(),
 		Status:       "pending",
 		TotalAmount:  float64(request.Quantity) * product.Price,
 		Notes:        fmt.Sprintf("Delivery: %s. %s", request.DeliveryAddress, request.Notes),
-		DeliveryDate: &[]time.Time{time.Now().AddDate(0, 0, 7)}[0], // Default 7 days delivery
+		DeliveryDate: &[]time.Time{time.Now().AddDate(0, 0, 7)}[0],
 	}
 
 	if err := h.db.Create(&order).Error; err != nil {
@@ -400,8 +465,27 @@ func (h *BusinessHandler) CreateOrder(c *gin.Context) {
 		Quantity:  request.Quantity,
 		Reason:    fmt.Sprintf("Order #%s", order.OrderNumber),
 	}
-
 	h.db.Create(&inventoryLog)
+
+	// Get or create conversation using BOTH client_id AND business_id
+	conversation, err := h.getOrCreateConversation(request.ClientID, businessID)
+	if err != nil {
+		fmt.Printf("DEBUG BusinessHandler: Failed to get/create conversation: %v\n", err)
+	} else {
+		// Create message in conversation
+		orderMessage := fmt.Sprintf("🛒 ORDER:%d | %s x%d ($%.2f) | Status: pending", order.ID, product.Name, request.Quantity, order.TotalAmount)
+		if request.Notes != "" {
+			orderMessage += fmt.Sprintf(" | Notes: %s", request.Notes)
+		}
+
+		message := models.Message{
+			ConversationID: conversation.ID,
+			Content:        orderMessage,
+			Type:           "order",
+			Sender:         "business",
+		}
+		h.db.Create(&message)
+	}
 
 	c.JSON(http.StatusOK, gin.H{
 		"success": true,
@@ -411,16 +495,15 @@ func (h *BusinessHandler) CreateOrder(c *gin.Context) {
 }
 
 func (h *BusinessHandler) GetOrders(c *gin.Context) {
-	userID := c.GetUint("user_id")
-	if userID == 0 {
-		c.JSON(http.StatusUnauthorized, gin.H{"error": "User not authenticated"})
+	businessID := c.GetUint("business_id")
+	if businessID == 0 {
+		c.JSON(http.StatusUnauthorized, gin.H{"error": "Business not authenticated"})
 		return
 	}
 
 	var orders []models.Order
-	h.db.Where("user_id = ?", userID).Find(&orders)
+	h.db.Where("business_id = ?", businessID).Find(&orders)
 
-	// Calculate stats
 	var pendingCount, confirmedCount, fulfilledCount, canceledCount int64
 	var totalRevenue float64
 
@@ -439,7 +522,7 @@ func (h *BusinessHandler) GetOrders(c *gin.Context) {
 	}
 
 	c.HTML(http.StatusOK, "orders.html", gin.H{
-		"User":           gin.H{},
+		"Business":       gin.H{},
 		"Orders":         orders,
 		"PendingCount":   pendingCount,
 		"ConfirmedCount": confirmedCount,
@@ -451,9 +534,9 @@ func (h *BusinessHandler) GetOrders(c *gin.Context) {
 }
 
 func (h *BusinessHandler) UpdateOrderStatus(c *gin.Context) {
-	userID := c.GetUint("user_id")
-	if userID == 0 {
-		c.JSON(http.StatusUnauthorized, gin.H{"error": "User not authenticated"})
+	businessID := c.GetUint("business_id")
+	if businessID == 0 {
+		c.JSON(http.StatusUnauthorized, gin.H{"error": "Business not authenticated"})
 		return
 	}
 
@@ -468,35 +551,30 @@ func (h *BusinessHandler) UpdateOrderStatus(c *gin.Context) {
 	}
 
 	var order models.Order
-	if err := h.db.Where("id = ? AND user_id = ?", id, userID).First(&order).Error; err != nil {
+	if err := h.db.Where("id = ? AND business_id = ?", id, businessID).First(&order).Error; err != nil {
 		c.JSON(http.StatusNotFound, gin.H{"error": "Order not found"})
 		return
 	}
 
 	order.Status = request.Status
-
 	if err := h.db.Save(&order).Error; err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to update order status"})
 		return
 	}
 
-	c.JSON(http.StatusOK, gin.H{
-		"success": true,
-		"order":   order,
-	})
+	c.JSON(http.StatusOK, gin.H{"success": true, "order": order})
 }
 
 func (h *BusinessHandler) GetBookings(c *gin.Context) {
-	userID := c.GetUint("user_id")
-	if userID == 0 {
-		c.JSON(http.StatusUnauthorized, gin.H{"error": "User not authenticated"})
+	businessID := c.GetUint("business_id")
+	if businessID == 0 {
+		c.JSON(http.StatusUnauthorized, gin.H{"error": "Business not authenticated"})
 		return
 	}
 
 	var bookings []models.Booking
-	h.db.Where("user_id = ?", userID).Find(&bookings)
+	h.db.Where("business_id = ?", businessID).Find(&bookings)
 
-	// Calculate stats
 	var pendingCount, confirmedCount, completedCount, canceledCount int64
 	var totalRevenue float64
 
@@ -515,7 +593,7 @@ func (h *BusinessHandler) GetBookings(c *gin.Context) {
 	}
 
 	c.HTML(http.StatusOK, "bookings.html", gin.H{
-		"User":           gin.H{},
+		"Business":       gin.H{},
 		"Bookings":       bookings,
 		"PendingCount":   pendingCount,
 		"ConfirmedCount": confirmedCount,
@@ -526,10 +604,32 @@ func (h *BusinessHandler) GetBookings(c *gin.Context) {
 	})
 }
 
+func (h *BusinessHandler) GetBooking(c *gin.Context) {
+	businessID := c.GetUint("business_id")
+	if businessID == 0 {
+		c.JSON(http.StatusUnauthorized, gin.H{"error": "Business not authenticated"})
+		return
+	}
+
+	bookingID, err := strconv.ParseUint(c.Param("id"), 10, 32)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid booking ID"})
+		return
+	}
+
+	var booking models.Booking
+	if err := h.db.Where("id = ? AND business_id = ?", bookingID, businessID).First(&booking).Error; err != nil {
+		c.JSON(http.StatusNotFound, gin.H{"error": "Booking not found"})
+		return
+	}
+
+	c.JSON(http.StatusOK, gin.H{"success": true, "booking": booking})
+}
+
 func (h *BusinessHandler) UpdateBookingStatus(c *gin.Context) {
-	userID := c.GetUint("user_id")
-	if userID == 0 {
-		c.JSON(http.StatusUnauthorized, gin.H{"error": "User not authenticated"})
+	businessID := c.GetUint("business_id")
+	if businessID == 0 {
+		c.JSON(http.StatusUnauthorized, gin.H{"error": "Business not authenticated"})
 		return
 	}
 
@@ -544,39 +644,95 @@ func (h *BusinessHandler) UpdateBookingStatus(c *gin.Context) {
 	}
 
 	var booking models.Booking
-	if err := h.db.Where("id = ? AND user_id = ?", id, userID).First(&booking).Error; err != nil {
+	if err := h.db.Where("id = ? AND business_id = ?", id, businessID).First(&booking).Error; err != nil {
 		c.JSON(http.StatusNotFound, gin.H{"error": "Booking not found"})
 		return
 	}
 
 	booking.Status = request.Status
-
 	if err := h.db.Save(&booking).Error; err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to update booking status"})
 		return
 	}
 
-	c.JSON(http.StatusOK, gin.H{
-		"success": true,
-		"booking": booking,
-	})
+	c.JSON(http.StatusOK, gin.H{"success": true, "booking": booking})
 }
 
-// Quick Booking Creation
-func (h *BusinessHandler) CreateBooking(c *gin.Context) {
-	userID := c.GetUint("user_id")
-	if userID == 0 {
-		c.JSON(http.StatusUnauthorized, gin.H{"error": "User not authenticated"})
+func (h *BusinessHandler) UpdateBooking(c *gin.Context) {
+	businessID := c.GetUint("business_id")
+	if businessID == 0 {
+		c.JSON(http.StatusUnauthorized, gin.H{"error": "Business not authenticated"})
+		return
+	}
+
+	bookingID, err := strconv.ParseUint(c.Param("id"), 10, 32)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid booking ID"})
+		return
+	}
+
+	var booking models.Booking
+	if err := h.db.Where("id = ? AND business_id = ?", bookingID, businessID).First(&booking).Error; err != nil {
+		c.JSON(http.StatusNotFound, gin.H{"error": "Booking not found"})
 		return
 	}
 
 	var request struct {
-		ServiceID     uint   `json:"service_id" binding:"required"`
-		CustomerName  string `json:"customer_name" binding:"required"`
-		CustomerEmail string `json:"customer_email"`
-		CustomerPhone string `json:"customer_phone"`
-		BookingDate   string `json:"booking_date" binding:"required"`
-		Notes         string `json:"notes"`
+		ServiceID   uint   `json:"service_id"`
+		BookingDate string `json:"booking_date"`
+		Notes       string `json:"notes"`
+	}
+
+	if err := c.ShouldBindJSON(&request); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		return
+	}
+
+	booking.Notes = request.Notes
+
+	if request.BookingDate != "" {
+		scheduledDate, err := time.Parse(time.RFC3339, request.BookingDate)
+		if err == nil {
+			booking.ScheduledDate = scheduledDate
+		}
+	}
+
+	if request.ServiceID > 0 {
+		var service models.Service
+		if err := h.db.First(&service, request.ServiceID).Error; err == nil {
+			if len(booking.BookingItems) > 0 {
+				booking.BookingItems[0].ServiceID = request.ServiceID
+				booking.BookingItems[0].UnitPrice = service.MaxPrice
+				booking.BookingItems[0].TotalPrice = service.MaxPrice
+				h.db.Save(&booking.BookingItems[0])
+			}
+			booking.TotalAmount = service.MaxPrice
+		}
+	}
+
+	if err := h.db.Save(&booking).Error; err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to update booking"})
+		return
+	}
+
+	c.JSON(http.StatusOK, gin.H{"success": true, "booking": booking})
+}
+
+// Quick Booking Creation
+func (h *BusinessHandler) CreateBooking(c *gin.Context) {
+	businessID := c.GetUint("business_id")
+	if businessID == 0 {
+		c.JSON(http.StatusUnauthorized, gin.H{"error": "Business not authenticated"})
+		return
+	}
+
+	var request struct {
+		ServiceID   uint   `json:"service_id" binding:"required"`
+		clientName  string `json:"client_name" binding:"required"`
+		clientEmail string `json:"client_email"`
+		clientPhone string `json:"client_phone"`
+		BookingDate string `json:"booking_date" binding:"required"`
+		Notes       string `json:"notes"`
 	}
 
 	if err := c.ShouldBindJSON(&request); err != nil {
@@ -587,40 +743,29 @@ func (h *BusinessHandler) CreateBooking(c *gin.Context) {
 
 	// Get service details
 	var service models.Service
-	if err := h.db.Where("id = ? AND user_id = ?", request.ServiceID, userID).First(&service).Error; err != nil {
+	if err := h.db.Where("id = ? AND business_id = ?", request.ServiceID, businessID).First(&service).Error; err != nil {
 		c.JSON(http.StatusNotFound, gin.H{"error": "Service not found"})
 		return
 	}
 
-	// Create or get customer
-	var customer models.Client
-	customerResult := h.db.Where("email = ? AND user_id = ?", request.CustomerEmail, userID).First(&customer)
-	if customerResult.Error != nil {
-		// Create new customer
-		customer = models.Client{
-			UserID: userID,
-			Name:   request.CustomerName,
-			Email:  request.CustomerEmail,
-			Phone:  request.CustomerPhone,
-			Status: "active",
-		}
-		if err := h.db.Create(&customer).Error; err != nil {
-			c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to create customer"})
-			return
-		}
+	// Create or get client
+	var client models.Client
+	if err := h.db.Where("client_email ? =", request.clientEmail).First(&client).Error; err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to create client"})
+		return
 	}
 
-	// Create booking
-	// Parse booking date and time properly
+	// Parse booking date
 	bookingDate, err := parseBookingDateTime(request.BookingDate)
 	if err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 		return
 	}
 
+	// Create booking
 	booking := models.Booking{
-		UserID:        userID,
-		CustomerID:    customer.ID,
+		BusinessID:    businessID,
+		ClientID:      client.ID,
 		BookingNumber: generateBookingNumber(),
 		Status:        "pending",
 		ScheduledDate: bookingDate,
@@ -647,6 +792,26 @@ func (h *BusinessHandler) CreateBooking(c *gin.Context) {
 		return
 	}
 
+	// Get or create conversation using BOTH client_id AND business_id
+	conversation, err := h.getOrCreateConversation(client.ID, businessID)
+	if err != nil {
+		fmt.Printf("DEBUG BusinessHandler: Failed to get/create conversation: %v\n", err)
+	} else {
+		// Create message in conversation
+		bookingMessage := fmt.Sprintf("📅 BOOKING:%d | %s | %s | Status: pending", booking.ID, service.Name, bookingDate.Format("Jan 2, 2006 3:04 PM"))
+		if request.Notes != "" {
+			bookingMessage += fmt.Sprintf(" | Notes: %s", request.Notes)
+		}
+
+		message := models.Message{
+			ConversationID: conversation.ID,
+			Content:        bookingMessage,
+			Type:           "booking",
+			Sender:         "business",
+		}
+		h.db.Create(&message)
+	}
+
 	c.JSON(http.StatusOK, gin.H{
 		"success": true,
 		"booking": booking,
@@ -654,33 +819,257 @@ func (h *BusinessHandler) CreateBooking(c *gin.Context) {
 	})
 }
 
-// Helper function to properly parse booking datetime
+// client-facing handlers
+func (h *BusinessHandler) GetBusinessProducts(c *gin.Context) {
+	businessID, err := strconv.ParseUint(c.Param("business_id"), 10, 32)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid business ID"})
+		return
+	}
+
+	var products []models.Product
+	if err := h.db.Where("business_id = ? AND is_active = ?", businessID, true).Find(&products).Error; err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to fetch products"})
+		return
+	}
+
+	c.JSON(http.StatusOK, products)
+}
+
+func (h *BusinessHandler) GetBusinessServices(c *gin.Context) {
+	businessID, err := strconv.ParseUint(c.Param("business_id"), 10, 32)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid business ID"})
+		return
+	}
+
+	var services []models.Service
+	if err := h.db.Where("business_id = ? AND is_active = ?", businessID, true).Find(&services).Error; err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to fetch services"})
+		return
+	}
+
+	c.JSON(http.StatusOK, services)
+}
+
+// ClientCreateOrder allows customers to create orders
+func (h *BusinessHandler) ClientCreateOrder(c *gin.Context) {
+	// Get client ID from authenticated context (set by ClientMiddleware)
+	clientID := c.GetUint("client_id")
+	if clientID == 0 {
+		c.JSON(http.StatusUnauthorized, gin.H{"error": "Not authenticated as client"})
+		return
+	}
+
+	var request struct {
+		BusinessID      uint   `json:"business_id" binding:"required"`
+		ProductID       uint   `json:"product_id" binding:"required"`
+		Quantity        int    `json:"quantity" binding:"required,min=1"`
+		DeliveryAddress string `json:"delivery_address"`
+		Notes           string `json:"notes"`
+	}
+
+	if err := c.ShouldBindJSON(&request); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		return
+	}
+
+	// Get product details
+	var product models.Product
+	if err := h.db.First(&product, request.ProductID).Error; err != nil {
+		c.JSON(http.StatusNotFound, gin.H{"error": "Product not found"})
+		return
+	}
+
+	// Get client by primary key
+	var client models.Client
+	if err := h.db.First(&client, clientID).Error; err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to find client"})
+		return
+	}
+
+	// Get or create conversation using BOTH client_id AND business_id
+	conversation, err := h.getOrCreateConversation(client.ID, request.BusinessID)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to create conversation"})
+		return
+	}
+
+	// Create order
+	totalAmount := product.Price * float64(request.Quantity)
+	order := models.Order{
+		BusinessID:  request.BusinessID,
+		ClientID:    client.ID,
+		OrderNumber: generateOrderNumber(),
+		Status:      "pending",
+		TotalAmount: totalAmount,
+		Notes:       request.Notes,
+	}
+
+	if err := h.db.Create(&order).Error; err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to create order"})
+		return
+	}
+
+	// Create order item
+	orderItem := models.OrderItem{
+		OrderID:    order.ID,
+		ProductID:  request.ProductID,
+		Quantity:   request.Quantity,
+		UnitPrice:  product.Price,
+		TotalPrice: totalAmount,
+	}
+
+	if err := h.db.Create(&orderItem).Error; err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to create order item"})
+		return
+	}
+
+	// Create message in conversation
+	orderMessage := fmt.Sprintf("🛒 ORDER:%d | %s x%d ($%.2f) | Status: pending", order.ID, product.Name, request.Quantity, totalAmount)
+	if request.Notes != "" {
+		orderMessage += fmt.Sprintf(" | Notes: %s", request.Notes)
+	}
+
+	message := models.Message{
+		ConversationID: conversation.ID,
+		Content:        orderMessage,
+		Type:           "order",
+		Sender:         "client",
+	}
+
+	if err := h.db.Create(&message).Error; err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to create message"})
+		return
+	}
+
+	c.JSON(http.StatusOK, gin.H{"success": true, "order": order, "product_name": product.Name, "quantity": request.Quantity})
+}
+
+// ClientCreateBooking allows customers to create bookings
+func (h *BusinessHandler) ClientCreateBooking(c *gin.Context) {
+	// Get client ID from authenticated context (set by ClientMiddleware)
+	clientID := c.GetUint("client_id")
+	if clientID == 0 {
+		c.JSON(http.StatusUnauthorized, gin.H{"error": "Not authenticated as client"})
+		return
+	}
+
+	var request struct {
+		ServiceID     uint   `json:"service_id" binding:"required"`
+		ScheduledDate string `json:"scheduled_date" binding:"required"`
+		Notes         string `json:"notes"`
+		BusinessID    uint   `json:"business_id" binding:"required"`
+	}
+
+	if err := c.ShouldBindJSON(&request); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		return
+	}
+
+	// Get service details
+	var service models.Service
+	if err := h.db.First(&service, request.ServiceID).Error; err != nil {
+		c.JSON(http.StatusNotFound, gin.H{"error": "Service not found"})
+		return
+	}
+
+	// Get client by primary key
+	var client models.Client
+	if err := h.db.First(&client, clientID).Error; err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to find client"})
+		return
+	}
+
+	// Parse booking date
+	bookingDate, err := time.Parse(time.RFC3339, request.ScheduledDate)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid date format"})
+		return
+	}
+
+	// Get or create conversation using BOTH client_id AND business_id
+	conversation, err := h.getOrCreateConversation(client.ID, request.BusinessID)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to create conversation"})
+		return
+	}
+
+	// Create booking
+	booking := models.Booking{
+		BusinessID:    request.BusinessID,
+		ClientID:      client.ID,
+		BookingNumber: generateBookingNumber(),
+		Status:        "pending",
+		ScheduledDate: bookingDate,
+		Duration:      service.Duration,
+		TotalAmount:   service.MaxPrice,
+		Notes:         request.Notes,
+	}
+
+	if err := h.db.Create(&booking).Error; err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to create booking"})
+		return
+	}
+
+	// Create booking item
+	bookingItem := models.BookingItem{
+		BookingID:  booking.ID,
+		ServiceID:  request.ServiceID,
+		Quantity:   1,
+		UnitPrice:  service.MaxPrice,
+		TotalPrice: service.MaxPrice,
+	}
+
+	if err := h.db.Create(&bookingItem).Error; err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to create booking item"})
+		return
+	}
+
+	// Create message in conversation
+	bookingMessage := fmt.Sprintf("📅 BOOKING:%d | %s | %s | Status: pending", booking.ID, service.Name, bookingDate.Format("Jan 2, 2006 3:04 PM"))
+	if request.Notes != "" {
+		bookingMessage += fmt.Sprintf(" | Notes: %s", request.Notes)
+	}
+
+	message := models.Message{
+		ConversationID: conversation.ID,
+		Content:        bookingMessage,
+		Type:           "booking",
+		Sender:         "client",
+	}
+
+	if err := h.db.Create(&message).Error; err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to create message"})
+		return
+	}
+
+	c.JSON(http.StatusOK, gin.H{"success": true, "booking": booking, "service_name": service.Name})
+}
+
+// Helper functions
 func parseBookingDateTime(bookingDateTime string) (time.Time, error) {
 	parts := strings.Split(bookingDateTime, "T")
 	if len(parts) != 2 {
 		return time.Time{}, fmt.Errorf("invalid datetime format, expected dateTtime")
 	}
 
-	// Parse date
 	date, err := time.Parse("2006-01-02", parts[0])
 	if err != nil {
 		return time.Time{}, fmt.Errorf("invalid date: %v", err)
 	}
 
-	// Parse time
 	timeOnly, err := time.Parse("15:04", parts[1])
 	if err != nil {
 		return time.Time{}, fmt.Errorf("invalid time: %v", err)
 	}
 
-	// Combine date and time into proper datetime
 	result := time.Date(date.Year(), date.Month(), date.Day(),
 		timeOnly.Hour(), timeOnly.Minute(), 0, 0, time.UTC)
 
 	return result, nil
 }
 
-// Helper functions
 func generateOrderNumber() string {
 	return fmt.Sprintf("ORD-%d", time.Now().Unix())
 }

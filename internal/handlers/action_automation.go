@@ -39,7 +39,7 @@ func AutoAdvanceConversationProgress(actionType string, currentStage models.Conv
 
 // CreateActionWithProgress creates an action and updates conversation progress
 func CreateActionWithProgress(c *gin.Context) {
-	userID := c.GetUint("user_id")
+	userID := c.GetUint("business_id")
 	messageID, err := strconv.ParseUint(c.Param("id"), 10, 32)
 	if err != nil {
 		c.String(400, "Invalid message ID")
@@ -48,7 +48,7 @@ func CreateActionWithProgress(c *gin.Context) {
 
 	// Verify message belongs to user
 	var message models.Message
-	if err := db.DB.Where("id = ? AND conversation_id IN (SELECT id FROM conversations WHERE client_id IN (SELECT id FROM clients WHERE user_id = ?))",
+	if err := db.DB.Where("id = ? AND conversation_id IN (SELECT id FROM conversations WHERE client_id IN (SELECT id FROM clients WHERE business_id = ?))",
 		messageID, userID).First(&message); err != nil {
 		c.String(404, "Message not found")
 		return

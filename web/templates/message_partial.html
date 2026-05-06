@@ -1,6 +1,6 @@
-<div class="flex {{if eq .Message.Sender "user"}}justify-end{{else}}justify-start{{end}}">
+<div class="flex {{if eq .Message.Sender "business"}}justify-end{{else}}justify-start{{end}}">
     <div class="max-w-xs lg:max-w-md">
-        <div class="{{if eq .Message.Sender "user"}}bg-teal-600 text-white{{else}}bg-gray-200 text-gray-800{{end}} rounded-lg px-4 py-2">
+        <div class="{{if eq .Message.Sender "business"}}bg-teal-600 text-white{{else}}bg-gray-200 text-gray-800{{end}} rounded-lg px-4 py-2">
             <p class="text-sm">{{.Message.Content}}</p>
         </div>
         <div class="flex items-center justify-between mt-1">

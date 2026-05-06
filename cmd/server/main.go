@@ -3,6 +3,8 @@ package main
 import (
 	"log"
 	"os"
+	"strings"
+	"text/template"
 
 	"threadly/internal/db"
 	"threadly/internal/models"
@@ -18,13 +20,15 @@ func main() {
 	gin.SetMode(os.Getenv("GIN_MODE"))
 
 	db.Connect()
+
+	log.Println("🔄 Starting database auto-migration...")
 	db.DB.AutoMigrate(
-		&models.User{},
+		&models.Business{},
 		&models.Client{},
 		&models.Conversation{},
 		&models.Message{},
 		&models.Action{},
-		&models.CustomerAuth{},
+		&models.ClientAuth{},
 		&models.ConversationProgress{},
 		&models.Product{},
 		&models.Service{},
@@ -35,8 +39,21 @@ func main() {
 		&models.Payment{},
 		&models.InventoryLog{},
 	)
+	if err := db.MigrateNamingConventions(); err != nil {
+		log.Fatalf("failed to apply naming migration: %v", err)
+	}
+	log.Println("✅ Database auto-migration completed successfully")
 
 	r := gin.Default()
+	if err := r.SetTrustedProxies(nil); err != nil {
+		log.Fatalf("failed to set trusted proxies: %v", err)
+	}
+
+	// Add template functions
+	r.SetFuncMap(template.FuncMap{
+		"hasPrefix": strings.HasPrefix,
+	})
+
 	r.LoadHTMLGlob("web/templates/*.html")
 	r.Static("/static", "./web/static")
 

@@ -11,7 +11,7 @@ import (
 )
 
 func CreateAction(c *gin.Context) {
-	userID := c.GetUint("user_id")
+	userID := c.GetUint("business_id")
 	messageID, err := strconv.ParseUint(c.Param("message_id"), 10, 32)
 	if err != nil {
 		c.JSON(400, gin.H{"error": "Invalid message ID"})
@@ -22,7 +22,7 @@ func CreateAction(c *gin.Context) {
 	var message models.Message
 	if err := db.DB.Joins("JOIN conversations ON messages.conversation_id = conversations.id").
 		Joins("JOIN clients ON conversations.client_id = clients.id").
-		Where("messages.id = ? AND clients.user_id = ?", messageID, userID).
+		Where("messages.id = ? AND clients.business_id = ?", messageID, userID).
 		First(&message).Error; err != nil {
 		c.JSON(404, gin.H{"error": "Message not found"})
 		return
@@ -78,7 +78,7 @@ func CreateAction(c *gin.Context) {
 }
 
 func UpdateConversationStatus(c *gin.Context) {
-	userID := c.GetUint("user_id")
+	userID := c.GetUint("business_id")
 	conversationID, err := strconv.ParseUint(c.Param("conversation_id"), 10, 32)
 	if err != nil {
 		c.JSON(400, gin.H{"error": "Invalid conversation ID"})
@@ -88,7 +88,7 @@ func UpdateConversationStatus(c *gin.Context) {
 	// Verify conversation belongs to user
 	var conversation models.Conversation
 	if err := db.DB.Joins("JOIN clients ON conversations.client_id = clients.id").
-		Where("conversations.id = ? AND clients.user_id = ?", conversationID, userID).
+		Where("conversations.id = ? AND clients.business_id = ?", conversationID, userID).
 		First(&conversation).Error; err != nil {
 		c.JSON(404, gin.H{"error": "Conversation not found"})
 		return
@@ -152,13 +152,13 @@ func UpdateConversationStatus(c *gin.Context) {
 }
 
 func GetActions(c *gin.Context) {
-	userID := c.GetUint("user_id")
+	userID := c.GetUint("business_id")
 
 	var actions []models.Action
 	if err := db.DB.Joins("JOIN messages ON actions.message_id = messages.id").
 		Joins("JOIN conversations ON messages.conversation_id = conversations.id").
 		Joins("JOIN clients ON conversations.client_id = clients.id").
-		Where("clients.user_id = ?", userID).
+		Where("clients.business_id = ?", userID).
 		Order("actions.created_at DESC").
 		Find(&actions).Error; err != nil {
 		c.JSON(500, gin.H{"error": "Failed to load actions"})
@@ -169,7 +169,7 @@ func GetActions(c *gin.Context) {
 }
 
 func UpdateActionStatus(c *gin.Context) {
-	userID := c.GetUint("user_id")
+	userID := c.GetUint("business_id")
 	actionID, err := strconv.ParseUint(c.Param("id"), 10, 32)
 	if err != nil {
 		c.JSON(400, gin.H{"error": "Invalid action ID"})
@@ -181,7 +181,7 @@ func UpdateActionStatus(c *gin.Context) {
 	if err := db.DB.Joins("JOIN messages ON actions.message_id = messages.id").
 		Joins("JOIN conversations ON messages.conversation_id = conversations.id").
 		Joins("JOIN clients ON conversations.client_id = clients.id").
-		Where("actions.id = ? AND clients.user_id = ?", actionID, userID).
+		Where("actions.id = ? AND clients.business_id = ?", actionID, userID).
 		First(&action).Error; err != nil {
 		c.JSON(404, gin.H{"error": "Action not found"})
 		return

@@ -25,7 +25,7 @@ func RequireAuth() gin.HandlerFunc {
 			return
 		}
 
-		c.Set("user_id", claims.UserID)
+		c.Set("business_id", claims.UserID)
 		c.Set("email", claims.Email)
 		c.Next()
 	}

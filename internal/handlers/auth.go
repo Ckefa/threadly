@@ -31,7 +31,7 @@ func Register(c *gin.Context) {
 
 	hashedPassword := services.Hash(password)
 
-	user := models.User{
+	user := models.Business{
 		Email:        email,
 		Password:     hashedPassword,
 		FirstName:    firstName,
@@ -54,7 +54,7 @@ func Login(c *gin.Context) {
 	email := c.PostForm("email")
 	password := c.PostForm("password")
 
-	var user models.User
+	var user models.Business
 	if err := db.DB.Where("email = ?", email).First(&user).Error; err != nil {
 		c.HTML(401, "login.html", gin.H{
 			"Title": "Login - Threadly",

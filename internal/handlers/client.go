@@ -9,11 +9,11 @@ import (
 	"github.com/gin-gonic/gin"
 )
 
-func ShowCustomers(c *gin.Context) {
-	userID := c.GetUint("user_id")
+func Showclients(c *gin.Context) {
+	businessID := c.GetUint("business_id")
 
 	var clients []models.Client
-	if err := db.DB.Where("user_id = ?", userID).Find(&clients).Error; err != nil {
+	if err := db.DB.Where("business_id = ?", businessID).Find(&clients).Error; err != nil {
 		c.HTML(500, "index.html", gin.H{
 			"Title": "Threadly",
 			"Error": "Failed to load clients",
@@ -51,10 +51,10 @@ func ShowCustomers(c *gin.Context) {
 
 	// Count pending orders and bookings
 	var pendingOrderCount int64
-	db.DB.Model(&models.Order{}).Where("user_id = ? AND status = ?", userID, "pending").Count(&pendingOrderCount)
+	db.DB.Model(&models.Order{}).Where("business_id = ? AND status = ?", businessID, "pending").Count(&pendingOrderCount)
 
 	var pendingBookingCount int64
-	db.DB.Model(&models.Booking{}).Where("user_id = ? AND status = ?", userID, "pending").Count(&pendingBookingCount)
+	db.DB.Model(&models.Booking{}).Where("business_id = ? AND status = ?", businessID, "pending").Count(&pendingBookingCount)
 
 	totalPending := pendingOrderCount + pendingBookingCount
 
@@ -63,23 +63,23 @@ func ShowCustomers(c *gin.Context) {
 		"Clients":             clientsWithProgress,
 		"PendingOrderCount":   pendingOrderCount,
 		"PendingBookingCount": pendingBookingCount,
-		"TotalPending":        totalPending,
+		"TotalPending":        int(totalPending),
 	})
 }
 
-func CreateCustomer(c *gin.Context) {
-	userID := c.GetUint("user_id")
+func CreateClient(c *gin.Context) {
+	businessID := c.GetUint("business_id")
 
 	name := c.PostForm("name")
 	email := c.PostForm("email")
 	phone := c.PostForm("phone")
 
 	client := models.Client{
-		UserID: userID,
-		Name:   name,
-		Email:  email,
-		Phone:  phone,
-		Status: models.StatusNew,
+		BusinessID: businessID,
+		Name:       name,
+		Email:      email,
+		Phone:      phone,
+		Status:     models.StatusNew,
 	}
 
 	if err := db.DB.Create(&client).Error; err != nil {
@@ -89,56 +89,101 @@ func CreateCustomer(c *gin.Context) {
 
 	// Create conversation for the new client
 	conversation := models.Conversation{
-		ClientID: client.ID,
+		ClientID:   client.ID,
+		BusinessID: businessID,
 	}
 	db.DB.Create(&conversation)
 
-	c.JSON(200, gin.H{"client": client})
+	c.JSON(200, gin.H{
+		"success": true,
+		"message": "Customer created successfully",
+		"client":  client,
+	})
 }
 
-func UpdateCustomerStatus(c *gin.Context) {
-	userID := c.GetUint("user_id")
-	customerID, err := strconv.ParseUint(c.Param("id"), 10, 32)
+func DeleteClient(c *gin.Context) {
+	businessID := c.GetUint("business_id")
+	clientID, err := strconv.ParseUint(c.Param("id"), 10, 32)
 	if err != nil {
 		c.JSON(400, gin.H{"error": "Invalid customer ID"})
 		return
 	}
 
-	var customer models.Client
-	if err := db.DB.Where("id = ? AND user_id = ?", customerID, userID).First(&customer).Error; err != nil {
+	// Check if customer belongs to this user
+	var client models.Client
+	if err := db.DB.Where("id = ? AND business_id = ?", clientID, businessID).First(&client).Error; err != nil {
+		c.JSON(404, gin.H{"error": "Customer not found"})
+		return
+	}
+
+	// Start transaction
+	tx := db.DB.Begin()
+
+	// Delete conversation
+	if err := tx.Where("client_id = ?", client.ID).Delete(&models.Conversation{}).Error; err != nil {
+		tx.Rollback()
+		c.JSON(500, gin.H{"error": "Failed to delete conversation"})
+		return
+	}
+
+	// Delete customer
+	if err := tx.Delete(&client).Error; err != nil {
+		tx.Rollback()
+		c.JSON(500, gin.H{"error": "Failed to delete customer"})
+		return
+	}
+
+	tx.Commit()
+
+	c.JSON(200, gin.H{
+		"success": true,
+		"message": "Customer deleted successfully",
+	})
+}
+
+func UpdateClientStatus(c *gin.Context) {
+	businessID := c.GetUint("business_id")
+	clientID, err := strconv.ParseUint(c.Param("id"), 10, 32)
+	if err != nil {
+		c.JSON(400, gin.H{"error": "Invalid customer ID"})
+		return
+	}
+
+	var client models.Client
+	if err := db.DB.Where("id = ? AND business_id = ?", clientID, businessID).First(&client).Error; err != nil {
 		c.JSON(404, gin.H{"error": "Customer not found"})
 		return
 	}
 
 	newStatus := c.PostForm("status")
-	customer.Status = models.ClientStatus(newStatus)
+	client.Status = models.ClientStatus(newStatus)
 
-	if err := db.DB.Save(&customer).Error; err != nil {
+	if err := db.DB.Save(&client).Error; err != nil {
 		c.JSON(500, gin.H{"error": "Failed to update customer status"})
 		return
 	}
 
-	c.JSON(200, gin.H{"customer": customer})
+	c.JSON(200, gin.H{"client": client})
 }
 
-func GetCustomerConversationID(c *gin.Context) {
-	userID := c.GetUint("user_id")
-	customerID, err := strconv.ParseUint(c.Param("id"), 10, 32)
+func GetClientConversationID(c *gin.Context) {
+	businessID := c.GetUint("business_id")
+	clientID, err := strconv.ParseUint(c.Param("id"), 10, 32)
 	if err != nil {
 		c.JSON(400, gin.H{"error": "Invalid customer ID"})
 		return
 	}
 
-	// Verify customer belongs to user
-	var customer models.Client
-	if err := db.DB.Where("id = ? AND user_id = ?", customerID, userID).First(&customer).Error; err != nil {
+	// Verify client belongs to business
+	var client models.Client
+	if err := db.DB.Where("id = ? AND business_id = ?", clientID, businessID).First(&client).Error; err != nil {
 		c.JSON(404, gin.H{"error": "Customer not found"})
 		return
 	}
 
 	// Get conversation for this customer
 	var conversation models.Conversation
-	if err := db.DB.Where("client_id = ?", customerID).First(&conversation).Error; err != nil {
+	if err := db.DB.Where("client_id = ?", clientID).First(&conversation).Error; err != nil {
 		c.JSON(404, gin.H{"error": "Conversation not found"})
 		return
 	}

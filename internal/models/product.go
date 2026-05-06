@@ -6,7 +6,7 @@ import (
 
 type Product struct {
 	ID          uint      `gorm:"primaryKey" json:"id"`
-	UserID      uint      `gorm:"not null;index" json:"user_id"`
+	BusinessID  uint      `gorm:"not null;index" json:"business_id"`
 	Name        string    `gorm:"not null" json:"name"`
 	Description string    `gorm:"type:text" json:"description"`
 	Price       float64   `gorm:"not null" json:"price"`
@@ -19,18 +19,18 @@ type Product struct {
 	UpdatedAt   time.Time `json:"updated_at"`
 
 	// Relationships
-	User        User                `gorm:"foreignKey:UserID" json:"user,omitempty"`
-	OrderItems  []OrderItem        `gorm:"foreignKey:ProductID" json:"order_items,omitempty"`
-	Inventory   []InventoryLog     `gorm:"foreignKey:ProductID" json:"inventory_logs,omitempty"`
+	Business   Business       `gorm:"foreignKey:BusinessID" json:"business,omitempty"`
+	OrderItems []OrderItem    `gorm:"foreignKey:ProductID" json:"order_items,omitempty"`
+	Inventory  []InventoryLog `gorm:"foreignKey:ProductID" json:"inventory_logs,omitempty"`
 }
 
 type InventoryLog struct {
-	ID          uint      `gorm:"primaryKey" json:"id"`
-	ProductID   uint      `gorm:"not null;index" json:"product_id"`
-	Type        string    `gorm:"not null" json:"type"` // "in", "out", "adjustment"
-	Quantity    int       `gorm:"not null" json:"quantity"`
-	Reason      string    `gorm:"type:text" json:"reason"`
-	CreatedAt   time.Time `json:"created_at"`
+	ID        uint      `gorm:"primaryKey" json:"id"`
+	ProductID uint      `gorm:"not null;index" json:"product_id"`
+	Type      string    `gorm:"not null" json:"type"` // "in", "out", "adjustment"
+	Quantity  int       `gorm:"not null" json:"quantity"`
+	Reason    string    `gorm:"type:text" json:"reason"`
+	CreatedAt time.Time `json:"created_at"`
 
-	Product     Product   `gorm:"foreignKey:ProductID" json:"product,omitempty"`
+	Product Product `gorm:"foreignKey:ProductID" json:"product,omitempty"`
 }

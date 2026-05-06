@@ -49,7 +49,7 @@
                 {{end}}
                 {{end}}
             </div>
-            <button data-customer-id="{{.Customer.ID}}" 
+            <button data-client-id="{{.Customer.ID}}"
                     class="progress-btn px-3 py-1 bg-blue-100 text-blue-700 rounded-lg text-sm hover:bg-blue-200">
                 <i class="fas fa-chart-line mr-1"></i>Analytics
             </button>
@@ -60,9 +60,59 @@
 <!-- Messages Area -->
 <div class="flex-1 overflow-y-auto p-4 space-y-4" id="messages-container">
     {{range .Messages}}
-    <div class="flex {{if eq .Sender "user"}}justify-end{{else}}justify-start{{end}}">
+    {{if hasPrefix .Content "🛒 ORDER:"}}
+    <!-- Order Card -->
+    <div class="flex {{if eq .Sender "business"}}justify-end{{else}}justify-start{{end}}">
+        <div class="max-w-xs lg:max-w-md w-full">
+            <div class="bg-blue-50 border border-blue-200 rounded-lg px-4 py-3" data-message-id="{{.ID}}">
+                <div class="flex items-center justify-between mb-2">
+                    <div class="flex items-center space-x-2">
+                        <i class="fas fa-shopping-cart text-blue-600"></i>
+                        <span class="font-semibold text-blue-800 text-sm">Order</span>
+                    </div>
+                    <button onclick="editOrderMessage('{{.ID}}')" class="text-blue-600 hover:text-blue-800 text-xs" title="Edit Order">
+                        <i class="fas fa-edit"></i>
+                    </button>
+                </div>
+                <div class="order-details text-sm text-gray-700">
+                    <p class="text-sm">{{.Content}}</p>
+                </div>
+                <div class="flex items-center justify-between mt-2">
+                    <p class="text-xs text-gray-500">{{.CreatedAt.Format "3:04 PM"}}</p>
+                    <span class="text-xs bg-yellow-100 text-yellow-800 px-2 py-1 rounded">Pending</span>
+                </div>
+            </div>
+        </div>
+    </div>
+    {{else if hasPrefix .Content "📅 BOOKING:"}}
+    <!-- Booking Card -->
+    <div class="flex {{if eq .Sender "business"}}justify-end{{else}}justify-start{{end}}">
+        <div class="max-w-xs lg:max-w-md w-full">
+            <div class="bg-purple-50 border border-purple-200 rounded-lg px-4 py-3" data-message-id="{{.ID}}">
+                <div class="flex items-center justify-between mb-2">
+                    <div class="flex items-center space-x-2">
+                        <i class="fas fa-calendar text-purple-600"></i>
+                        <span class="font-semibold text-purple-800 text-sm">Booking</span>
+                    </div>
+                    <button onclick="editBookingMessage('{{.ID}}')" class="text-purple-600 hover:text-purple-800 text-xs" title="Edit Booking">
+                        <i class="fas fa-edit"></i>
+                    </button>
+                </div>
+                <div class="booking-details text-sm text-gray-700">
+                    <p class="text-sm">{{.Content}}</p>
+                </div>
+                <div class="flex items-center justify-between mt-2">
+                    <p class="text-xs text-gray-500">{{.CreatedAt.Format "3:04 PM"}}</p>
+                    <span class="text-xs bg-yellow-100 text-yellow-800 px-2 py-1 rounded">Pending</span>
+                </div>
+            </div>
+        </div>
+    </div>
+    {{else}}
+    <!-- Regular Message -->
+    <div class="flex {{if eq .Sender "business"}}justify-end{{else}}justify-start{{end}}">
         <div class="max-w-xs lg:max-w-md">
-            <div class="{{if eq .Sender "user"}}bg-teal-600 text-white{{else}}bg-gray-200 text-gray-800{{end}} rounded-lg px-4 py-2">
+            <div class="{{if eq .Sender "business"}}bg-teal-600 text-white{{else}}bg-gray-200 text-gray-800{{end}} rounded-lg px-4 py-2">
                 <p class="text-sm">{{.Content}}</p>
             </div>
             <div class="flex items-center justify-between mt-1">
@@ -86,6 +136,7 @@
             </div>
         </div>
     </div>
+    {{end}}
     {{else}}
     <div class="text-center text-gray-500 py-8">
         <i class="fas fa-inbox text-4xl mb-2"></i>
@@ -96,34 +147,34 @@
 
 <!-- Message Input -->
 <div class="bg-white border-t border-gray-200 p-4">
-    <form id="message-form" hx-post="/customers/{{.Customer.ID}}/messages" 
+    <form id="message-form" hx-post="/clients/{{.Customer.ID}}/messages"
           hx-target="#messages-container" hx-swap="beforeend"
           hx-on::after-request="this.reset()">
         <div class="flex space-x-3">
             <!-- Action Button -->
-            <div class="relative" data-customer-id="{{.Customer.ID}}">
+            <div class="relative" data-client-id="{{.Customer.ID}}">
                 <button type="button" onclick="toggleActionButtons()" class="bg-purple-600 hover:bg-purple-700 text-white w-10 h-10 rounded-full flex items-center justify-center">
                     <i class="fas fa-plus" id="action-icon"></i>
                 </button>
                 <!-- Action Buttons (hidden by default) -->
                 <div id="action-buttons" class="absolute bottom-12 left-0 space-y-2 hidden">
-                    <button onclick="openQuickBookingModal(this.closest('[data-customer-id]').dataset.customerId)" class="bg-green-500 hover:bg-green-600 text-white px-3 py-2 rounded-lg shadow-lg flex items-center space-x-1 text-sm">
+                    <button onclick="openQuickBookingModal(this.closest('[data-client-id]').dataset.clientId)" class="bg-green-500 hover:bg-green-600 text-white px-3 py-2 rounded-lg shadow-lg flex items-center space-x-1 text-sm">
                         <i class="fas fa-calendar-plus"></i>
                         <span>Booking</span>
                     </button>
-                    <button onclick="openQuickOrderModal(this.closest('[data-customer-id]').dataset.customerId)" class="bg-blue-500 hover:bg-blue-600 text-white px-3 py-2 rounded-lg shadow-lg flex items-center space-x-1 text-sm">
+                    <button onclick="openQuickOrderModal(this.closest('[data-client-id]').dataset.clientId)" class="bg-blue-500 hover:bg-blue-600 text-white px-3 py-2 rounded-lg shadow-lg flex items-center space-x-1 text-sm">
                         <i class="fas fa-shopping-cart"></i>
                         <span>Order</span>
                     </button>
-                    <button onclick="openQuotationModal(this.closest('[data-customer-id]').dataset.customerId)" class="bg-orange-500 hover:bg-orange-600 text-white px-3 py-2 rounded-lg shadow-lg flex items-center space-x-1 text-sm">
+                    <button onclick="openQuotationModal(this.closest('[data-client-id]').dataset.clientId)" class="bg-orange-500 hover:bg-orange-600 text-white px-3 py-2 rounded-lg shadow-lg flex items-center space-x-1 text-sm">
                         <i class="fas fa-file-invoice"></i>
                         <span>Quotation</span>
                     </button>
-                    <button onclick="openPaymentModal(this.closest('[data-customer-id]').dataset.customerId)" class="bg-yellow-500 hover:bg-yellow-600 text-white px-3 py-2 rounded-lg shadow-lg flex items-center space-x-1 text-sm">
+                    <button onclick="openPaymentModal(this.closest('[data-client-id]').dataset.clientId)" class="bg-yellow-500 hover:bg-yellow-600 text-white px-3 py-2 rounded-lg shadow-lg flex items-center space-x-1 text-sm">
                         <i class="fas fa-credit-card"></i>
                         <span>Payment</span>
                     </button>
-                    <button onclick="openGoalModal(this.closest('[data-customer-id]').dataset.customerId)" class="bg-purple-500 hover:bg-purple-600 text-white px-3 py-2 rounded-lg shadow-lg flex items-center space-x-1 text-sm">
+                    <button onclick="openGoalModal(this.closest('[data-client-id]').dataset.clientId)" class="bg-purple-500 hover:bg-purple-600 text-white px-3 py-2 rounded-lg shadow-lg flex items-center space-x-1 text-sm">
                         <i class="fas fa-bullseye"></i>
                         <span>Goal</span>
                     </button>
@@ -132,7 +183,7 @@
             <input type="text" name="content" placeholder="Type a message..." 
                    class="flex-1 px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-teal-500"
                    required>
-            <input type="hidden" name="sender" value="user">
+            <input type="hidden" name="sender" value="business">
             <button type="submit" class="bg-teal-600 text-white px-6 py-2 rounded-lg hover:bg-teal-700">
                 <i class="fas fa-paper-plane"></i>
             </button>
@@ -141,43 +192,90 @@
 </div>
 
 <script>
-// Handle action button clicks
-document.addEventListener('click', function(e) {
-    const actionBtn = e.target.closest('.action-btn');
-    if (actionBtn) {
-        const messageId = actionBtn.getAttribute('data-message-id');
-        const actionType = actionBtn.getAttribute('data-action-type');
-        createQuickAction(messageId, actionType);
-    }
-    
-    const progressBtn = e.target.closest('.progress-btn');
-    if (progressBtn) {
-        const customerId = progressBtn.getAttribute('data-customer-id');
-        showConversationProgress(customerId);
-    }
-    
-    const statusDropdown = e.target.closest('.conversation-status-dropdown');
-    if (statusDropdown && statusDropdown.value) {
-        const conversationId = statusDropdown.getAttribute('data-conversation-id');
-        updateConversationStatus(conversationId, statusDropdown.value);
-    }
-    
-    const saveProgressBtn = e.target.closest('.save-chat-progress-btn');
-    if (saveProgressBtn) {
-        const conversationId = saveProgressBtn.getAttribute('data-conversation-id');
-        const dropdown = document.querySelector('.conversation-progress-dropdown[data-conversation-id="' + conversationId + '"]');
-        if (dropdown && dropdown.value) {
-            saveChatProgress(conversationId, dropdown.value);
-        }
-    }
-});
+    const clientId = '{{.Customer.ID}}';
+    const businessId = null;
+    let pollingInterval = null;
 
-function updateCustomerStatus(customerId, status) {
-    console.log('Updating customer status:', customerId, status);
+    // Auto-scroll to bottom on load
+    window.addEventListener('load', function() {
+        const messagesContainer = document.getElementById('messages-container');
+        if (messagesContainer) {
+            messagesContainer.scrollTop = messagesContainer.scrollHeight;
+        }
+        // Start polling for new messages
+        startMessagePolling();
+    });
+
+    function startMessagePolling() {
+        // Check for new messages every 5 seconds
+        pollingInterval = setInterval(function() {
+            fetchMessages();
+        }, 5000);
+    }
+
+    function fetchMessages() {
+        fetch(`/clients/${clientId}/messages`)
+            .then(response => response.text())
+            .then(html => {
+                // Parse the HTML to extract new messages
+                const parser = new DOMParser();
+                const doc = parser.parseFromString(html, 'text/html');
+                const newMessages = doc.getElementById('messages-container');
+                const currentMessages = document.getElementById('messages-container');
+                
+                if (newMessages && currentMessages) {
+                    const newMessageCount = newMessages.children.length;
+                    const currentMessageCount = currentMessages.children.length;
+                    
+                    // If there are new messages, update the chat
+                    if (newMessageCount > currentMessageCount) {
+                        currentMessages.innerHTML = newMessages.innerHTML;
+                        currentMessages.scrollTop = currentMessages.scrollHeight;
+                    }
+                }
+            })
+            .catch(error => {
+                console.error('Error fetching messages:', error);
+            });
+    }
+
+    // Stop polling when page is unloaded
+    window.addEventListener('beforeunload', function() {
+        if (pollingInterval) {
+            clearInterval(pollingInterval);
+        }
+    });
+
+    // Event delegation for dynamic elements
+    document.addEventListener('click', function(e) {
+        const progressBtn = e.target.closest('.view-chat-progress-btn');
+        if (progressBtn) {
+            const clientId = progressBtn.getAttribute('data-client-id');
+            showConversationProgress(clientId);
+        }
+        
+        const statusDropdown = e.target.closest('.conversation-status-dropdown');
+        if (statusDropdown && statusDropdown.value) {
+            const conversationId = statusDropdown.getAttribute('data-conversation-id');
+            updateConversationStatus(conversationId, statusDropdown.value);
+        }
+        
+        const saveProgressBtn = e.target.closest('.save-chat-progress-btn');
+        if (saveProgressBtn) {
+            const conversationId = saveProgressBtn.getAttribute('data-conversation-id');
+            const dropdown = document.querySelector('.conversation-progress-dropdown[data-conversation-id="' + conversationId + '"]');
+            if (dropdown && dropdown.value) {
+                saveChatProgress(conversationId, dropdown.value);
+            }
+        }
+    });
+
+function updateClientStatus(clientId, status) {
+    console.log('Updating client status:', clientId, status);
     const formData = new FormData();
     formData.append('status', status);
     
-    fetch('/customers/' + customerId + '/status', {
+    fetch('/clients/' + clientId + '/status', {
         method: 'PUT',
         body: formData
     })
@@ -190,23 +288,23 @@ function updateCustomerStatus(customerId, status) {
     })
     .then(data => {
         console.log('Customer status response data:', data);
-        if (data.customer) {
+        if (data.client) {
             // Show success notification
             showNotification('Customer status updated to ' + status, 'success');
             // Update dropdown to show new status
-            const dropdown = document.querySelector('select[data-customer-id="' + customerId + '"]');
+            const dropdown = document.querySelector('select[data-client-id="' + clientId + '"]');
             if (dropdown) {
                 dropdown.value = status;
                 console.log('Updated customer dropdown to:', status);
             }
         } else {
-            console.error('No customer data in response');
-            showNotification('Failed to update customer status', 'error');
+            console.error('No client data in response');
+            showNotification('Failed to update client status', 'error');
         }
     })
     .catch(error => {
-        console.error('Error updating customer status:', error);
-        showNotification('Failed to update customer status: ' + error.message, 'error');
+        console.error('Error updating client status:', error);
+        showNotification('Failed to update client status: ' + error.message, 'error');
     });
 }
 
@@ -217,9 +315,9 @@ function updateCustomerStatus(customerId, status) {
         });
     }
 
-    function showConversationProgress(customerId) {
-        // Get conversation ID from customer
-        fetch('/customers/' + customerId + '/conversation')
+    function showConversationProgress(clientId) {
+        // Get conversation ID from client
+        fetch('/clients/' + clientId + '/conversation-id')
             .then(response => response.json())
             .then(data => {
                 if (data.conversation_id) {
@@ -329,6 +427,87 @@ function updateCustomerStatus(customerId, status) {
         .catch(error => {
             console.error('Error saving chat progress:', error);
             showNotification('Failed to save conversation progress: ' + error.message, 'error');
+        });
+    }
+
+    // Edit order/booking message functions for business chat
+    function editOrderMessage(messageId) {
+        const messageEl = document.querySelector(`[data-message-id="${messageId}"]`);
+        if (!messageEl) return;
+        
+        const currentContent = messageEl.querySelector('.order-details p')?.textContent || '';
+        
+        // Extract current values from structured message
+        // Format: 🛒 ORDER:order_id | product_name xquantity ($total) | Status: status | Notes: notes
+        const parts = currentContent.split('|').map(p => p.trim());
+        let notes = '';
+        const notesPart = parts.find(p => p.startsWith('Notes:'));
+        if (notesPart) {
+            notes = notesPart.replace('Notes:', '').trim();
+        }
+        
+        const newNotes = prompt('Update order notes:', notes);
+        if (newNotes === null) return; // Cancelled
+        
+        // Reconstruct message with updated notes
+        let newContent = parts.filter(p => !p.startsWith('Notes:')).join(' | ');
+        if (newNotes.trim()) {
+            newContent += ` | Notes: ${newNotes.trim()}`;
+        }
+        
+        updateMessageContent(messageId, newContent);
+    }
+
+    function editBookingMessage(messageId) {
+        const messageEl = document.querySelector(`[data-message-id="${messageId}"]`);
+        if (!messageEl) return;
+        
+        const currentContent = messageEl.querySelector('.booking-details p')?.textContent || '';
+        
+        // Extract current values
+        // Format: 📅 BOOKING:booking_id | service_name | date | Status: status | Notes: notes
+        const parts = currentContent.split('|').map(p => p.trim());
+        let notes = '';
+        const notesPart = parts.find(p => p.startsWith('Notes:'));
+        if (notesPart) {
+            notes = notesPart.replace('Notes:', '').trim();
+        }
+        
+        const newNotes = prompt('Update booking notes:', notes);
+        if (newNotes === null) return; // Cancelled
+        
+        // Reconstruct message with updated notes
+        let newContent = parts.filter(p => !p.startsWith('Notes:')).join(' | ');
+        if (newNotes.trim()) {
+            newContent += ` | Notes: ${newNotes.trim()}`;
+        }
+        
+        updateMessageContent(messageId, newContent);
+    }
+
+    function updateMessageContent(messageId, newContent) {
+        fetch(`/messages/${messageId}`, {
+            method: 'PUT',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({ content: newContent })
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                showNotification('Updated successfully!', 'success');
+                // Reload chat to show updated message
+                if (currentClientId) {
+                    loadCustomer(currentClientId);
+                }
+            } else {
+                showNotification(data.error || 'Failed to update', 'error');
+            }
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            showNotification('Failed to update', 'error');
         });
     }
 

@@ -13,7 +13,7 @@ const (
 
 type Client struct {
 	ID             uint         `gorm:"primaryKey" json:"id"`
-	UserID         uint         `gorm:"not null;index" json:"user_id"`
+	BusinessID     uint         `gorm:"column:business_id;not null;index" json:"business_id"`
 	Name           string       `gorm:"not null" json:"name"`
 	Email          string       `json:"email"`
 	Phone          string       `json:"phone"`
@@ -24,6 +24,6 @@ type Client struct {
 	CreatedAt      time.Time    `json:"created_at"`
 	UpdatedAt      time.Time    `json:"updated_at"`
 
-	User         User         `gorm:"foreignKey:UserID" json:"user,omitempty"`
+	Business     Business     `gorm:"foreignKey:BusinessID" json:"business,omitempty"`
 	Conversation Conversation `gorm:"foreignKey:ClientID" json:"conversation,omitempty"`
 }

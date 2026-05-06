@@ -226,11 +226,33 @@
         }
 
         function editProduct(productId) {
-            // This would typically fetch product data and populate the form
-            // For now, just show the modal
-            document.getElementById('modalTitle').textContent = 'Edit Product';
-            document.getElementById('productId').value = productId;
-            document.getElementById('productModal').classList.remove('hidden');
+            // Fetch product data and populate form
+            fetch(`/products/${productId}`)
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success) {
+                        const product = data.product;
+                        
+                        document.getElementById('modalTitle').textContent = 'Edit Product';
+                        document.getElementById('productId').value = product.id;
+                        document.getElementById('productName').value = product.name;
+                        document.getElementById('productDescription').value = product.description || '';
+                        document.getElementById('productPrice').value = product.price;
+                        document.getElementById('productSKU').value = product.sku || '';
+                        document.getElementById('productStock').value = product.stock;
+                        document.getElementById('productMinStock').value = product.min_stock || '';
+                        document.getElementById('productImageURL').value = product.image_url || '';
+                        document.getElementById('productIsActive').checked = product.is_active;
+                        
+                        document.getElementById('productModal').classList.remove('hidden');
+                    } else {
+                        alert('Failed to load product data');
+                    }
+                })
+                .catch(error => {
+                    console.error('Error:', error);
+                    alert('Failed to load product data');
+                });
         }
 
         function deleteProduct(productId) {

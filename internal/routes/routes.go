@@ -19,26 +19,28 @@ func Setup(r *gin.Engine) {
 	r.POST("/register", handlers.Register)
 	r.GET("/logout", handlers.Logout)
 
-	// PUBLIC - Customer Routes
-	r.GET("/customer/login", handlers.ShowCustomerLogin)
-	r.POST("/customer/send-otp", handlers.SendCustomerOTP)
-	r.POST("/customer/verify-otp", handlers.VerifyCustomerOTP)
-	r.GET("/customer/logout", handlers.CustomerLogout)
+	// PUBLIC - client Routes
+	r.GET("/client/login", handlers.ShowClientLogin)
+	r.POST("/client/send-otp", handlers.SendClientOTP)
+	r.POST("/client/verify-otp", handlers.VerifyClientOTP)
+	r.GET("/client/logout", handlers.ClientLogout)
 
 	// PROTECTED BUSINESS ROUTES
 	protected := r.Group("/")
 	protected.Use(middleware.RequireAuth())
 	{
 		// Chat Dashboard (original)
-		protected.GET("/", handlers.ShowCustomers)
+		protected.GET("/", handlers.Showclients)
 
 		// Business Dashboard routes
 		protected.GET("/business", businessHandler.GetDashboard)
 		protected.GET("/products", businessHandler.GetProducts)
+		protected.GET("/products/:id", businessHandler.GetProduct)
 		protected.POST("/products", businessHandler.CreateProduct)
 		protected.PUT("/products/:id", businessHandler.UpdateProduct)
 		protected.DELETE("/products/:id", businessHandler.DeleteProduct)
 		protected.GET("/services", businessHandler.GetServices)
+		protected.GET("/services/:id", businessHandler.GetService)
 		protected.POST("/services", businessHandler.CreateService)
 		protected.PUT("/services/:id", businessHandler.UpdateService)
 		protected.DELETE("/services/:id", businessHandler.DeleteService)
@@ -46,17 +48,21 @@ func Setup(r *gin.Engine) {
 		protected.POST("/orders", businessHandler.CreateOrder)
 		protected.PUT("/orders/:id/status", businessHandler.UpdateOrderStatus)
 		protected.GET("/bookings", businessHandler.GetBookings)
+		protected.GET("/bookings/:id", businessHandler.GetBooking)
 		protected.POST("/bookings", businessHandler.CreateBooking)
+		protected.PUT("/bookings/:id", businessHandler.UpdateBooking)
 		protected.PUT("/bookings/:id/status", businessHandler.UpdateBookingStatus)
 
-		// Customer routes
-		protected.POST("/customers", handlers.CreateCustomer)
-		protected.PUT("/customers/:id/status", handlers.UpdateCustomerStatus)
-		protected.GET("/customers/:id/conversation-id", handlers.GetCustomerConversationID)
+		// client routes
+		protected.POST("/clients", handlers.CreateClient)
+		protected.DELETE("/clients/:id", handlers.DeleteClient)
+		protected.PUT("/clients/:id/status", handlers.UpdateClientStatus)
+		protected.GET("/clients/:id/conversation-id", handlers.GetClientConversationID)
 
 		// Message routes
-		protected.GET("/customers/:id/messages", handlers.GetMessages)
-		protected.POST("/customers/:id/messages", handlers.CreateMessage)
+		protected.GET("/clients/:id/messages", handlers.GetMessages)
+		protected.POST("/clients/:id/messages", handlers.CreateMessage)
+		protected.PUT("/messages/:message_id", handlers.UpdateMessage)
 
 		// Action routes
 		protected.POST("/messages/:message_id/actions", handlers.CreateAction)
@@ -74,24 +80,29 @@ func Setup(r *gin.Engine) {
 		protected.PUT("/actions/:id/enhanced-status", handlers.UpdateEnhancedActionStatus)
 
 		// Business widget routes
-		protected.POST("/customers/:id/quick-booking", handlers.QuickBooking)
-		protected.POST("/customers/:id/quick-order", handlers.QuickOrder)
-		protected.POST("/customers/:id/request-payment", handlers.RequestPayment)
-		protected.POST("/customers/:id/set-goal", handlers.SetGoal)
+		protected.POST("/clients/:id/quick-booking", handlers.QuickBooking)
+		protected.POST("/clients/:id/quick-order", handlers.QuickOrder)
+		protected.POST("/clients/:id/request-payment", handlers.RequestPayment)
+		protected.POST("/clients/:id/set-goal", handlers.SetGoal)
 
 		// Conversation progress routes
 		protected.GET("/conversations/:conversation_id/progress", handlers.GetConversationProgress)
 		protected.PUT("/conversations/:conversation_id/stage", handlers.UpdateConversationStage)
 	}
 
-	// PROTECTED CUSTOMER ROUTES
-	customerProtected := r.Group("/customer")
-	customerProtected.Use(handlers.CustomerMiddleware())
+	// PROTECTED client ROUTES
+	clientProtected := r.Group("/client")
+	clientProtected.Use(handlers.ClientMiddleware())
 	{
-		customerProtected.GET("/dashboard", handlers.CustomerDashboard)
-		customerProtected.GET("/businesses/:business_id/messages", handlers.GetCustomerMessages)
-		customerProtected.POST("/businesses/:business_id/messages", handlers.CreateCustomerMessage)
-		customerProtected.POST("/heartbeat", handlers.CustomerHeartbeat)
+		clientProtected.GET("/dashboard", handlers.ClientDashboard)
+		clientProtected.GET("/businesses/:business_id/messages", handlers.GetClientMessages)
+		clientProtected.POST("/businesses/:business_id/messages", handlers.CreateClientMessage)
+		clientProtected.GET("/businesses/:business_id/products", businessHandler.GetBusinessProducts)
+		clientProtected.GET("/businesses/:business_id/services", businessHandler.GetBusinessServices)
+		clientProtected.POST("/businesses/:business_id/bookings", businessHandler.ClientCreateBooking)
+		clientProtected.POST("/orders", businessHandler.ClientCreateOrder)
+		clientProtected.POST("/bookings", businessHandler.ClientCreateBooking)
+		clientProtected.POST("/heartbeat", handlers.ClientHeartbeat)
 	}
 
 	// API

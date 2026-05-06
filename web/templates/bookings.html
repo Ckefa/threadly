@@ -206,12 +206,17 @@
                                         </td>
                                         <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">${{.TotalAmount}}</td>
                                         <td class="px-6 py-4 whitespace-nowrap text-sm font-medium">
-                                            <select onchange="updateBookingStatus(this)" data-booking-id="{{.ID}}" class="border border-gray-300 rounded-md px-2 py-1 text-sm">
-                                                <option value="pending" {{if eq .Status "pending"}}selected{{end}}>Pending</option>
-                                                <option value="confirmed" {{if eq .Status "confirmed"}}selected{{end}}>Confirmed</option>
-                                                <option value="completed" {{if eq .Status "completed"}}selected{{end}}>Completed</option>
-                                                <option value="cancelled" {{if eq .Status "cancelled"}}selected{{end}}>Cancelled</option>
-                                            </select>
+                                            <div class="flex items-center space-x-2">
+                                                <select onchange="updateBookingStatus(this)" data-booking-id="{{.ID}}" class="border border-gray-300 rounded-md px-2 py-1 text-sm">
+                                                    <option value="pending" {{if eq .Status "pending"}}selected{{end}}>Pending</option>
+                                                    <option value="confirmed" {{if eq .Status "confirmed"}}selected{{end}}>Confirmed</option>
+                                                    <option value="completed" {{if eq .Status "completed"}}selected{{end}}>Completed</option>
+                                                    <option value="cancelled" {{if eq .Status "cancelled"}}selected{{end}}>Cancelled</option>
+                                                </select>
+                                                <button onclick="editBooking({{.ID}})" class="text-blue-600 hover:text-blue-800 text-sm" title="Edit Booking">
+                                                    <i class="fas fa-edit"></i>
+                                                </button>
+                                            </div>
                                         </td>
                                     </tr>
                                     {{else}}
@@ -294,7 +299,7 @@
         }
 
         function loadServices() {
-            fetch('/services')
+            return fetch('/services')
                 .then(response => response.json())
                 .then(data => {
                     const select = document.getElementById('bookingService');
@@ -302,8 +307,12 @@
                     data.services.forEach(service => {
                         select.innerHTML += `<option value="${service.id}">${service.name} - $${service.max_price}</option>`;
                     });
+                    return data.services;
                 })
-                .catch(error => console.error('Error loading services:', error));
+                .catch(error => {
+                    console.error('Error loading services:', error);
+                    return [];
+                });
         }
 
         function updateBookingStatus(selectElement) {
@@ -328,6 +337,56 @@
             .catch(error => console.error('Error:', error));
         }
 
+        function editBooking(bookingId) {
+            // Fetch booking data and populate form
+            fetch(`/bookings/${bookingId}`)
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success) {
+                        const booking = data.booking;
+                        
+                        // Change modal title to Edit
+                        document.querySelector('#quickBookingModal h3').textContent = 'Edit Booking';
+                        
+                        // Store booking ID for update
+                        document.getElementById('quickBookingForm').setAttribute('data-booking-id', booking.id);
+                        
+                        // Populate form fields
+                        document.getElementById('bookingCustomerName').value = booking.customer_name || '';
+                        document.getElementById('bookingCustomerEmail').value = booking.customer_email || '';
+                        document.getElementById('bookingCustomerPhone').value = booking.customer_phone || '';
+                        document.getElementById('bookingNotes').value = booking.notes || '';
+                        
+                        // Handle date and time
+                        if (booking.scheduled_date) {
+                            const dateObj = new Date(booking.scheduled_date);
+                            const dateStr = dateObj.toISOString().split('T')[0];
+                            const timeStr = dateObj.toTimeString().slice(0, 5);
+                            document.getElementById('bookingDate').value = dateStr;
+                            document.getElementById('bookingTime').value = timeStr;
+                        }
+                        
+                        // Load services and select the current one
+                        loadServices().then(() => {
+                            // Assuming the first booking item's service is the one to select
+                            if (booking.booking_items && booking.booking_items.length > 0) {
+                                document.getElementById('bookingService').value = booking.booking_items[0].service_id;
+                            }
+                        });
+                        
+                        // Show modal
+                        document.getElementById('quickBookingModal').classList.remove('hidden');
+                        document.getElementById('quickBookingModal').classList.add('flex');
+                    } else {
+                        alert('Failed to load booking data');
+                    }
+                })
+                .catch(error => {
+                    console.error('Error:', error);
+                    alert('Failed to load booking data');
+                });
+        }
+
         document.getElementById('quickBookingForm').addEventListener('submit', function(e) {
             e.preventDefault();
             
@@ -348,8 +407,15 @@
                 notes: document.getElementById('bookingNotes').value
             };
 
-            fetch('/bookings', {
-                method: 'POST',
+            // Check if this is an edit or create
+            const bookingId = this.getAttribute('data-booking-id');
+            const isEdit = bookingId && bookingId !== '';
+            
+            const url = isEdit ? `/bookings/${bookingId}` : '/bookings';
+            const method = isEdit ? 'PUT' : 'POST';
+
+            fetch(url, {
+                method: method,
                 headers: {
                     'Content-Type': 'application/json',
                 },
@@ -359,14 +425,16 @@
             .then(data => {
                 if (data.success) {
                     hideQuickBookingModal();
+                    // Reset the form's data-booking-id attribute
+                    this.removeAttribute('data-booking-id');
                     location.reload();
                 } else {
-                    alert(data.error || 'Failed to create booking');
+                    alert(data.error || `Failed to ${isEdit ? 'update' : 'create'} booking`);
                 }
             })
             .catch(error => {
                 console.error('Error:', error);
-                alert('Failed to create booking');
+                alert(`Failed to ${isEdit ? 'update' : 'create'} booking`);
             });
         });
     </script>

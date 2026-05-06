@@ -23,7 +23,7 @@ func GenerateOTP() string {
 	return otp
 }
 
-func SendCustomerOTP(email string) (string, error) {
+func SendClientOTP(email string) (string, error) {
 	// Find customer by email
 	var client models.Client
 	if err := db.DB.Where("email = ?", email).First(&client).Error; err != nil {
@@ -37,10 +37,10 @@ func SendCustomerOTP(email string) (string, error) {
 	}
 
 	// Create or update customer auth record
-	var customerAuth models.CustomerAuth
+	var customerAuth models.ClientAuth
 	err := db.DB.Where("client_id = ?", client.ID).First(&customerAuth).Error
 	if err != nil {
-		customerAuth = models.CustomerAuth{
+		customerAuth = models.ClientAuth{
 			ClientID:     client.ID,
 			Email:        email,
 			OTPCode:      otpCode,
@@ -60,10 +60,10 @@ func SendCustomerOTP(email string) (string, error) {
 	return otpCode, nil
 }
 
-func VerifyCustomerOTP(email, otpCode string) (*models.CustomerAuth, error) {
-	var customerAuth models.CustomerAuth
-	err := db.DB.Joins("JOIN clients ON customer_auths.client_id = clients.id").
-		Where("customer_auths.email = ? AND customer_auths.otp_code = ? AND customer_auths.otp_expires_at > ?",
+func VerifyClientOTP(email, otpCode string) (*models.ClientAuth, error) {
+	var customerAuth models.ClientAuth
+	err := db.DB.Joins("JOIN clients ON client_auths.client_id = clients.id").
+		Where("client_auths.email = ? AND client_auths.otp_code = ? AND client_auths.otp_expires_at > ?",
 			email, otpCode, time.Now()).
 		First(&customerAuth).Error
 
@@ -79,14 +79,14 @@ func VerifyCustomerOTP(email, otpCode string) (*models.CustomerAuth, error) {
 	return &customerAuth, nil
 }
 
-func GenerateCustomerToken(customerAuth *models.CustomerAuth) (string, error) {
+func GenerateClientToken(clientAuth *models.ClientAuth) (string, error) {
 	claims := &Claims{
-		UserID: customerAuth.ClientID,
-		Email:  customerAuth.Email,
+		UserID: clientAuth.ClientID,
+		Email:  clientAuth.Email,
 		RegisteredClaims: jwt.RegisteredClaims{
 			ExpiresAt: jwt.NewNumericDate(time.Now().Add(24 * time.Hour)),
 			IssuedAt:  jwt.NewNumericDate(time.Now()),
-			Subject:   "customer",
+			Subject:   "client",
 		},
 	}
 
