@@ -26,24 +26,25 @@
     <!-- Order Card -->
     <div class="flex justify-end">
       <div class="max-w-xs lg:max-w-md w-full">
-        <div class="bg-blue-50 border border-blue-200 rounded-lg px-4 py-3" data-message-id="{{.ID}}">
+        <div class="bg-blue-50 border border-blue-200 rounded-lg px-4 py-3" data-message-id="{{.ID}}" data-order-id="{{if .Data}}{{.Data.id}}{{end}}">
           <div class="flex items-center justify-between mb-2">
             <div class="flex items-center space-x-2">
-              <span class="font-semibold text-blue-800 text-sm order-id">[{{.ID}}]</span>
+              <i class="fas fa-shopping-cart text-blue-600"></i>
+              <span class="font-semibold text-blue-800 text-sm order-id">[{{.Data.id}}]</span>
               {{if .Data}}
               <span class="text-gray-700 text-sm product-name">{{index .Data.product_names 0}}</span>
               <span class="text-xs bg-yellow-100 text-yellow-800 px-2 py-1 rounded order-status">{{.Data.status}}</span>
               {{end}}
             </div>
-            <button onclick="editOrderMessage({{.ID}})" class="text-blue-600 hover:text-blue-800 text-xs"
+            <button onclick="openEditOrderModal({{.ID}})" class="text-blue-600 hover:text-blue-800 text-xs"
               title="Edit Order">
               <i class="fas fa-edit"></i>
             </button>
           </div>
           <div class="order-details text-sm text-gray-700">
             {{if .Data}}
-            <p class="text-sm">Order #{{.Data.order_number}} - ${{printf "%.2f" .Data.total_amount}}</p>
-            {{if .Data.notes}}<p class="text-xs text-gray-600 mt-1">Notes: {{.Data.notes}}</p>{{end}}
+            <p class="text-sm">Order #{{.Data.order_number}} - {{if .Data.quantity}}{{.Data.quantity}}{{else}}1{{end}}x ${{printf "%.2f" .Data.total_amount}}</p>
+            <p class="hidden order-notes-data">{{.Data.notes}}</p>
             {{end}}
           </div>
           <div class="flex items-center justify-between mt-2">
@@ -56,17 +57,18 @@
     <!-- Booking Card -->
     <div class="flex justify-end">
       <div class="max-w-xs lg:max-w-md w-full">
-        <div class="bg-purple-50 border border-purple-200 rounded-lg px-4 py-3" data-message-id="{{.ID}}">
+        <div class="bg-purple-50 border border-purple-200 rounded-lg px-4 py-3" data-message-id="{{.ID}}" data-booking-id="{{if .Data}}{{.Data.id}}{{end}}">
           <div class="flex items-center justify-between mb-2">
             <div class="flex items-center space-x-2">
               <i class="fas fa-calendar-plus text-purple-600"></i>
-              <span class="font-semibold text-purple-800 text-sm">Booking</span>
+              <span class="font-semibold text-purple-800 text-sm">[{{.Data.id}}]</span>
+              <span class="text-gray-700 text-sm">{{index .Data.service_names 0}}</span>
               {{if .Data}}
               <span
                 class="text-xs bg-yellow-100 text-yellow-800 px-2 py-1 rounded booking-status">{{.Data.status}}</span>
               {{end}}
             </div>
-            <button onclick="editBookingMessage({{.ID}})" class="text-purple-600 hover:text-purple-800 text-xs"
+            <button onclick="openEditBookingModal({{.ID}})" class="text-purple-600 hover:text-purple-800 text-xs"
               title="Edit Booking">
               <i class="fas fa-edit"></i>
             </button>
@@ -74,8 +76,8 @@
           <div class="booking-details text-sm text-gray-700">
             {{if .Data}}
             <p class="text-sm">{{index .Data.service_names 0}}</p>
-            <p class="text-xs text-gray-600">{{.Data.scheduled_date}}</p>
-            {{if .Data.notes}}<p class="text-xs text-gray-600 mt-1">Notes: {{.Data.notes}}</p>{{end}}
+            <p class="text-xs text-gray-600 booking-date-data">{{.Data.scheduled_date}}</p>
+            <p class="hidden booking-notes-data">{{.Data.notes}}</p>
             {{end}}
           </div>
           <div class="flex items-center justify-between mt-2">
@@ -537,7 +539,7 @@
       const messageDiv = document.createElement('div');
       messageDiv.className = 'flex justify-end';
 
-      const messageHTML = '<div class="max-w-xs lg:max-w-md w-full"><div class="bg-blue-50 border border-blue-200 rounded-lg px-4 py-3" data-message-id="' + order.id + '" data-order-content="🛒 ORDER:' + order.id + ' | ' + order.product_name + ' x' + order.quantity + ' ($' + order.total_amount + ') | Status: pending' + (order.notes ? ' | Notes: ' + order.notes : '') + '"><div class="flex items-center justify-between mb-2"><div class="flex items-center space-x-2"><span class="font-semibold text-blue-800 text-sm">[' + order.id + ']</span><span class="text-gray-700 text-sm">' + order.product_name + '</span></div><button onclick="editOrderMessage(' + order.id + ')" class="text-blue-600 hover:text-blue-800 text-xs" title="Edit Order"><i class="fas fa-edit"></i></button></div><div class="order-details text-sm text-gray-700"><p class="text-sm hidden">🛒 ORDER:' + order.id + ' | ' + order.product_name + ' x' + order.quantity + ' ($' + order.total_amount + ') | Status: pending' + (order.notes ? ' | Notes: ' + order.notes : '') + '</p></div><div class="flex items-center justify-between mt-2"><p class="text-xs text-gray-500">' + new Date().toLocaleTimeString('en-US', {hour: 'numeric', minute: '2-digit', hour12: true}) + '</p><span class="text-xs bg-yellow-100 text-yellow-800 px-2 py-1 rounded">Pending</span></div></div></div></div>';
+      const messageHTML = '<div class="max-w-xs lg:max-w-md w-full"><div class="bg-blue-50 border border-blue-200 rounded-lg px-4 py-3" data-message-id="' + order.id + '" data-order-id="' + order.id + '"><div class="flex items-center justify-between mb-2"><div class="flex items-center space-x-2"><i class="fas fa-shopping-cart text-blue-600"></i><span class="font-semibold text-blue-800 text-sm">[' + order.id + ']</span><span class="text-gray-700 text-sm">' + (order.product_name || 'Product') + '</span></div><button onclick="openEditOrderModal(' + order.id + ')" class="text-blue-600 hover:text-blue-800 text-xs" title="Edit Order"><i class="fas fa-edit"></i></button></div><div class="order-details text-sm text-gray-700"><p class="text-sm">Order #' + order.order_number + ' - ' + (order.quantity || 1) + 'x - $' + parseFloat(order.total_amount).toFixed(2) + '</p><p class="hidden order-notes-data">' + (order.notes || '') + '</p></div><div class="flex items-center justify-between mt-2"><p class="text-xs text-gray-500">' + new Date().toLocaleTimeString('en-US', {hour: 'numeric', minute: '2-digit', hour12: true}) + '</p><span class="text-xs bg-yellow-100 text-yellow-800 px-2 py-1 rounded">Pending</span></div></div></div></div>';
 
       messageDiv.innerHTML = messageHTML;
       messagesContainer.appendChild(messageDiv);
@@ -554,18 +556,19 @@
       const bookingMessage = `
             <div class="flex justify-end">
                 <div class="max-w-xs lg:max-w-md w-full">
-                    <div class="bg-purple-50 border border-purple-200 rounded-lg px-4 py-3" data-message-id="${booking.id}" data-booking-content="${bookingContent}">
+                    <div class="bg-purple-50 border border-purple-200 rounded-lg px-4 py-3" data-message-id="${booking.id}" data-booking-id="${booking.id}">
                         <div class="flex items-center justify-between mb-2">
                             <div class="flex items-center space-x-2">
                                 <i class="fas fa-calendar text-purple-600"></i>
                                 <span class="font-semibold text-purple-800 text-sm">Booking</span>
                             </div>
-                            <button onclick="editBookingMessage(${booking.id})" class="text-purple-600 hover:text-purple-800 text-xs" title="Edit Booking">
+                            <button onclick="openEditBookingModal(${booking.id})" class="text-purple-600 hover:text-purple-800 text-xs" title="Edit Booking">
                                 <i class="fas fa-edit"></i>
                             </button>
                         </div>
                         <div class="booking-details text-sm text-gray-700">
                             <p class="text-sm">${bookingContent}</p>
+                            <p class="hidden booking-notes-data">${booking.notes || ''}</p>
                         </div>
                         <div class="flex items-center justify-between mt-2">
                             <p class="text-xs text-gray-500">Just now</p>
@@ -595,85 +598,142 @@
       }, 3000);
     }
 
-    // Edit order/booking message functions
-    function editOrderMessage(messageId) {
+    // Edit order/booking modal functions
+    function openEditOrderModal(messageId) {
       const messageEl = document.querySelector(`[data-message-id="${messageId}"]`);
       if (!messageEl) return;
 
-      const currentContent = messageEl.getAttribute('data-order-content') || messageEl.querySelector('.order-details p')?.textContent || '';
-
-      // Extract current values from structured message
-      // Format: 🛒 ORDER:order_id | product_name xquantity ($total) | Status: status | Notes: notes
-      const parts = currentContent.split('|').map(p => p.trim());
-      let notes = '';
-      const notesPart = parts.find(p => p.startsWith('Notes:'));
-      if (notesPart) {
-        notes = notesPart.replace('Notes:', '').trim();
+      const orderId = messageEl.getAttribute('data-order-id');
+      if (!orderId) {
+        showNotification('Order ID not found', 'error');
+        return;
       }
 
-      const newNotes = prompt('Update order notes:', notes);
-      if (newNotes === null) return; // Cancelled
+      // Preload data from the message element
+      const notesEl = messageEl.querySelector('.order-notes-data');
+      const quantityEl = messageEl.querySelector('.order-quantity-data');
+      const notes = notesEl ? notesEl.textContent.trim() : '';
+      const quantity = quantityEl ? quantityEl.textContent.trim() : '1';
 
-      // Reconstruct message with updated notes
-      let newContent = parts.filter(p => !p.startsWith('Notes:')).join(' | ');
-      if (newNotes.trim()) {
-        newContent += ` | Notes: ${newNotes.trim()}`;
-      }
-
-      updateMessageContent(messageId, newContent);
+      document.getElementById('editOrderId').value = orderId;
+      document.getElementById('editOrderNotes').value = notes;
+      document.getElementById('editOrderQuantity').value = quantity;
+      document.getElementById('editOrderModal').classList.remove('hidden');
     }
 
-    function editBookingMessage(messageId) {
-      const messageEl = document.querySelector(`[data-message-id="${messageId}"]`);
-      if (!messageEl) return;
-
-      const currentContent = messageEl.getAttribute('data-booking-content') || messageEl.querySelector('.booking-details p')?.textContent || '';
-
-      // Extract current values
-      // Format: 📅 BOOKING:booking_id | service_name | date | Status: status | Notes: notes
-      const parts = currentContent.split('|').map(p => p.trim());
-      let notes = '';
-      const notesPart = parts.find(p => p.startsWith('Notes:'));
-      if (notesPart) {
-        notes = notesPart.replace('Notes:', '').trim();
-      }
-
-      const newNotes = prompt('Update booking notes:', notes);
-      if (newNotes === null) return; // Cancelled
-
-      // Reconstruct message with updated notes
-      let newContent = parts.filter(p => !p.startsWith('Notes:')).join(' | ');
-      if (newNotes.trim()) {
-        newContent += ` | Notes: ${newNotes.trim()}`;
-      }
-
-      updateMessageContent(messageId, newContent);
+    function hideEditOrderModal() {
+      document.getElementById('editOrderModal').classList.add('hidden');
     }
 
-    function updateMessageContent(messageId, newContent) {
-      fetch(`/messages/${messageId}`, {
-        method: 'PUT',
+    function submitEditOrder() {
+      const orderId = document.getElementById('editOrderId').value;
+      const notes = document.getElementById('editOrderNotes').value;
+      const quantity = document.getElementById('editOrderQuantity').value;
+
+      const formData = new URLSearchParams();
+      formData.append('notes', notes);
+      formData.append('quantity', quantity);
+
+      fetch(`/client/orders/${orderId}/update`, {
+        method: 'POST',
         headers: {
-          'Content-Type': 'application/json',
-          'Authorization': 'Bearer ' + getCookie('client_token')
+          'Content-Type': 'application/x-www-form-urlencoded'
         },
-        body: JSON.stringify({content: newContent})
+        body: formData
       })
         .then(response => response.json())
         .then(data => {
           if (data.success) {
-            showNotification('Updated successfully!', 'success');
+            showNotification('Order updated successfully!', 'success');
+            hideEditOrderModal();
             // Reload chat to show updated message
             if (businessId) {
               loadBusiness(businessId);
             }
           } else {
-            showNotification(data.error || 'Failed to update', 'error');
+            showNotification(data.error || 'Failed to update order', 'error');
           }
         })
         .catch(error => {
           console.error('Error:', error);
-          showNotification('Failed to update', 'error');
+          showNotification('Failed to update order', 'error');
+        });
+    }
+
+    function openEditBookingModal(messageId) {
+      const messageEl = document.querySelector(`[data-message-id="${messageId}"]`);
+      if (!messageEl) return;
+
+      const bookingId = messageEl.getAttribute('data-booking-id');
+      if (!bookingId) {
+        showNotification('Booking ID not found', 'error');
+        return;
+      }
+
+      // Preload data from the message element
+      const notesEl = messageEl.querySelector('.booking-notes-data');
+      const dateEl = messageEl.querySelector('.booking-date-data');
+      const notes = notesEl ? notesEl.textContent.trim() : '';
+      const scheduledDate = dateEl ? dateEl.textContent.trim() : '';
+
+      document.getElementById('editBookingId').value = bookingId;
+      document.getElementById('editBookingNotes').value = notes;
+
+      // Parse and set date/time inputs
+      if (scheduledDate) {
+        try {
+          const date = new Date(scheduledDate);
+          const dateStr = date.toISOString().split('T')[0];
+          const timeStr = date.toISOString().split('T')[1].substring(0, 5);
+          document.getElementById('editBookingDate').value = dateStr;
+          document.getElementById('editBookingTime').value = timeStr;
+        } catch (e) {
+          console.error('Error parsing date:', e);
+        }
+      }
+
+      document.getElementById('editBookingModal').classList.remove('hidden');
+    }
+
+    function hideEditBookingModal() {
+      document.getElementById('editBookingModal').classList.add('hidden');
+    }
+
+    function submitEditBooking() {
+      const bookingId = document.getElementById('editBookingId').value;
+      const notes = document.getElementById('editBookingNotes').value;
+      const dateVal = document.getElementById('editBookingDate').value;
+      const timeVal = document.getElementById('editBookingTime').value;
+
+      const formData = new URLSearchParams();
+      formData.append('notes', notes);
+      if (dateVal && timeVal) {
+        formData.append('scheduled_date', `${dateVal}T${timeVal}:00Z`);
+      }
+
+      fetch(`/client/bookings/${bookingId}/update`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/x-www-form-urlencoded'
+        },
+        body: formData
+      })
+        .then(response => response.json())
+        .then(data => {
+          if (data.success) {
+            showNotification('Booking updated successfully!', 'success');
+            hideEditBookingModal();
+            // Reload chat to show updated message
+            if (businessId) {
+              loadBusiness(businessId);
+            }
+          } else {
+            showNotification(data.error || 'Failed to update booking', 'error');
+          }
+        })
+        .catch(error => {
+          console.error('Error:', error);
+          showNotification('Failed to update booking', 'error');
         });
     }
 
@@ -819,3 +879,73 @@
       </form>
     </div>
   </div>
+</div>
+
+<!-- Edit Order Modal -->
+<div id="editOrderModal" class="fixed inset-0 bg-gray-600 bg-opacity-50 hidden overflow-y-auto h-full w-full z-50">
+  <div class="relative top-20 mx-auto p-5 border w-96 shadow-lg rounded-md bg-white">
+    <div class="mt-3">
+      <h3 class="text-lg font-medium text-gray-900">Edit Order</h3>
+      <form id="editOrderForm" class="mt-4 space-y-4">
+        <input type="hidden" id="editOrderId">
+        <div>
+          <label class="block text-sm font-medium text-gray-700">Quantity</label>
+          <input type="number" id="editOrderQuantity" min="1" required
+            class="mt-1 block w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-blue-500 focus:border-blue-500">
+        </div>
+        <div>
+          <label class="block text-sm font-medium text-gray-700">Notes</label>
+          <textarea id="editOrderNotes" rows="3" placeholder="Update order notes..."
+            class="mt-1 block w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-blue-500 focus:border-blue-500"></textarea>
+        </div>
+        <div class="flex justify-end space-x-3 pt-4">
+          <button type="button" onclick="hideEditOrderModal()"
+            class="bg-gray-300 hover:bg-gray-400 text-gray-800 px-4 py-2 rounded">
+            Cancel
+          </button>
+          <button type="button" onclick="submitEditOrder()"
+            class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded">
+            Update Order
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
+
+<!-- Edit Booking Modal -->
+<div id="editBookingModal" class="fixed inset-0 bg-gray-600 bg-opacity-50 hidden overflow-y-auto h-full w-full z-50">
+  <div class="relative top-20 mx-auto p-5 border w-96 shadow-lg rounded-md bg-white">
+    <div class="mt-3">
+      <h3 class="text-lg font-medium text-gray-900">Edit Booking</h3>
+      <form id="editBookingForm" class="mt-4 space-y-4">
+        <input type="hidden" id="editBookingId">
+        <div>
+          <label class="block text-sm font-medium text-gray-700">Date</label>
+          <input type="date" id="editBookingDate" required
+            class="mt-1 block w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-purple-500 focus:border-purple-500">
+        </div>
+        <div>
+          <label class="block text-sm font-medium text-gray-700">Time</label>
+          <input type="time" id="editBookingTime" required
+            class="mt-1 block w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-purple-500 focus:border-purple-500">
+        </div>
+        <div>
+          <label class="block text-sm font-medium text-gray-700">Notes</label>
+          <textarea id="editBookingNotes" rows="3" placeholder="Update booking notes..."
+            class="mt-1 block w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-purple-500 focus:border-purple-500"></textarea>
+        </div>
+        <div class="flex justify-end space-x-3 pt-4">
+          <button type="button" onclick="hideEditBookingModal()"
+            class="bg-gray-300 hover:bg-gray-400 text-gray-800 px-4 py-2 rounded">
+            Cancel
+          </button>
+          <button type="button" onclick="submitEditBooking()"
+            class="bg-purple-600 hover:bg-purple-700 text-white px-4 py-2 rounded">
+            Update Booking
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>

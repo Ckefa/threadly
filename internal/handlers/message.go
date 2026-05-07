@@ -2,6 +2,7 @@ package handlers
 
 import (
 	"fmt"
+	"log"
 	"strconv"
 
 	"threadly/internal/db"
@@ -32,13 +33,6 @@ func GetMessages(c *gin.Context) {
 		return
 	}
 
-	// Get messages
-	var messages []models.Message
-	if err := db.DB.Where("conversation_id = ?", conversation.ID).Order("created_at ASC").Find(&messages).Error; err != nil {
-		c.String(500, "Failed to load messages")
-		return
-	}
-
 	// Add conversation ID to client struct for template use
 	client.ConversationID = conversation.ID
 
@@ -57,13 +51,117 @@ func GetMessages(c *gin.Context) {
 		}
 	}
 
+	// Convert messages to MessageObj
+	var messageObjs []MessageObj
+	var messages []models.Message
+	db.DB.Where("conversation_id = ?", conversation.ID).Order("created_at ASC").Find(&messages)
+
+	for _, msg := range messages {
+		messageObj := MessageObj{
+			ID:        msg.ID,
+			MsgType:   "message",
+			Value:     msg.Content,
+			Data:      msg,
+			Sender:    msg.Sender,
+			CreatedAt: msg.CreatedAt,
+		}
+		messageObjs = append(messageObjs, messageObj)
+		log.Printf("Added message ID=%d, Content='%s', Sender='%s', ConvoID=%d",
+			msg.ID, msg.Content, msg.Sender, msg.ConversationID)
+	}
+
+	// Fetch orders
+	var orders []models.Order
+	db.DB.Where("client_id = ? AND business_id = ?", client.ID, businessID).Order("created_at ASC").Find(&orders)
+	log.Printf("Found %d orders for client_id=%d, business_id=%d", len(orders), client.ID, businessID)
+
+	for _, order := range orders {
+		var orderItems []models.OrderItem
+		db.DB.Where("order_id = ?", order.ID).Find(&orderItems)
+
+		var productNames []string
+		for _, item := range orderItems {
+			var product models.Product
+			db.DB.First(&product, item.ProductID)
+			productNames = append(productNames, product.Name)
+		}
+
+		orderData := map[string]interface{}{
+			"id":            order.ID,
+			"order_number":  order.OrderNumber,
+			"status":        order.Status,
+			"quantity":      order.Quantity,
+			"total_amount":  order.TotalAmount,
+			"notes":         order.Notes,
+			"created_at":    order.CreatedAt,
+			"product_names": productNames,
+		}
+
+		messageObjs = append(messageObjs, MessageObj{
+			ID:        order.ID + 10000,
+			MsgType:   "order",
+			Value:     "",
+			Data:      orderData,
+			Sender:    "client",
+			CreatedAt: order.CreatedAt,
+		})
+		log.Printf("Added order ID=%d to MessageObj", order.ID)
+	}
+
+	// Fetch bookings
+	var bookings []models.Booking
+	db.DB.Where("client_id = ? AND business_id = ?", client.ID, businessID).Order("created_at ASC").Find(&bookings)
+	log.Printf("Found %d bookings for client_id=%d, business_id=%d", len(bookings), client.ID, businessID)
+
+	for _, booking := range bookings {
+		var serviceName string
+		var bookingItems []models.BookingItem
+		db.DB.Where("booking_id = ?", booking.ID).Find(&bookingItems)
+
+		for _, item := range bookingItems {
+			var service models.Service
+			if err := db.DB.First(&service, item.ServiceID).Error; err == nil {
+				serviceName = service.Name
+				break
+			}
+		}
+
+		bookingData := map[string]interface{}{
+			"id":             booking.ID,
+			"service_name":   serviceName,
+			"scheduled_date": booking.ScheduledDate,
+			"notes":          booking.Notes,
+			"status":         booking.Status,
+			"created_at":     booking.CreatedAt,
+		}
+
+		messageObjs = append(messageObjs, MessageObj{
+			ID:        booking.ID + 20000,
+			MsgType:   "booking",
+			Value:     "",
+			Data:      bookingData,
+			Sender:    "client",
+			CreatedAt: booking.CreatedAt,
+		})
+		log.Printf("Added booking ID=%d to MessageObj", booking.ID)
+	}
+
+	// Sort messageObjs by CreatedAt
+	for i := 0; i < len(messageObjs); i++ {
+		for j := i + 1; j < len(messageObjs); j++ {
+			if messageObjs[i].CreatedAt.After(messageObjs[j].CreatedAt) {
+				messageObjs[i], messageObjs[j] = messageObjs[j], messageObjs[i]
+			}
+		}
+	}
+
 	// Debug logging
 	fmt.Printf("Loading chat for client %d, conversation ID: %d\n", clientID, conversation.ID)
 	fmt.Printf("Progress data: %+v\n", progress)
 
 	c.HTML(200, "chat.html", gin.H{
 		"Customer": client,
-		"Messages": messages,
+		"Messages": messageObjs,
 		"Progress": progress,
 	})
 }

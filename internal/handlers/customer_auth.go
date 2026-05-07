@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"log"
 	"net/http"
+	"strconv"
 	"strings"
 	"time"
 
@@ -273,6 +274,7 @@ func GetClientMessages(c *gin.Context) {
 			"id":            order.ID,
 			"order_number":  order.OrderNumber,
 			"status":        order.Status,
+			"quantity":      order.Quantity,
 			"total_amount":  order.TotalAmount,
 			"notes":         order.Notes,
 			"created_at":    order.CreatedAt,
@@ -488,4 +490,70 @@ func ClientLogout(c *gin.Context) {
 	// Clear cookie and redirect
 	c.SetCookie("client_token", "", -1, "/", "", false, true)
 	c.Redirect(http.StatusFound, "/client/login")
+}
+
+// ClientUpdateOrder allows clients to update their order notes and quantity
+func ClientUpdateOrder(c *gin.Context) {
+	clientID := c.GetUint("client_id")
+	orderID := c.Param("id")
+
+	var order models.Order
+	if err := db.DB.Where("id = ? AND client_id = ?", orderID, clientID).First(&order).Error; err != nil {
+		c.JSON(http.StatusNotFound, gin.H{"error": "Order not found"})
+		return
+	}
+
+	// Update notes if provided
+	notes := c.PostForm("notes")
+	if notes != "" {
+		order.Notes = notes
+	}
+
+	// Update quantity if provided
+	quantityStr := c.PostForm("quantity")
+	if quantityStr != "" {
+		if quantity, err := strconv.Atoi(quantityStr); err == nil && quantity > 0 {
+			// Get the order item to find product price
+			var orderItem models.OrderItem
+			if err := db.DB.Where("order_id = ?", order.ID).First(&orderItem).Error; err == nil {
+				// Recalculate total amount
+				order.TotalAmount = float64(quantity) * orderItem.UnitPrice
+				orderItem.Quantity = quantity
+				orderItem.TotalPrice = order.TotalAmount
+				db.DB.Save(&orderItem)
+			}
+			// Update the main order quantity field
+			order.Quantity = quantity
+		}
+	}
+
+	db.DB.Save(&order)
+	c.JSON(http.StatusOK, gin.H{"success": true, "order": order})
+}
+
+// ClientUpdateBooking allows clients to update their booking notes and date
+func ClientUpdateBooking(c *gin.Context) {
+	clientID := c.GetUint("client_id")
+	bookingID := c.Param("id")
+
+	var booking models.Booking
+	if err := db.DB.Where("id = ? AND client_id = ?", bookingID, clientID).First(&booking).Error; err != nil {
+		c.JSON(http.StatusNotFound, gin.H{"error": "Booking not found"})
+		return
+	}
+
+	notes := c.PostForm("notes")
+	scheduledDate := c.PostForm("scheduled_date")
+
+	if notes != "" {
+		booking.Notes = notes
+	}
+	if scheduledDate != "" {
+		if newDate, err := time.Parse(time.RFC3339, scheduledDate); err == nil {
+			booking.ScheduledDate = newDate
+		}
+	}
+
+	db.DB.Save(&booking)
+	c.JSON(http.StatusOK, gin.H{"success": true, "booking": booking})
 }

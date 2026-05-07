@@ -10,6 +10,7 @@ type Order struct {
 	ClientID     uint       `gorm:"not null;index" json:"client_id"`
 	OrderNumber  string     `gorm:"unique;not null" json:"order_number"`
 	Status       string     `gorm:"default:'pending'" json:"status"` // pending, confirmed, fulfilled, cancelled
+	Quantity     int        `gorm:"default:1" json:"quantity"`
 	TotalAmount  float64    `gorm:"not null" json:"total_amount"`
 	PaidAmount   float64    `gorm:"default:0" json:"paid_amount"`
 	DeliveryDate *time.Time `json:"delivery_date"`

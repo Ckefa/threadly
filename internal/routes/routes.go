@@ -102,6 +102,8 @@ func Setup(r *gin.Engine) {
 		clientProtected.POST("/businesses/:business_id/bookings", businessHandler.ClientCreateBooking)
 		clientProtected.POST("/orders", businessHandler.ClientCreateOrder)
 		clientProtected.POST("/bookings", businessHandler.ClientCreateBooking)
+		clientProtected.POST("/orders/:id/update", handlers.ClientUpdateOrder)
+		clientProtected.POST("/bookings/:id/update", handlers.ClientUpdateBooking)
 		clientProtected.POST("/heartbeat", handlers.ClientHeartbeat)
 	}
 

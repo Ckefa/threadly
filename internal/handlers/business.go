@@ -21,7 +21,7 @@ func NewBusinessHandler(db *gorm.DB) *BusinessHandler {
 	return &BusinessHandler{db: db}
 }
 
-// Dashboard data structure
+// DashboardData structure
 type DashboardData struct {
 	Business            models.Business
 	ProductCount        int64
@@ -136,7 +136,7 @@ func (h *BusinessHandler) getOrCreateClient(email string, businessID uint) (*mod
 	return &client, nil
 }
 
-// Products Management
+// GetProducts for business
 func (h *BusinessHandler) GetProducts(c *gin.Context) {
 	businessID := c.GetUint("business_id")
 	if businessID == 0 {
@@ -258,7 +258,7 @@ func (h *BusinessHandler) DeleteProduct(c *gin.Context) {
 	c.JSON(http.StatusOK, gin.H{"success": true})
 }
 
-// Services Management
+// GetServices for the business
 func (h *BusinessHandler) GetServices(c *gin.Context) {
 	businessID := c.GetUint("business_id")
 	if businessID == 0 {
@@ -380,7 +380,7 @@ func (h *BusinessHandler) DeleteService(c *gin.Context) {
 	c.JSON(http.StatusOK, gin.H{"success": true})
 }
 
-// Quick Order Creation
+// CreateOrder  Creation
 func (h *BusinessHandler) CreateOrder(c *gin.Context) {
 	businessID := c.GetUint("business_id")
 	if businessID == 0 {
@@ -466,26 +466,6 @@ func (h *BusinessHandler) CreateOrder(c *gin.Context) {
 		Reason:    fmt.Sprintf("Order #%s", order.OrderNumber),
 	}
 	h.db.Create(&inventoryLog)
-
-	// Get or create conversation using BOTH client_id AND business_id
-	conversation, err := h.getOrCreateConversation(request.ClientID, businessID)
-	if err != nil {
-		fmt.Printf("DEBUG BusinessHandler: Failed to get/create conversation: %v\n", err)
-	} else {
-		// Create message in conversation
-		orderMessage := fmt.Sprintf("🛒 ORDER:%d | %s x%d ($%.2f) | Status: pending", order.ID, product.Name, request.Quantity, order.TotalAmount)
-		if request.Notes != "" {
-			orderMessage += fmt.Sprintf(" | Notes: %s", request.Notes)
-		}
-
-		message := models.Message{
-			ConversationID: conversation.ID,
-			Content:        orderMessage,
-			Type:           "order",
-			Sender:         "business",
-		}
-		h.db.Create(&message)
-	}
 
 	c.JSON(http.StatusOK, gin.H{
 		"success": true,
@@ -718,7 +698,7 @@ func (h *BusinessHandler) UpdateBooking(c *gin.Context) {
 	c.JSON(http.StatusOK, gin.H{"success": true, "booking": booking})
 }
 
-// Quick Booking Creation
+// CreateBooking for business
 func (h *BusinessHandler) CreateBooking(c *gin.Context) {
 	businessID := c.GetUint("business_id")
 	if businessID == 0 {
@@ -792,26 +772,6 @@ func (h *BusinessHandler) CreateBooking(c *gin.Context) {
 		return
 	}
 
-	// Get or create conversation using BOTH client_id AND business_id
-	conversation, err := h.getOrCreateConversation(client.ID, businessID)
-	if err != nil {
-		fmt.Printf("DEBUG BusinessHandler: Failed to get/create conversation: %v\n", err)
-	} else {
-		// Create message in conversation
-		bookingMessage := fmt.Sprintf("📅 BOOKING:%d | %s | %s | Status: pending", booking.ID, service.Name, bookingDate.Format("Jan 2, 2006 3:04 PM"))
-		if request.Notes != "" {
-			bookingMessage += fmt.Sprintf(" | Notes: %s", request.Notes)
-		}
-
-		message := models.Message{
-			ConversationID: conversation.ID,
-			Content:        bookingMessage,
-			Type:           "booking",
-			Sender:         "business",
-		}
-		h.db.Create(&message)
-	}
-
 	c.JSON(http.StatusOK, gin.H{
 		"success": true,
 		"booking": booking,
@@ -819,7 +779,7 @@ func (h *BusinessHandler) CreateBooking(c *gin.Context) {
 	})
 }
 
-// client-facing handlers
+// GetBusinessProducts as a struct
 func (h *BusinessHandler) GetBusinessProducts(c *gin.Context) {
 	businessID, err := strconv.ParseUint(c.Param("business_id"), 10, 32)
 	if err != nil {
@@ -902,6 +862,7 @@ func (h *BusinessHandler) ClientCreateOrder(c *gin.Context) {
 		ClientID:    client.ID,
 		OrderNumber: generateOrderNumber(),
 		Status:      "pending",
+		Quantity:    request.Quantity,
 		TotalAmount: totalAmount,
 		Notes:       request.Notes,
 	}
