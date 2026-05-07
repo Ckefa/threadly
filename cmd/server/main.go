@@ -39,9 +39,6 @@ func main() {
 		&models.Payment{},
 		&models.InventoryLog{},
 	)
-	if err := db.MigrateNamingConventions(); err != nil {
-		log.Fatalf("failed to apply naming migration: %v", err)
-	}
 	log.Println("✅ Database auto-migration completed successfully")
 
 	r := gin.Default()

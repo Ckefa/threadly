@@ -848,13 +848,6 @@ func (h *BusinessHandler) ClientCreateOrder(c *gin.Context) {
 		return
 	}
 
-	// Get or create conversation using BOTH client_id AND business_id
-	conversation, err := h.getOrCreateConversation(client.ID, request.BusinessID)
-	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to create conversation"})
-		return
-	}
-
 	// Create order
 	totalAmount := product.Price * float64(request.Quantity)
 	order := models.Order{
@@ -883,24 +876,6 @@ func (h *BusinessHandler) ClientCreateOrder(c *gin.Context) {
 
 	if err := h.db.Create(&orderItem).Error; err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to create order item"})
-		return
-	}
-
-	// Create message in conversation
-	orderMessage := fmt.Sprintf("🛒 ORDER:%d | %s x%d ($%.2f) | Status: pending", order.ID, product.Name, request.Quantity, totalAmount)
-	if request.Notes != "" {
-		orderMessage += fmt.Sprintf(" | Notes: %s", request.Notes)
-	}
-
-	message := models.Message{
-		ConversationID: conversation.ID,
-		Content:        orderMessage,
-		Type:           "order",
-		Sender:         "client",
-	}
-
-	if err := h.db.Create(&message).Error; err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to create message"})
 		return
 	}
 
@@ -949,13 +924,6 @@ func (h *BusinessHandler) ClientCreateBooking(c *gin.Context) {
 		return
 	}
 
-	// Get or create conversation using BOTH client_id AND business_id
-	conversation, err := h.getOrCreateConversation(client.ID, request.BusinessID)
-	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to create conversation"})
-		return
-	}
-
 	// Create booking
 	booking := models.Booking{
 		BusinessID:    request.BusinessID,
@@ -984,24 +952,6 @@ func (h *BusinessHandler) ClientCreateBooking(c *gin.Context) {
 
 	if err := h.db.Create(&bookingItem).Error; err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to create booking item"})
-		return
-	}
-
-	// Create message in conversation
-	bookingMessage := fmt.Sprintf("📅 BOOKING:%d | %s | %s | Status: pending", booking.ID, service.Name, bookingDate.Format("Jan 2, 2006 3:04 PM"))
-	if request.Notes != "" {
-		bookingMessage += fmt.Sprintf(" | Notes: %s", request.Notes)
-	}
-
-	message := models.Message{
-		ConversationID: conversation.ID,
-		Content:        bookingMessage,
-		Type:           "booking",
-		Sender:         "client",
-	}
-
-	if err := h.db.Create(&message).Error; err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to create message"})
 		return
 	}
 
