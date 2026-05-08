@@ -2,6 +2,7 @@ package handlers
 
 import (
 	"fmt"
+	"log"
 	"net/http"
 	"strconv"
 	"strings"
@@ -416,7 +417,8 @@ func (h *BusinessHandler) CreateOrder(c *gin.Context) {
 
 	// Create or get client
 	var client models.Client
-	if err := h.db.Where("client_id ? =", request.ClientID).First(&client).Error; err != nil {
+	if err := h.db.Where("id = ?", request.ClientID).First(&client).Error; err != nil {
+		log.Println("Failed to create client", err)
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to create client"})
 		return
 	}
@@ -425,6 +427,7 @@ func (h *BusinessHandler) CreateOrder(c *gin.Context) {
 	order := models.Order{
 		BusinessID:   businessID,
 		ClientID:     client.ID,
+		Quantity:     request.Quantity,
 		OrderNumber:  generateOrderNumber(),
 		Status:       "pending",
 		TotalAmount:  float64(request.Quantity) * product.Price,
