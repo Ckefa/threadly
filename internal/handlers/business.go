@@ -937,7 +937,7 @@ func (h *BusinessHandler) ClientCreateBooking(c *gin.Context) {
 	}
 
 	if err := h.db.Create(&booking).Error; err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to create booking"})
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to create booking!"})
 		return
 	}
 
