@@ -2,6 +2,7 @@ package handlers
 
 import (
 	"strconv"
+	"time"
 
 	"threadly/internal/db"
 	"threadly/internal/models"
@@ -12,8 +13,33 @@ import (
 func Showclients(c *gin.Context) {
 	businessID := c.GetUint("business_id")
 
-	var clients []models.Client
-	if err := db.DB.Where("business_id = ?", businessID).Find(&clients).Error; err != nil {
+	// Client with unread count struct
+	type ClientWithUnread struct {
+		models.Client
+		ConversationID uint       `json:"conversation_id"`
+		UnreadCount    int        `json:"unread_count"`
+		LastMessageAt  *time.Time `json:"last_message_at"`
+		OnlineStatus   string     `json:"online_status"`
+	}
+
+	var clientsWithUnread []ClientWithUnread
+
+	// Query: join clients with their conversations, count unread messages
+	query := `
+		SELECT 
+			clients.*, 
+			conversations.id as conversation_id,
+			COUNT(CASE WHEN messages.sender = 'client' AND messages.created_at > COALESCE(conversations.last_read_by_business_at, '1970-01-01') THEN 1 END) as unread_count,
+			MAX(messages.created_at) as last_message_at
+		FROM clients 
+		JOIN conversations ON conversations.client_id = clients.id AND conversations.business_id = ?
+		LEFT JOIN messages ON messages.conversation_id = conversations.id
+		WHERE clients.business_id = ?
+		GROUP BY clients.id, conversations.id
+		ORDER BY unread_count DESC, last_message_at DESC
+	`
+
+	if err := db.DB.Raw(query, businessID, businessID).Scan(&clientsWithUnread).Error; err != nil {
 		c.HTML(500, "index.html", gin.H{
 			"Title": "Threadly",
 			"Error": "Failed to load clients",
@@ -21,32 +47,13 @@ func Showclients(c *gin.Context) {
 		return
 	}
 
-	// Load conversation progress for each client
-	type ClientWithProgress struct {
-		models.Client
-		Progress models.ConversationProgress `json:"progress"`
-	}
-
-	var clientsWithProgress []ClientWithProgress
-	for _, client := range clients {
-		var progress models.ConversationProgress
-		err := db.DB.Table("conversation_progresses").
-			Joins("JOIN conversations ON conversation_progresses.conversation_id = conversations.id").
-			Where("conversations.client_id = ?", client.ID).
-			First(&progress).Error
-
-		// Create default progress if not found
-		if err != nil {
-			progress = models.ConversationProgress{
-				CurrentStage:  models.StageInitial,
-				ProgressScore: 10,
-			}
+	// Set online status for each client
+	for i := range clientsWithUnread {
+		if clientsWithUnread[i].IsOnline {
+			clientsWithUnread[i].OnlineStatus = "online"
+		} else {
+			clientsWithUnread[i].OnlineStatus = "offline"
 		}
-
-		clientsWithProgress = append(clientsWithProgress, ClientWithProgress{
-			Client:   client,
-			Progress: progress,
-		})
 	}
 
 	// Count pending orders and bookings
@@ -56,14 +63,14 @@ func Showclients(c *gin.Context) {
 	var pendingBookingCount int64
 	db.DB.Model(&models.Booking{}).Where("business_id = ? AND status = ?", businessID, "pending").Count(&pendingBookingCount)
 
-	totalPending := pendingOrderCount + pendingBookingCount
+	totalPending := int(pendingOrderCount + pendingBookingCount)
 
 	c.HTML(200, "index.html", gin.H{
 		"Title":               "Threadly",
-		"Clients":             clientsWithProgress,
-		"PendingOrderCount":   pendingOrderCount,
-		"PendingBookingCount": pendingBookingCount,
-		"TotalPending":        int(totalPending),
+		"Clients":             clientsWithUnread,
+		"PendingOrderCount":   int(pendingOrderCount),
+		"PendingBookingCount": int(pendingBookingCount),
+		"TotalPending":        totalPending,
 	})
 }
 

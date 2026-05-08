@@ -32,6 +32,37 @@
     .shake-notification {
       animation: shake 1s ease-in-out infinite;
     }
+
+    /* Unread Badge Styles */
+    .unread-badge {
+      background-color: #ef4444; /* red-500 */
+      color: white;
+      font-size: 12px;
+      font-weight: bold;
+      min-width: 20px;
+      height: 20px;
+      border-radius: 10px;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      padding: 0 6px;
+      cursor: pointer;
+      animation: pulse 2s infinite;
+    }
+
+    @keyframes pulse {
+      0%, 100% {
+        transform: scale(1);
+      }
+      50% {
+        transform: scale(1.1);
+      }
+    }
+
+    /* Optional: different style for 1 unread vs many */
+    .unread-badge[data-count="1"] {
+      background-color: #f59e0b; /* amber-500 for single message */
+    }
   </style>
 </head>
 
@@ -99,6 +130,12 @@
                 <div class="w-2 h-2 bg-gray-400 rounded-full"></div>
                 <span class="text-xs text-gray-500">Offline</span>
                 {{end}}
+                <!-- UNREAD BADGE -->
+                {{if gt .UnreadCount 0}}
+                <span class="unread-badge" hx-put="/clients/{{.ID}}/read" hx-target="#chat-panel" hx-on::after-request="this.style.display='none'">
+                  {{.UnreadCount}}
+                </span>
+                {{end}}
               </div>
 
               <!-- STATUS -->
@@ -110,19 +147,7 @@
                 {{$status}}
               </span>
 
-              <!-- PROGRESS -->
-              {{ $stage := .Progress.CurrentStage }}
-              <div class="flex flex-col items-end space-y-1">
-                <span class="inline-block px-2 py-1 text-xs rounded-full
-        {{if eq $stage " initial"}}bg-gray-100 text-gray-700 {{else if eq $stage "qualification" }}bg-blue-100
-                  text-blue-700 {{else if eq $stage "negotiation" }}bg-purple-100 text-purple-700 {{else if eq
-                  $stage "confirmation" }}bg-yellow-100 text-yellow-700 {{else if eq $stage "in_progress"
-                  }}bg-orange-100 text-orange-700 {{else if eq $stage "completed" }}bg-green-100 text-green-700
-                  {{else}}bg-teal-100 text-teal-700{{end}}">
-                  {{$stage}}
-                </span>
-              </div>
-            </div>
+                          </div>
             <button onclick="deleteClient('{{.ID}}', '{{.Name}}')" class="text-red-500 hover:text-red-700 text-base"
               title="Delete Customer">
               <i class="fas fa-trash"></i>

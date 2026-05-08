@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"log"
 	"strconv"
+	"time"
 
 	"threadly/internal/db"
 	"threadly/internal/models"
@@ -237,4 +238,35 @@ func UpdateMessage(c *gin.Context) {
 	}
 
 	c.JSON(200, gin.H{"success": true, "message": message})
+}
+
+func MarkConversationAsRead(c *gin.Context) {
+	businessID := c.GetUint("business_id")
+	clientID, err := strconv.ParseUint(c.Param("id"), 10, 32)
+	if err != nil {
+		c.JSON(400, gin.H{"error": "Invalid client ID"})
+		return
+	}
+
+	// Update conversation's last read time
+	now := time.Now()
+	if err := db.DB.Model(&models.Conversation{}).
+		Where("business_id = ? AND client_id = ?", businessID, clientID).
+		Update("last_read_by_business_at", &now).Error; err != nil {
+		c.JSON(500, gin.H{"error": "Failed to mark conversation as read"})
+		return
+	}
+
+	// Also mark all unread messages as read by business
+	if err := db.DB.Model(&models.Message{}).
+		Where("conversation_id IN (SELECT id FROM conversations WHERE business_id = ? AND client_id = ?) AND sender = 'client' AND read_by_business = ?", businessID, clientID, false).
+		Updates(map[string]interface{}{
+			"read_by_business": true,
+			"read_at":          &now,
+		}).Error; err != nil {
+		c.JSON(500, gin.H{"error": "Failed to mark messages as read"})
+		return
+	}
+
+	c.JSON(200, gin.H{"status": "ok"})
 }

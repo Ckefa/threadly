@@ -63,6 +63,7 @@ func Setup(r *gin.Engine) {
 		protected.GET("/clients/:id/messages", handlers.GetMessages)
 		protected.POST("/clients/:id/messages", handlers.CreateMessage)
 		protected.PUT("/messages/:message_id", handlers.UpdateMessage)
+		protected.PUT("/clients/:id/read", handlers.MarkConversationAsRead)
 
 		// Action routes
 		protected.POST("/messages/:message_id/actions", handlers.CreateAction)
