@@ -711,6 +711,7 @@ func (h *BusinessHandler) CreateBooking(c *gin.Context) {
 	}
 
 	var request struct {
+		ClientID    uint   `json:"client_id" binding:"required"`
 		ServiceID   uint   `json:"service_id" binding:"required"`
 		clientName  string `json:"client_name" binding:"required"`
 		clientEmail string `json:"client_email"`
@@ -734,8 +735,8 @@ func (h *BusinessHandler) CreateBooking(c *gin.Context) {
 
 	// Create or get client
 	var client models.Client
-	if err := h.db.Where("client_email ? =", request.clientEmail).First(&client).Error; err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to create client"})
+	if err := h.db.Where("id = ? AND business_id = ?", request.ClientID, businessID).First(&client).Error; err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to find client"})
 		return
 	}
 
