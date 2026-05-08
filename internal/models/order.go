@@ -10,6 +10,7 @@ type Order struct {
 	ClientID     uint       `gorm:"not null;index" json:"client_id"`
 	OrderNumber  string     `gorm:"unique;not null" json:"order_number"`
 	Status       string     `gorm:"default:'pending'" json:"status"` // pending, confirmed, fulfilled, cancelled
+	Sender       string     `gorm:"default:'client'" json:"sender"`  // client, business
 	Quantity     int        `gorm:"default:1" json:"quantity"`
 	TotalAmount  float64    `gorm:"not null" json:"total_amount"`
 	PaidAmount   float64    `gorm:"default:0" json:"paid_amount"`
@@ -44,6 +45,7 @@ type Booking struct {
 	ClientID      uint      `gorm:"not null;index" json:"client_id"`
 	BookingNumber string    `gorm:"unique;not null" json:"booking_number"`
 	Status        string    `gorm:"default:'pending'" json:"status"` // pending, confirmed, fulfilled, cancelled
+	Sender        string    `gorm:"default:'client'" json:"sender"`  // client, business
 	ScheduledDate time.Time `gorm:"not null" json:"scheduled_date"`
 	Duration      int       `gorm:"not null" json:"duration"` // in minutes
 	TotalAmount   float64   `gorm:"not null" json:"total_amount"`

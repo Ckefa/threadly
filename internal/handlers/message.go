@@ -102,7 +102,7 @@ func GetMessages(c *gin.Context) {
 			MsgType:   "order",
 			Value:     "",
 			Data:      orderData,
-			Sender:    "client",
+			Sender:    order.Sender,
 			CreatedAt: order.CreatedAt,
 		})
 		log.Printf("Added order ID=%d to MessageObj", order.ID)
@@ -140,7 +140,7 @@ func GetMessages(c *gin.Context) {
 			MsgType:   "booking",
 			Value:     "",
 			Data:      bookingData,
-			Sender:    "client",
+			Sender:    booking.Sender,
 			CreatedAt: booking.CreatedAt,
 		})
 		log.Printf("Added booking ID=%d to MessageObj", booking.ID)

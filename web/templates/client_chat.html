@@ -24,7 +24,7 @@
     {{range .MessageObjs}}
     {{if eq .MsgType "order"}}
     <!-- Order Card -->
-    <div class="flex justify-end">
+    <div class="flex {{if eq .Sender "client"}}justify-end{{else}}justify-start{{end}}">
       <div class="max-w-xs lg:max-w-md w-full">
         <div class="bg-blue-50 border border-blue-200 rounded-lg px-4 py-3" data-message-id="{{.ID}}" data-order-id="{{if .Data}}{{.Data.id}}{{end}}">
           <div class="flex items-center justify-between mb-2">
@@ -55,7 +55,7 @@
     </div>
     {{else if eq .MsgType "booking"}}
     <!-- Booking Card -->
-    <div class="flex justify-end">
+    <div class="flex {{if eq .Sender "client"}}justify-end{{else}}justify-start{{end}}">
       <div class="max-w-xs lg:max-w-md w-full">
         <div class="bg-purple-50 border border-purple-200 rounded-lg px-4 py-3" data-message-id="{{.ID}}" data-booking-id="{{if .Data}}{{.Data.id}}{{end}}">
           <div class="flex items-center justify-between mb-2">
