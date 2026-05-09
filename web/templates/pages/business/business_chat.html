@@ -170,7 +170,7 @@
 
 <!-- Message Input -->
 <div class="bg-white border-t border-gray-200 p-4">
-  <form id="message-form" hx-post="/clients/{{.Customer.ID}}/messages" hx-target="#messages-container"
+  <form id="message-form" hx-post="clients/{{.Customer.ID}}/messages" hx-target="#messages-container"
     hx-swap="beforeend" hx-on::after-request="this.reset()">
     <div class="flex space-x-3">
       <!-- Action Button -->

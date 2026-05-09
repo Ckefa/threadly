@@ -219,7 +219,7 @@ func CreateMessage(c *gin.Context) {
 	}
 
 	// Return message partial
-	c.HTML(200, "partials/messages/message_partial.html", gin.H{
+	c.HTML(200, "message_partial.html", gin.H{
 		"Message": message,
 	})
 }
