@@ -12,17 +12,30 @@ import (
 	"github.com/gin-gonic/gin"
 )
 
+type MessageObj struct {
+	ID        uint        `json:"id"`
+	MsgType   string      `json:"msgtype"` // "message", "order", "booking"
+	Value     string      `json:"value"`   // string content for normal messages, empty for orders/bookings
+	Data      interface{} `json:"data"`    // order object or booking object as JSON, null for normal messages
+	Sender    string      `json:"sender"`
+	CreatedAt time.Time   `json:"created_at"`
+}
+
 func GetMessages(c *gin.Context) {
 	businessID := c.GetUint("business_id")
 	clientID, err := strconv.ParseUint(c.Param("id"), 10, 32)
 	if err != nil {
+		log.Println("GetMessages: =>> Invalid customer ID")
 		c.String(400, "Invalid customer ID")
 		return
 	}
 
+	log.Println("Getting messages bizID, clientID", businessID, clientID)
+
 	// Verify client belongs to business
 	var client models.Client
 	if err := db.DB.Where("id = ? AND business_id = ?", clientID, businessID).First(&client).Error; err != nil {
+		log.Println("GetMessages: =>> Customer not found by id", clientID)
 		c.String(404, "Customer not found")
 		return
 	}
@@ -30,6 +43,7 @@ func GetMessages(c *gin.Context) {
 	// Get conversation
 	var conversation models.Conversation
 	if err := db.DB.Where("client_id = ?", clientID).First(&conversation).Error; err != nil {
+		log.Println("GetMessages: =>> Conversation not found", clientID, businessID)
 		c.String(404, "Conversation not found")
 		return
 	}
@@ -47,6 +61,7 @@ func GetMessages(c *gin.Context) {
 			ProgressScore:  10,
 		}
 		if err := db.DB.Create(&progress).Error; err != nil {
+			log.Println("GetMessages: =>> Failed to Crete conversation progress", clientID, businessID)
 			c.String(500, "Failed to create conversation progress")
 			return
 		}
@@ -160,7 +175,7 @@ func GetMessages(c *gin.Context) {
 	fmt.Printf("Loading chat for client %d, conversation ID: %d\n", clientID, conversation.ID)
 	fmt.Printf("Progress data: %+v\n", progress)
 
-	c.HTML(200, "chat.html", gin.H{
+	c.HTML(200, "business_chat.html", gin.H{
 		"Customer": client,
 		"Messages": messageObjs,
 		"Progress": progress,
@@ -204,7 +219,7 @@ func CreateMessage(c *gin.Context) {
 	}
 
 	// Return message partial
-	c.HTML(200, "message_partial.html", gin.H{
+	c.HTML(200, "partials/messages/message_partial.html", gin.H{
 		"Message": message,
 	})
 }

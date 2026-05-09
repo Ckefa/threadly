@@ -1,0 +1,37 @@
+{{ define "components/ui/button" }}
+{{- $variant := .variant | default "primary" -}}
+{{- $size := .size | default "md" -}}
+{{- $disabled := .disabled | default false -}}
+{{- $type := .type | default "button" -}}
+{{- $onclick := .onclick | default "" -}}
+{{- $class := .class | default "" -}}
+
+<button 
+    type="{{$type}}"
+    {{if $onclick}}onclick="{{$onclick}}"{{end}}
+    {{if $disabled}}disabled{{end}}
+    class="
+        {{if eq $variant "primary"}}bg-teal-600 hover:bg-teal-700 text-white{{end}}
+        {{if eq $variant "secondary"}}bg-gray-200 hover:bg-gray-300 text-gray-900{{end}}
+        {{if eq $variant "danger"}}bg-red-600 hover:bg-red-700 text-white{{end}}
+        {{if eq $variant "success"}}bg-green-600 hover:bg-green-700 text-white{{end}}
+        {{if eq $variant "outline"}}border border-teal-600 text-teal-600 hover:bg-teal-50{{end}}
+        
+        {{if eq $size "sm"}}px-3 py-1.5 text-xs{{end}}
+        {{if eq $size "md"}}px-4 py-2 text-sm{{end}}
+        {{if eq $size "lg"}}px-6 py-3 text-base{{end}}
+        
+        rounded-md font-medium transition-colors duration-200 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-teal-500
+        {{if $disabled}}opacity-50 cursor-not-allowed{{end}}
+        {{$class}}
+    "
+>
+    {{if .icon}}
+        <i class="fas fa-{{.icon}} {{if .text}}mr-2{{end}}"></i>
+    {{end}}
+    {{.text}}
+    {{if .content}}
+        {{.content}}
+    {{end}}
+</button>
+{{ end }}

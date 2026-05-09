@@ -1,0 +1,848 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>{{.Title}}</title>
+  <script src="https://unpkg.com/htmx.org@1.9.10"></script>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  <style>
+    @keyframes shake {
+
+      0%,
+      30%,
+      100% {
+        transform: translateX(0);
+      }
+
+      5%,
+      15%,
+      25% {
+        transform: translateX(-2px);
+      }
+
+      10%,
+      20% {
+        transform: translateX(2px);
+      }
+    }
+
+    .shake-notification {
+      animation: shake 1s ease-in-out infinite;
+    }
+
+    /* Unread Badge Styles */
+    .unread-badge {
+      background-color: #ef4444;
+      /* red-500 */
+      color: white;
+      font-size: 12px;
+      font-weight: bold;
+      min-width: 20px;
+      height: 20px;
+      border-radius: 10px;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      padding: 0 6px;
+      cursor: pointer;
+      animation: pulse 2s infinite;
+    }
+
+    @keyframes pulse {
+
+      0%,
+      100% {
+        transform: scale(1);
+      }
+
+      50% {
+        transform: scale(1.1);
+      }
+    }
+
+    /* Optional: different style for 1 unread vs many */
+    .unread-badge[data-count="1"] {
+      background-color: #f59e0b;
+      /* amber-500 for single message */
+    }
+  </style>
+</head>
+
+<body class="bg-gray-100 h-screen overflow-hidden">
+  <!-- Header -->
+  <header class="bg-teal-600 text-white p-4 flex items-center justify-between">
+    <div class="flex items-center space-x-4">
+      <i class="fas fa-comments text-2xl"></i>
+      <h1 class="text-xl font-semibold">Threadly</h1>
+    </div>
+    <div class="flex items-center space-x-4">
+      <a href="/business"
+        class="bg-purple-600 hover:bg-purple-700 px-4 py-2 rounded-lg flex items-center space-x-2 relative">
+        <i class="fas fa-chart-line"></i>
+        <span>Business</span>
+        {{if gt .TotalPending 0}}
+        <span
+          class="shake-notification absolute -top-2 -right-2 bg-red-500 text-white text-xs font-bold rounded-full h-5 w-5 flex items-center justify-center">
+          {{.TotalPending}}
+        </span>
+        {{end}}
+      </a>
+      <button onclick="showNewClientModal()"
+        class="bg-teal-700 hover:bg-teal-800 px-4 py-2 rounded-lg flex items-center space-x-2">
+        <i class="fas fa-plus"></i>
+        <span>New Customer</span>
+      </button>
+      <a href="/business/logout" class="hover:bg-teal-700 px-3 py-2 rounded-lg">
+        <i class="fas fa-sign-out-alt"></i>
+      </a>
+    </div>
+  </header>
+
+  <div class="flex h-[calc(100vh-72px)]">
+    <!-- Sidebar - Client List -->
+    <aside class="w-80 bg-white border-r border-gray-200 flex flex-col">
+      <div class="p-4 border-b border-gray-200">
+        <div class="relative">
+          <input type="text" placeholder="Search clients..."
+            class="w-full pl-10 pr-4 py-2 bg-gray-100 rounded-lg focus:outline-none focus:ring-2 focus:ring-teal-500">
+          <i class="fas fa-search absolute left-3 top-3 text-gray-400"></i>
+        </div>
+      </div>
+
+      <div class="flex-1 overflow-y-auto" id="client-list">
+        {{range .Clients}}
+        <div class="client-item px-4 py-3 hover:bg-gray-50 cursor-pointer border-b border-gray-100"
+          onclick="loadClient('{{.ID}}')" data-client-id="{{.ID}}">
+          <div class="flex items-center space-x-3">
+            <div class="w-12 h-12 bg-teal-100 rounded-full flex items-center justify-center">
+              <i class="fas fa-user text-teal-600"></i>
+            </div>
+            <div class="flex-1">
+              <h3 class="font-semibold text-gray-900">{{.Name}}</h3>
+              <p class="text-sm text-gray-500 truncate">{{.Email}}</p>
+            </div>
+
+
+            <div class="flex flex-col items-end space-y-1">
+              <div class="flex items-center space-x-1">
+                {{if .IsOnline}}
+                <div class="w-2 h-2 bg-green-500 rounded-full"></div>
+                <span class="text-xs text-green-600">Online</span>
+                {{else}}
+                <div class="w-2 h-2 bg-gray-400 rounded-full"></div>
+                <span class="text-xs text-gray-500">Offline</span>
+                {{end}}
+                <!-- UNREAD BADGE -->
+                {{if gt .UnreadCount 0}}
+                <span class="unread-badge" hx-put="clients/{{.ID}}/read" hx-target="#chat-panel"
+                  hx-on::after-request="this.style.display='none'">
+                  {{.UnreadCount}}
+                </span>
+                {{end}}
+              </div>
+
+              <!-- STATUS -->
+              {{ $status := .Status }}
+              <span class="status-badge inline-block px-2 py-1 text-xs rounded-full
+      {{if eq $status " new"}}bg-blue-100 text-blue-800 {{else if eq $status "active" }}bg-green-100 text-green-800
+                {{else if eq $status "awaiting_payment" }}bg-yellow-100 text-yellow-800 {{else}}bg-gray-100
+                text-gray-800{{end}}">
+                {{$status}}
+              </span>
+
+            </div>
+            <button onclick="deleteClient('{{.ID}}', '{{.Name}}')" class="text-red-500 hover:text-red-700 text-base"
+              title="Delete Customer">
+              <i class="fas fa-trash"></i>
+            </button>
+          </div>
+        </div>
+        {{else}}
+        <div class="p-8 text-center text-gray-500">
+          <i class="fas fa-users text-4xl mb-4"></i>
+          <p>No clients yet</p>
+          <button onclick="showNewClientModal()" class="mt-4 text-teal-600 hover:text-teal-700">
+            <i class="fas fa-plus mr-2"></i>Add your first client
+          </button>
+        </div>
+        {{end}}
+      </div>
+    </aside>
+
+
+    <!-- Main Chat Area -->
+    <main class="flex-1 flex flex-col bg-gray-50" id="chat-area">
+      <div class="flex-1 flex items-center justify-center text-gray-400">
+        <div class="text-center text-gray-500">
+          <i class="fas fa-comments text-6xl mb-4"></i>
+          <p>Select a client to start chatting</p>
+        </div>
+      </div>
+    </main>
+  </div>
+
+  <!-- New Client Modal -->
+  <div id="new-client-modal" class="fixed inset-0 bg-black bg-opacity-50 hidden flex items-center justify-center z-50">
+    <div class="bg-white rounded-lg p-6 w-96">
+      <h2 class="text-xl font-semibold mb-4">Add New Customer</h2>
+      <form id="new-client-form">
+        <div class="mb-4">
+          <label class="block text-sm font-medium text-gray-700 mb-2">Name *</label>
+          <input type="text" name="name" required
+            class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-teal-500">
+        </div>
+        <div class="mb-4">
+          <label class="block text-sm font-medium text-gray-700 mb-2">Email</label>
+          <input type="email" name="email"
+            class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-teal-500">
+        </div>
+        <div class="mb-4">
+          <label class="block text-sm font-medium text-gray-700 mb-2">Phone</label>
+          <input type="tel" name="phone"
+            class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-teal-500">
+        </div>
+        <div class="flex justify-end space-x-3">
+          <button type="button" onclick="hideNewClientModal()"
+            class="px-4 py-2 text-gray-600 hover:text-gray-800">Cancel</button>
+          <button type="submit" class="px-4 py-2 bg-teal-600 text-white rounded-lg hover:bg-teal-700">Add
+            Customer</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- Quick Order Modal -->
+  <div id="quickOrderModal" class="fixed inset-0 bg-gray-600 bg-opacity-50 hidden overflow-y-auto h-full w-full z-50">
+    <div class="relative top-20 mx-auto p-5 border w-96 shadow-lg rounded-md bg-white">
+      <div class="mt-3">
+        <h3 class="text-lg font-medium text-gray-900">Quick Order</h3>
+        <form id="quickOrderForm" class="mt-4 space-y-4">
+          <div>
+            <label class="block text-sm font-medium text-gray-700">Select Product</label>
+            <select id="orderProduct" required
+              class="mt-1 block w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-teal-500 focus:border-teal-500">
+              <option value="">Choose a product...</option>
+            </select>
+          </div>
+          <div>
+            <label class="block text-sm font-medium text-gray-700">Quantity</label>
+            <input type="number" id="orderQuantity" min="1" required
+              class="mt-1 block w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-teal-500 focus:border-teal-500">
+          </div>
+          <div>
+            <label class="block text-sm font-medium text-gray-700">Customer Name</label>
+            <input type="text" id="orderCustomerName" required
+              class="mt-1 block w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-teal-500 focus:border-teal-500"
+              readonly>
+          </div>
+          <div>
+            <label class="block text-sm font-medium text-gray-700">Customer Email</label>
+            <input type="email" id="orderCustomerEmail"
+              class="mt-1 block w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-teal-500 focus:border-teal-500"
+              readonly>
+          </div>
+          <div>
+            <label class="block text-sm font-medium text-gray-700">Customer Phone</label>
+            <input type="tel" id="orderCustomerPhone"
+              class="mt-1 block w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-teal-500 focus:border-teal-500"
+              readonly>
+          </div>
+          <div>
+            <label class="block text-sm font-medium text-gray-700">Delivery Address</label>
+            <textarea id="orderDeliveryAddress" rows="2"
+              class="mt-1 block w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-teal-500 focus:border-teal-500"></textarea>
+          </div>
+          <div>
+            <label class="block text-sm font-medium text-gray-700">Notes</label>
+            <textarea id="orderNotes" rows="2"
+              class="mt-1 block w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-teal-500 focus:border-teal-500"></textarea>
+          </div>
+          <div class="flex justify-end space-x-3 pt-4">
+            <button type="button" onclick="hideQuickOrderModal()"
+              class="bg-gray-300 hover:bg-gray-400 text-gray-800 px-4 py-2 rounded">
+              Cancel
+            </button>
+            <button type="submit" class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded">
+              Create Order
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>
+
+  <!-- Quick Booking Modal -->
+  <div id="quickBookingModal" class="fixed inset-0 bg-gray-600 bg-opacity-50 hidden overflow-y-auto h-full w-full z-50">
+    <div class="relative top-20 mx-auto p-5 border w-96 shadow-lg rounded-md bg-white">
+      <div class="mt-3">
+        <h3 class="text-lg font-medium text-gray-900">Quick Booking</h3>
+        <form id="quickBookingForm" class="mt-4 space-y-4">
+          <div>
+            <label class="block text-sm font-medium text-gray-700">Select Service</label>
+            <select id="bookingService" required
+              class="mt-1 block w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-teal-500 focus:border-teal-500">
+              <option value="">Choose a service...</option>
+            </select>
+          </div>
+          <div>
+            <label class="block text-sm font-medium text-gray-700">Customer Name</label>
+            <input type="text" id="bookingCustomerName" required
+              class="mt-1 block w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-teal-500 focus:border-teal-500"
+              readonly>
+          </div>
+          <div>
+            <label class="block text-sm font-medium text-gray-700">Customer Email</label>
+            <input type="email" id="bookingCustomerEmail"
+              class="mt-1 block w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-teal-500 focus:border-teal-500"
+              readonly>
+          </div>
+          <div>
+            <label class="block text-sm font-medium text-gray-700">Customer Phone</label>
+            <input type="tel" id="bookingCustomerPhone"
+              class="mt-1 block w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-teal-500 focus:border-teal-500"
+              readonly>
+          </div>
+          <div>
+            <label class="block text-sm font-medium text-gray-700">Booking Date</label>
+            <input type="date" id="bookingDate" required
+              class="mt-1 block w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-teal-500 focus:border-teal-500">
+          </div>
+          <div>
+            <label class="block text-sm font-medium text-gray-700">Booking Time</label>
+            <input type="time" id="bookingTime" required
+              class="mt-1 block w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-teal-500 focus:border-teal-500">
+          </div>
+          <div>
+            <label class="block text-sm font-medium text-gray-700">Notes</label>
+            <textarea id="bookingNotes" rows="2"
+              class="mt-1 block w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-teal-500 focus:border-teal-500"></textarea>
+          </div>
+          <div class="flex justify-end space-x-3 pt-4">
+            <button type="button" onclick="hideQuickBookingModal()"
+              class="bg-gray-300 hover:bg-gray-400 text-gray-800 px-4 py-2 rounded">
+              Cancel
+            </button>
+            <button type="submit" class="bg-purple-600 hover:bg-purple-700 text-white px-4 py-2 rounded">
+              Create Booking
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    let currentClientId = null;
+
+    function showNewClientModal() {
+      document.getElementById('new-client-modal').classList.remove('hidden');
+    }
+
+    function hideNewClientModal() {
+      document.getElementById('new-client-modal').classList.add('hidden');
+      document.getElementById('new-client-form').reset();
+    }
+
+    function openQuickBookingModal(clientId) {
+      // Show booking modal and populate client data
+      populateClientData(clientId);
+      loadServicesForBooking();
+      document.getElementById('quickBookingModal').classList.remove('hidden');
+    }
+
+    function openQuickOrderModal(clientId) {
+      // Show order modal and populate client data
+      populateClientData(clientId);
+      loadProductsForOrder();
+      document.getElementById('quickOrderModal').classList.remove('hidden');
+    }
+
+    function openQuotationModal(clientId) {
+      // TODO: Implement quotation modal
+      showNotification('Create quotation feature coming soon!', 'info');
+    }
+
+    function openPaymentModal(clientId) {
+      // TODO: Implement payment modal
+      showNotification('Payment request feature coming soon!', 'info');
+    }
+
+    function openGoalModal(clientId) {
+      // TODO: Implement goal modal
+      showNotification('Goal setting feature coming soon!', 'info');
+    }
+
+    function showNotification(message, type = 'info') {
+      // Create notification element
+      const notification = document.createElement('div');
+      notification.className = `fixed top-4 right-4 p-4 rounded-lg shadow-lg z-50 ${type === 'success' ? 'bg-green-500 text-white' :
+        type === 'error' ? 'bg-red-500 text-white' :
+          type === 'warning' ? 'bg-yellow-500 text-white' :
+            'bg-blue-500 text-white'
+        }`;
+      notification.textContent = message;
+
+      // Add to body
+      document.body.appendChild(notification);
+
+      // Remove after 3 seconds
+      setTimeout(() => {
+        notification.remove();
+      }, 3000);
+    }
+
+    function loadClient(clientId) {
+      currentClientId = clientId;
+
+      // Update active client styling
+      document.querySelectorAll('.client-item').forEach(item => {
+        item.classList.remove('bg-teal-50', 'border-l-4', 'border-teal-600');
+      });
+      document.querySelector(`[data-client-id="${clientId}"]`).classList.add('bg-teal-50', 'border-l-4', 'border-teal-600');
+
+
+      // Load chat interface
+      htmx.ajax('GET', `clients/${clientId}/messages`, {
+        target: '#chat-area',
+        swap: 'innerHTML'
+      });
+    }
+
+    // Helper functions for quick order and booking modals
+    function populateClientData(clientId) {
+      // Find the client element and extract data
+      const clientElement = document.querySelector(`[data-client-id="${clientId}"]`);
+      if (clientElement) {
+        const clientName = clientElement.querySelector('h3')?.textContent || '';
+        const clientEmail = clientElement.querySelector('.text-gray-500')?.textContent || '';
+
+        // Populate order modal
+        document.getElementById('orderCustomerName').value = clientName;
+        document.getElementById('orderCustomerEmail').value = clientEmail;
+
+        // Populate booking modal
+        document.getElementById('bookingCustomerName').value = clientName;
+        document.getElementById('bookingCustomerEmail').value = clientEmail;
+      }
+    }
+
+    async function loadProductsForOrder() {
+      try {
+        const response = await fetch('/products');
+        const data = await response.text();
+        // Parse the HTML to extract products
+        const parser = new DOMParser();
+        const doc = parser.parseFromString(data, 'text/html');
+        const productCards = doc.querySelectorAll('[data-product-id]');
+        const select = document.getElementById('orderProduct');
+
+        select.innerHTML = '<option value="">Choose a product...</option>';
+        productCards.forEach(card => {
+          const productId = card.dataset.productId;
+          const productName = card.querySelector('h3')?.textContent || 'Unknown Product';
+          const option = document.createElement('option');
+          option.value = productId;
+          option.textContent = productName;
+          select.appendChild(option);
+        });
+      } catch (error) {
+        console.error('Failed to load products:', error);
+        showNotification('Failed to load products', 'error');
+      }
+    }
+
+    async function loadServicesForBooking() {
+      try {
+        const response = await fetch('/services');
+        const data = await response.text();
+        // Parse the HTML to extract services
+        const parser = new DOMParser();
+        const doc = parser.parseFromString(data, 'text/html');
+        const serviceCards = doc.querySelectorAll('[data-service-id]');
+        const select = document.getElementById('bookingService');
+
+        select.innerHTML = '<option value="">Choose a service...</option>';
+        serviceCards.forEach(card => {
+          const serviceId = card.dataset.serviceId;
+          const serviceName = card.querySelector('h3')?.textContent || 'Unknown Service';
+          const option = document.createElement('option');
+          option.value = serviceId;
+          option.textContent = serviceName;
+          select.appendChild(option);
+        });
+      } catch (error) {
+        console.error('Failed to load services:', error);
+        showNotification('Failed to load services', 'error');
+      }
+    }
+
+    function hideQuickOrderModal() {
+      document.getElementById('quickOrderModal').classList.add('hidden');
+      document.getElementById('quickOrderForm').reset();
+    }
+
+    function hideQuickBookingModal() {
+      document.getElementById('quickBookingModal').classList.add('hidden');
+      document.getElementById('quickBookingForm').reset();
+    }
+
+    // Form submission handlers
+    document.getElementById('quickOrderForm').addEventListener('submit', function (e) {
+      e.preventDefault();
+
+      const orderData = {
+        client_id: parseInt(currentClientId),
+        product_id: parseInt(document.getElementById('orderProduct').value),
+        quantity: parseInt(document.getElementById('orderQuantity').value),
+        customer_name: document.getElementById('orderCustomerName').value,
+        customer_email: document.getElementById('orderCustomerEmail').value,
+        customer_phone: document.getElementById('orderCustomerPhone').value,
+        delivery_address: document.getElementById('orderDeliveryAddress').value,
+        notes: document.getElementById('orderNotes').value
+      };
+
+      fetch('/orders', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(orderData)
+      })
+        .then(response => response.json())
+        .then(data => {
+          if (data.success) {
+            // Capture product name before hiding modal
+            const productSelect = document.getElementById('orderProduct');
+            const productName = productSelect.options[productSelect.selectedIndex].text;
+
+            hideQuickOrderModal();
+            showNotification(data.message || 'Order created successfully!', 'success');
+            // Add order message to chat immediately
+            if (data.order) {
+              addOrderMessageToChat({
+                ...data.order,
+                product_name: productName,
+                quantity: orderData.quantity
+              });
+            }
+          } else {
+            showNotification(data.error || 'Failed to create order', 'error');
+          }
+        })
+        .catch(error => {
+          console.error('Error:', error);
+          showNotification('Failed to create order', 'error');
+        });
+    });
+
+    // Delete Customer Function
+    function deleteClient(clientId, clientName) {
+      if (confirm(`Are you sure you want to delete "${clientName}"? This action cannot be undone.`)) {
+        fetch(`clients/${clientId}`, {
+          method: 'DELETE',
+          headers: {
+            'Content-Type': 'application/json',
+          }
+        })
+          .then(response => response.json())
+          .then(data => {
+            if (data.success) {
+              showNotification('Customer deleted successfully!', 'success');
+              // Remove the client from the list
+              const clientElement = document.querySelector(`[data-client-id="${clientId}"]`);
+              if (clientElement) {
+                clientElement.remove();
+              }
+              // If this was the active client, clear the chat area
+              if (currentClientId == clientId) {
+                document.getElementById('chat-area').innerHTML = `
+                                <div class="flex-1 flex items-center justify-center text-gray-400">
+                                    <div class="text-center text-gray-500">
+                                        <i class="fas fa-comments text-6xl mb-4"></i>
+                                        <p>Select a client to start chatting</p>
+                                    </div>
+                                </div>
+                            `;
+                currentClientId = null;
+              }
+            } else {
+              showNotification(data.error || 'Failed to delete client', 'error');
+            }
+          })
+          .catch(error => {
+            console.error('Error:', error);
+            showNotification('Failed to delete client', 'error');
+          });
+      }
+    }
+
+    // New Client Form Handler
+    document.getElementById('new-client-form').addEventListener('submit', function (e) {
+      e.preventDefault();
+
+      const formData = new FormData(this);
+
+      fetch('clients', {
+        method: 'POST',
+        body: formData
+      })
+        .then(response => response.json())
+        .then(data => {
+          if (data.success) {
+            hideNewClientModal();
+            showNotification('Client added successfully!', 'success');
+            // Redirect to homepage after a short delay
+            setTimeout(() => {
+              window.location.href = '/';
+            }, 1500);
+          } else {
+            showNotification(data.error || 'Failed to add client', 'error');
+          }
+        })
+        .catch(error => {
+          console.error('Error:', error);
+          showNotification('Failed to add client', 'error');
+        });
+    });
+
+    document.getElementById('quickBookingForm').addEventListener('submit', function (e) {
+      e.preventDefault();
+
+      // Combine date and time values
+      const bookingDate = document.getElementById('bookingDate').value;
+      const bookingTime = document.getElementById('bookingTime').value;
+      // Ensure time is in HH:MM format by padding with leading zeros if needed
+      const [hours, minutes] = bookingTime.split(':');
+      const formattedTime = `${hours.padStart(2, '0')}:${minutes.padStart(2, '0')}`;
+      const bookingDateTime = `${bookingDate}T${formattedTime}`;
+
+      // Debug logging
+      console.log('Booking Date:', bookingDate);
+      console.log('Booking Time:', bookingTime);
+      console.log('Formatted Time:', formattedTime);
+      console.log('Final DateTime:', bookingDateTime);
+
+      const bookingData = {
+        client_id: parseInt(currentClientId),
+        service_id: parseInt(document.getElementById('bookingService').value),
+        customer_name: document.getElementById('bookingCustomerName').value,
+        customer_email: document.getElementById('bookingCustomerEmail').value,
+        customer_phone: document.getElementById('bookingCustomerPhone').value,
+        booking_date: bookingDateTime,
+        notes: document.getElementById('bookingNotes').value
+      };
+
+      fetch('/bookings', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(bookingData)
+      })
+        .then(response => response.json())
+        .then(data => {
+          if (data.success) {
+            // Capture service name before hiding modal
+            const serviceSelect = document.getElementById('bookingService');
+            const serviceName = serviceSelect.options[serviceSelect.selectedIndex].text;
+
+            hideQuickBookingModal();
+            showNotification(data.message || 'Booking created successfully!', 'success');
+            // Add booking message to chat immediately
+            if (data.booking) {
+              addBookingMessageToChat({
+                ...data.booking,
+                service_name: serviceName
+              });
+            }
+          } else {
+            showNotification(data.error || 'Failed to create booking', 'error');
+          }
+        })
+        .catch(error => {
+          console.error('Error:', error);
+          showNotification('Failed to create booking', 'error');
+        });
+    });
+
+    // Add order message to chat after successful creation
+    function addOrderMessageToChat(order) {
+      const messagesContainer = document.getElementById('messages-container');
+      if (!messagesContainer) return;
+
+      const messageDiv = document.createElement('div');
+      messageDiv.className = 'flex justify-end';
+
+      const messageHTML = '<div class="max-w-xs lg:max-w-md w-full"><div class="bg-blue-50 border border-blue-200 rounded-lg px-4 py-3" data-message-id="' + order.id + '" data-order-id="' + order.id + '"><div class="flex items-center justify-between mb-2"><div class="flex items-center space-x-2"><i class="fas fa-shopping-cart text-blue-600"></i><span class="font-semibold text-blue-800 text-sm">[' + order.id + ']</span><span class="text-gray-700 text-sm">' + (order.product_name || 'Product') + '</span><span class="text-xs bg-yellow-100 text-yellow-800 px-2 py-1 rounded">Pending</span></div><button onclick="openEditOrderModal(' + order.id + ')" class="text-blue-600 hover:text-blue-800 text-xs" title="Edit Order"><i class="fas fa-edit"></i></button></div><div class="order-details text-sm text-gray-700"><p class="text-sm">Order #' + (order.order_number || '') + ' - ' + (order.quantity || 1) + 'x - $' + parseFloat(order.total_amount || 0).toFixed(2) + '</p><p class="hidden order-notes-data">' + (order.notes || '') + '</p></div><div class="flex items-center justify-between mt-2"><p class="text-xs text-gray-500">' + new Date().toLocaleTimeString('en-US', {hour: 'numeric', minute: '2-digit', hour12: true}) + '</p></div></div></div></div>';
+
+      messageDiv.innerHTML = messageHTML;
+      messagesContainer.appendChild(messageDiv);
+      messagesContainer.scrollTop = messagesContainer.scrollHeight;
+    }
+
+    // Add booking message to chat after successful creation
+    function addBookingMessageToChat(booking) {
+      const messagesContainer = document.getElementById('messages-container');
+      if (!messagesContainer) return;
+
+      const bookingDate = booking.scheduled_date ? new Date(booking.scheduled_date) : new Date();
+      const bookingContent = '📅 BOOKING:' + booking.id + ' | ' + (booking.service_name || 'Service') + ' | ' + bookingDate.toLocaleDateString() + ' ' + bookingDate.toLocaleTimeString([], {hour: '2-digit', minute: '2-digit'}) + ' | Status: pending' + (booking.notes ? ' | Notes: ' + booking.notes : '');
+
+      const bookingMessage = `
+            <div class="flex justify-end">
+                <div class="max-w-xs lg:max-w-md w-full">
+                    <div class="bg-purple-50 border border-purple-200 rounded-lg px-4 py-3" data-message-id="${booking.id}" data-booking-id="${booking.id}">
+                        <div class="flex items-center justify-between mb-2">
+                            <div class="flex items-center space-x-2">
+                                <i class="fas fa-calendar text-purple-600"></i>
+                                <span class="font-semibold text-purple-800 text-sm">Booking</span>
+                                <span class="text-xs bg-yellow-100 text-yellow-800 px-2 py-1 rounded">Pending</span>
+                            </div>
+                            <button onclick="openEditBookingModal(${booking.id})" class="text-purple-600 hover:text-purple-800 text-xs" title="Edit Booking">
+                                <i class="fas fa-edit"></i>
+                            </button>
+                        </div>
+                        <div class="booking-details text-sm text-gray-700">
+                            <p class="text-sm">${bookingContent}</p>
+                            <p class="hidden booking-notes-data">${booking.notes || ''}</p>
+                        </div>
+                        <div class="flex items-center justify-between mt-2">
+                            <p class="text-xs text-gray-500">${new Date().toLocaleTimeString('en-US', {hour: 'numeric', minute: '2-digit', hour12: true})}</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        `;
+      messagesContainer.insertAdjacentHTML('beforeend', bookingMessage);
+      messagesContainer.scrollTop = messagesContainer.scrollHeight;
+    }
+
+    function toggleActionButtons() {
+      const actionButtons = document.getElementById('action-buttons');
+      const actionIcon = document.getElementById('action-icon');
+      const mainBtn = document.getElementById('main-action-btn');
+
+      if (actionButtons.classList.contains('hidden')) {
+        // Expand buttons
+        actionButtons.classList.remove('hidden');
+        actionIcon.classList.remove('fa-plus');
+        actionIcon.classList.add('fa-times');
+        mainBtn.classList.add('rotate-45');
+
+        // Add staggered animation to buttons
+        const buttons = actionButtons.querySelectorAll('button');
+        buttons.forEach((button, index) => {
+          button.style.opacity = '0';
+          button.style.transform = 'translateY(20px)';
+          setTimeout(() => {
+            button.style.opacity = '1';
+            button.style.transform = 'translateY(0)';
+          }, index * 50);
+        });
+      } else {
+        // Collapse buttons
+        actionButtons.classList.add('hidden');
+        actionIcon.classList.remove('fa-times');
+        actionIcon.classList.add('fa-plus');
+        mainBtn.classList.remove('rotate-45');
+      }
+    }
+
+    function sendMessage() {
+      const form = document.getElementById('message-form');
+      if (form) {
+        form.submit();
+      }
+    }
+
+    function createMessageAction(messageId, type) {
+      const title = prompt(`Create ${type}:`);
+      if (!title) return;
+
+      const description = prompt('Description (optional):');
+      const dueDate = type === 'booking' ? prompt('Date (YYYY-MM-DD):') : null;
+
+      const formData = new FormData();
+      formData.append('type', type);
+      formData.append('title', title);
+      formData.append('description', description || '');
+      if (dueDate) formData.append('due_date', dueDate);
+
+      htmx.ajax('POST', `/messages/${messageId}/actions`, {
+        target: '#actions-panel',
+        swap: 'innerHTML',
+        values: formData
+      });
+    }
+
+    document.addEventListener('DOMContentLoaded', function () {
+      // Handle conversation progress save button clicks
+      document.addEventListener('click', function (e) {
+        const saveBtn = e.target.closest('.save-progress-btn');
+        if (saveBtn) {
+          const clientId = saveBtn.getAttribute('data-customer-id');
+          const dropdown = document.querySelector('.conversation-progress-dropdown[data-customer-id="' + clientId + '"]');
+          if (dropdown && dropdown.value) {
+            saveConversationProgress(clientId, dropdown.value);
+          }
+        }
+
+        // Handle client item clicks (excluding dropdown and save button clicks)
+        const clientItem = e.target.closest('.client-item');
+        if (clientItem && !e.target.closest('.conversation-progress-dropdown') && !e.target.closest('.save-progress-btn')) {
+          const clientId = clientItem.getAttribute('data-client-id');
+          loadClient(clientId);
+        }
+      });
+    });
+
+    function saveConversationProgress(clientId, stage) {
+      console.log('Saving conversation progress:', clientId, stage);
+
+      // First get the conversation ID for this client
+      fetch('clients/' + clientId + '/conversation-id', {
+        method: 'GET'
+      })
+        .then(response => response.json())
+        .then(data => {
+          if (data.conversation_id) {
+            // Update progress score based on stage
+            const newScore = getProgressScore(stage);
+
+            // Create the progress update request
+            const formData = new FormData();
+            formData.append('current_stage', stage);
+            formData.append('progress_score', newScore);
+
+            fetch('/conversations/' + data.conversation_id + '/stage', {
+              method: 'PUT',
+              body: formData
+            })
+              .then(response => {
+                if (response.ok) {
+                  // Show success notification
+                  showNotification('Conversation progress updated successfully!', 'success');
+                } else {
+                  showNotification('Failed to update progress', 'error');
+                }
+              })
+              .catch(error => {
+                console.error('Error saving conversation progress:', error);
+                showNotification('Failed to save conversation progress: ' + error.message, 'error');
+              });
+          } else {
+            showNotification('Failed to get conversation ID', 'error');
+          }
+        })
+        .catch(error => {
+          console.error('Error getting conversation ID:', error);
+          showNotification('Failed to get conversation information', 'error');
+        });
+    }
+  </script>
+</body>
+
+</html>

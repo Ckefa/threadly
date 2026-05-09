@@ -1,0 +1,74 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>{{.Title}}</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+</head>
+
+<body class="bg-gray-100 min-h-screen flex items-center justify-center">
+  <div class="bg-white rounded-lg shadow-lg p-8 w-full max-w-md">
+    <div class="text-center mb-8">
+      <div class="inline-flex items-center justify-center w-16 h-16 bg-teal-100 rounded-full mb-4">
+        <i class="fas fa-shield-alt text-2xl text-teal-600"></i>
+      </div>
+      <h1 class="text-2xl font-bold text-gray-900">Threadly</h1>
+      <p class="text-gray-600 mt-2">Enter verification code</p>
+    </div>
+
+    <div class="bg-blue-50 border border-blue-200 text-blue-700 px-4 py-3 rounded-lg mb-6">
+      <i class="fas fa-info-circle mr-2"></i>
+      We've sent a 6-digit code to <strong>{{.Email}}</strong>
+      {{if .OTP}}
+      <br><small class="text-blue-600">Test OTP: <strong>{{.OTP}}</strong></small>
+      {{end}}
+    </div>
+
+    {{if .Error}}
+    <div class="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-lg mb-4">
+      <i class="fas fa-exclamation-circle mr-2"></i>
+      {{.Error}}
+    </div>
+    {{end}}
+
+    <form method="POST" action="/client/verify-otp" class="space-y-4">
+      <input type="hidden" name="email" value="{{.Email}}">
+
+      <div>
+        <label for="otp" class="block text-sm font-medium text-gray-700 mb-2">Verification Code</label>
+        <div class="relative">
+          <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+            <i class="fas fa-key text-gray-400"></i>
+          </div>
+          <input type="text" id="otp" name="otp" required maxlength="6" pattern="[0-9]{6}"
+            class="pl-10 w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-teal-500 focus:border-transparent text-center text-lg tracking-widest"
+            placeholder="000000">
+        </div>
+        <p class="text-xs text-gray-500 mt-1">Enter the 6-digit code sent to your email</p>
+      </div>
+
+      <button type="submit"
+        class="w-full bg-teal-600 text-white py-2 px-4 rounded-lg hover:bg-teal-700 transition duration-200 font-medium">
+        Verify & Sign In
+      </button>
+    </form>
+
+    <div class="text-center mt-6">
+      <a href="/client/login" class="text-teal-600 hover:text-teal-700 font-medium">
+        <i class="fas fa-arrow-left mr-2"></i>Back to login
+      </a>
+    </div>
+  </div>
+
+  <script>
+    // Auto-focus OTP input and format as numbers only
+    document.getElementById('otp').addEventListener('input', function (e) {
+      this.value = this.value.replace(/[^0-9]/g, '');
+    });
+  </script>
+</body>
+
+</html>
