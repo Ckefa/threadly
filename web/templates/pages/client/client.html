@@ -8,6 +8,16 @@
   <script src="https://unpkg.com/htmx.org@1.9.10"></script>
   <script src="https://cdn.tailwindcss.com"></script>
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  <style>
+    .unread-badge {
+      background-color: #ef4444; color: white; font-size: 12px; font-weight: bold;
+      min-width: 20px; height: 20px; border-radius: 10px; display: inline-flex;
+      align-items: center; justify-content: center; padding: 0 6px;
+      animation: pulse 2s infinite;
+    }
+    .unread-badge[data-count="1"] { background-color: #f59e0b; }
+    @keyframes pulse { 0%,100% { transform: scale(1); } 50% { transform: scale(1.1); } }
+  </style>
 </head>
 
 <body class="bg-gray-100 h-screen overflow-hidden">

@@ -1,6 +1,7 @@
 package routes
 
 import (
+	"threadly/internal/handlers"
 	"threadly/internal/handlers/client"
 
 	"github.com/gin-gonic/gin"
@@ -28,6 +29,7 @@ func SetupClientRoutes(r *gin.Engine) {
 		clientProtected.POST("/bookings", businessHandler.ClientCreateBooking)
 		clientProtected.POST("/orders/:id/update", client.ClientUpdateOrder)
 		clientProtected.POST("/bookings/:id/update", client.ClientUpdateBooking)
+		clientProtected.PUT("/businesses/:business_id/read", handlers.MarkClientConversationAsRead)
 		clientProtected.POST("/heartbeat", client.ClientHeartbeat)
 	}
 

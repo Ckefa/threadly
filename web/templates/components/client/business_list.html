@@ -17,7 +17,10 @@
           <h3 class="font-semibold text-gray-900">{{.FirstName}}</h3>
           <p class="text-sm text-gray-500">{{.BusinessType}}</p>
         </div>
-        <div class="flex flex-col items-end">
+        <div class="flex flex-col items-end space-y-1">
+          {{if gt .UnreadCount 0}}
+          <span class="unread-badge" data-count="{{.UnreadCount}}">{{.UnreadCount}}</span>
+          {{end}}
           <span class="inline-block w-2 h-2 bg-green-500 rounded-full"></span>
         </div>
       </div>

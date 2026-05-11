@@ -1,12 +1,24 @@
 let pollingInterval = null;
 
-requestAnimationFrame(function () {
-  const messagesContainer = document.getElementById('messages-container');
-  if (messagesContainer) {
-    messagesContainer.scrollTop = messagesContainer.scrollHeight;
-  }
-});
+scrollToBottom();
+markAsRead();
 startMessagePolling();
+
+function scrollToBottom() {
+  var container = document.getElementById('messages-container');
+  if (container) requestAnimationFrame(function () {
+    container.scrollTop = container.scrollHeight;
+  });
+}
+
+function markAsRead() {
+  fetch(`/business/clients/${clientId}/read`, { method: 'PUT' })
+    .then(function () {
+      var badge = document.querySelector('.client-item[data-client-id="' + clientId + '"] .unread-badge');
+      if (badge) badge.remove();
+    })
+    .catch(console.error);
+}
 
 function startMessagePolling() {
   pollingInterval = setInterval(function () {
@@ -23,14 +35,10 @@ function fetchMessages() {
       const newMessages = doc.getElementById('messages-container');
       const currentMessages = document.getElementById('messages-container');
 
-      if (newMessages && currentMessages) {
-        const newMessageCount = newMessages.children.length;
-        const currentMessageCount = currentMessages.children.length;
-
-        if (newMessageCount > currentMessageCount) {
-          currentMessages.innerHTML = newMessages.innerHTML;
-          currentMessages.scrollTop = currentMessages.scrollHeight;
-        }
+      if (newMessages && currentMessages && newMessages.innerHTML !== currentMessages.innerHTML) {
+        currentMessages.innerHTML = newMessages.innerHTML;
+        currentMessages.scrollTop = currentMessages.scrollHeight;
+        markAsRead();
       }
     })
     .catch(error => {

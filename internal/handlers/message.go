@@ -285,3 +285,22 @@ func MarkConversationAsRead(c *gin.Context) {
 
 	c.JSON(200, gin.H{"status": "ok"})
 }
+
+func MarkClientConversationAsRead(c *gin.Context) {
+	clientID := c.GetUint("client_id")
+	businessID, err := strconv.ParseUint(c.Param("business_id"), 10, 32)
+	if err != nil {
+		c.JSON(400, gin.H{"error": "Invalid business ID"})
+		return
+	}
+
+	now := time.Now()
+	if err := db.DB.Model(&models.Conversation{}).
+		Where("client_id = ? AND business_id = ?", clientID, businessID).
+		Update("last_read_by_client_at", &now).Error; err != nil {
+		c.JSON(500, gin.H{"error": "Failed to mark conversation as read"})
+		return
+	}
+
+	c.JSON(200, gin.H{"status": "ok"})
+}

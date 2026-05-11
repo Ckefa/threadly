@@ -1,26 +1,4 @@
-let heartbeatInterval = null;
 
-document.addEventListener('DOMContentLoaded', function () {
-  startHeartbeat();
-});
-
-function startHeartbeat() {
-  heartbeatInterval = setInterval(function () {
-    fetch('/client/heartbeat', {
-      method: 'POST',
-      headers: { 'Authorization': 'Bearer ' + getCookie('client_token') }
-    }).catch(console.error);
-  }, 30000);
-}
-
-function stopHeartbeat() {
-  if (heartbeatInterval) {
-    clearInterval(heartbeatInterval);
-    heartbeatInterval = null;
-  }
-}
-
-window.addEventListener('beforeunload', stopHeartbeat);
 
 function openClientOrderModal() {
   loadClientProducts();
@@ -163,14 +141,27 @@ function submitBookingForm() {
     .catch(e => { console.error(e); showNotification('Failed to send booking request', 'error'); });
 }
 
-window.addEventListener('load', function () {
-  const container = document.getElementById('messages-container');
-  if (container) container.scrollTop = container.scrollHeight;
-  fetchOrdersAndAddToChat();
-  startMessagePolling();
-});
+scrollToBottom();
+markAsRead();
+startMessagePolling();
+
+function scrollToBottom() {
+  var container = document.getElementById('messages-container');
+  if (container) requestAnimationFrame(function () {
+    container.scrollTop = container.scrollHeight;
+  });
+}
 
 let pollingInterval = null;
+
+function markAsRead() {
+  fetch(`/client/businesses/${businessId}/read`, { method: 'PUT' })
+    .then(function () {
+      var badge = document.querySelector('.business-item[data-business-id="' + businessId + '"] .unread-badge');
+      if (badge) badge.remove();
+    })
+    .catch(console.error);
+}
 
 function startMessagePolling() {
   pollingInterval = setInterval(function () {
@@ -181,25 +172,14 @@ function startMessagePolling() {
         const doc = parser.parseFromString(html, 'text/html');
         const newMsgs = doc.getElementById('messages-container');
         const curMsgs = document.getElementById('messages-container');
-        if (newMsgs && curMsgs && newMsgs.children.length > curMsgs.children.length) {
+        if (newMsgs && curMsgs && newMsgs.innerHTML !== curMsgs.innerHTML) {
           curMsgs.innerHTML = newMsgs.innerHTML;
           curMsgs.scrollTop = curMsgs.scrollHeight;
+          markAsRead();
         }
       })
       .catch(console.error);
   }, 5000);
-}
-
-function fetchOrdersAndAddToChat() {
-  fetch(`/client/businesses/${businessId}/orders`)
-    .then(r => r.json())
-    .then(orders => {
-      const container = document.getElementById('messages-container');
-      if (container) {
-        orders.forEach(o => addOrderMessageToChat({ ...o, product_name: o.product_name || 'Unknown Product' }));
-      }
-    })
-    .catch(console.error);
 }
 
 function addOrderMessageToChat(order) {

@@ -99,7 +99,6 @@ func VerifyClientOTP(c *gin.Context) {
 }
 
 func ClientDashboard(c *gin.Context) {
-	// Get client info from token
 	token := c.GetHeader("Authorization")
 	if token == "" {
 		token, _ = c.Cookie("client_token")
@@ -110,7 +109,6 @@ func ClientDashboard(c *gin.Context) {
 		return
 	}
 
-	// Remove "Bearer " prefix if present
 	if strings.HasPrefix(token, "Bearer ") {
 		token = strings.TrimPrefix(token, "Bearer ")
 	}
@@ -121,44 +119,35 @@ func ClientDashboard(c *gin.Context) {
 		return
 	}
 
-	log.Printf("ClientDashboard: Loading businesses for email=%s", claims.Email)
-
-	// Step 1: Get all clients for this client email
 	var client models.Client
 	db.DB.Where("email = ?", claims.Email).First(&client)
-	log.Printf("ClientDashboard: Found %v client email=%s", client.Name, claims.Email)
 
-	// Step 2: Get all conversations for these clients to find business IDs
-	var conversations []models.Conversation
-	db.DB.Where("client_id = ?", client.ID).Find(&conversations)
-	log.Printf("ClientDashboard: Found %d conversations for client ID=%v", len(conversations), client.ID)
-
-	// Extract unique business IDs from conversations
-	var businessIDs []uint
-	seen := make(map[uint]bool)
-	for _, conv := range conversations {
-		if conv.BusinessID > 0 && !seen[conv.BusinessID] {
-			businessIDs = append(businessIDs, conv.BusinessID)
-			seen[conv.BusinessID] = true
-		}
-	}
-	log.Printf("ClientDashboard: Found %d unique business IDs: %v", len(businessIDs), businessIDs)
-
-	var businesses []models.Business
-	if len(businessIDs) > 0 {
-		if err = db.DB.Where("id IN ?", businessIDs).Find(&businesses).Error; err != nil {
-			log.Printf("ClientDashboard: Error fetching businesses: %v", err)
-			c.HTML(500, "client.html", gin.H{
-				"Title": "Client Dashboard - Threadly",
-				"Error": "Failed to load businesses",
-			})
-			return
-		}
+	type BusinessWithUnread struct {
+		models.Business
+		ConversationID uint       `json:"conversation_id"`
+		UnreadCount    int        `json:"unread_count"`
+		LastMessageAt  *time.Time `json:"last_message_at"`
 	}
 
-	log.Printf("ClientDashboard: Found %d businesses for email=%s", len(businesses), claims.Email)
-	for i, b := range businesses {
-		log.Printf("ClientDashboard: Business[%d] ID=%d, Name=%s, Type=%s", i, b.ID, b.FirstName, b.BusinessType)
+	var businesses []BusinessWithUnread
+	query := `
+		SELECT
+			businesses.*,
+			conversations.id as conversation_id,
+			COUNT(CASE WHEN messages.sender = 'business' AND messages.created_at > COALESCE(conversations.last_read_by_client_at, '1970-01-01') THEN 1 END) as unread_count,
+			MAX(messages.created_at) as last_message_at
+		FROM businesses
+		JOIN conversations ON conversations.business_id = businesses.id AND conversations.client_id = ?
+		LEFT JOIN messages ON messages.conversation_id = conversations.id
+		GROUP BY businesses.id, conversations.id
+		ORDER BY unread_count DESC, last_message_at DESC
+	`
+	if err := db.DB.Raw(query, client.ID).Scan(&businesses).Error; err != nil {
+		c.HTML(500, "client.html", gin.H{
+			"Title": "Client Dashboard - Threadly",
+			"Error": "Failed to load businesses",
+		})
+		return
 	}
 
 	c.HTML(200, "client.html", gin.H{
