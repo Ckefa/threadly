@@ -1,10 +1,1086 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
-    <title>Test</title>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Threadly — CRM Powered by Real-Time Chat</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  <style>
+    @keyframes float { 0%,100%{transform:translateY(0)} 50%{transform:translateY(-12px)} }
+    @keyframes pulse-ring { 0%{box-shadow:0 0 0 0 rgba(13,148,136,0.4)} 70%{box-shadow:0 0 0 20px rgba(13,148,136,0)} 100%{box-shadow:0 0 0 0 rgba(13,148,136,0)} }
+    @keyframes slide-up { from{opacity:0;transform:translateY(30px)} to{opacity:1;transform:translateY(0)} }
+    @keyframes fade-in { from{opacity:0} to{opacity:1} }
+    @keyframes gradient { 0%{background-position:0% 50%} 50%{background-position:100% 50%} 100%{background-position:0% 50%} }
+    @keyframes blob { 0%,100%{transform:translate(0,0) scale(1)} 25%{transform:translate(20px,-30px) scale(1.1)} 50%{transform:translate(-20px,20px) scale(0.9)} 75%{transform:translate(30px,10px) scale(1.05)} }
+    .animate-float { animation: float 4s ease-in-out infinite; }
+    .animate-fade-in { animation: fade-in 1s ease-out; }
+    .animate-slide-up { animation: slide-up 0.8s ease-out; }
+    .animate-gradient { background-size: 200% 200%; animation: gradient 8s ease infinite; }
+    .animate-blob { animation: blob 10s ease-in-out infinite; }
+    .animate-delay-1 { animation-delay: 0.2s; }
+    .animate-delay-2 { animation-delay: 0.4s; }
+    .animate-delay-3 { animation-delay: 0.6s; }
+    .animate-delay-4 { animation-delay: 0.8s; }
+    .glass { backdrop-filter: blur(16px); background: rgba(255,255,255,0.7); }
+    .glass-dark { backdrop-filter: blur(16px); background: rgba(15,23,42,0.8); }
+    .gradient-text { background: linear-gradient(135deg,#0d9488,#0891b2,#7c3aed); -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text; }
+    .card-hover { transition: all 0.3s cubic-bezier(0.4,0,0.2,1); }
+    .card-hover:hover { transform: translateY(-6px); box-shadow: 0 20px 40px -12px rgba(0,0,0,0.15); }
+    .hero-gradient { background: linear-gradient(135deg,#0f172a 0%,#1e293b 50%,#0f172a 100%); }
+    .section-gradient { background: linear-gradient(180deg,#f8fafc 0%,#ffffff 100%); }
+    .feature-grid { display: grid; grid-template-columns: repeat(auto-fit,minmax(280px,1fr)); gap: 1.5rem; }
+    html { scroll-behavior: smooth; }
+    .stat-card { transition: all 0.3s ease; }
+    .stat-card:hover { transform: scale(1.05); }
+  </style>
 </head>
-<body>
-    <h1>Test Template</h1>
-    <p>This is a test template to verify rendering works.</p>
+<body class="bg-slate-50 text-slate-900 antialiased">
+
+  <!-- Navigation -->
+  <nav class="fixed top-0 left-0 right-0 z-50 glass border-b border-slate-200/60">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+      <div class="flex items-center justify-between h-16">
+        <a href="/" class="flex items-center space-x-2 group">
+          <div class="w-9 h-9 rounded-lg bg-gradient-to-br from-teal-500 to-cyan-600 flex items-center justify-center shadow-lg group-hover:shadow-teal-500/30 transition-shadow">
+            <i class="fas fa-comments text-white text-sm"></i>
+          </div>
+          <span class="text-xl font-bold bg-gradient-to-r from-teal-600 to-cyan-600 bg-clip-text text-transparent">Threadly</span>
+        </a>
+        <div class="hidden md:flex items-center space-x-8">
+          <a href="#features" class="text-sm font-medium text-slate-600 hover:text-teal-600 transition-colors">Features</a>
+          <a href="#how-it-works" class="text-sm font-medium text-slate-600 hover:text-teal-600 transition-colors">How It Works</a>
+          <a href="#for-businesses" class="text-sm font-medium text-slate-600 hover:text-teal-600 transition-colors">For Business</a>
+          <a href="#for-clients" class="text-sm font-medium text-slate-600 hover:text-teal-600 transition-colors">For Clients</a>
+        </div>
+        <div class="flex items-center space-x-3">
+          <a href="/business/login" class="hidden sm:inline-flex text-sm font-medium text-slate-600 hover:text-teal-600 transition-colors px-4 py-2">Business Login</a>
+          <a href="/client/login" class="inline-flex items-center px-5 py-2 rounded-lg bg-gradient-to-r from-teal-500 to-cyan-600 text-white text-sm font-semibold shadow-lg shadow-teal-500/25 hover:shadow-teal-500/40 hover:from-teal-600 hover:to-cyan-700 transition-all">
+            <i class="fas fa-rocket mr-2 text-xs"></i>Get Started
+          </a>
+        </div>
+      </div>
+    </div>
+  </nav>
+
+  <!-- Hero Section -->
+  <section class="relative hero-gradient min-h-screen pt-16 overflow-hidden">
+    <div class="absolute inset-0 overflow-hidden pointer-events-none">
+      <div class="absolute -top-40 -right-40 w-96 h-96 bg-teal-500/10 rounded-full blur-3xl animate-blob"></div>
+      <div class="absolute -bottom-40 -left-40 w-96 h-96 bg-cyan-500/10 rounded-full blur-3xl animate-blob" style="animation-delay:3s"></div>
+      <div class="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[800px] h-[800px] bg-purple-500/5 rounded-full blur-3xl animate-blob" style="animation-delay:6s"></div>
+    </div>
+
+    <div class="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-24 pb-20 lg:pt-32 lg:pb-28">
+      <div class="lg:grid lg:grid-cols-2 lg:gap-16 items-center">
+        <div class="animate-fade-in">
+          <div class="inline-flex items-center px-4 py-1.5 rounded-full bg-teal-500/10 border border-teal-500/20 text-teal-400 text-sm font-medium mb-6">
+            <i class="fas fa-sparkles mr-2 text-xs"></i>
+            The All-in-One Chat CRM
+          </div>
+          <h1 class="text-4xl sm:text-5xl lg:text-6xl font-extrabold text-white leading-tight">
+            Turn Every<br>
+            <span class="gradient-text">Conversation</span><br>
+            Into a Sale
+          </h1>
+          <p class="mt-6 text-lg sm:text-xl text-slate-300 leading-relaxed max-w-xl">
+            Threadly combines the familiarity of WhatsApp-style messaging with powerful CRM tools — order management, booking, analytics, and client portals — all in one seamless platform.
+          </p>
+          <div class="mt-8 flex flex-col sm:flex-row gap-4">
+            <a href="/client/login" class="inline-flex items-center justify-center px-8 py-3.5 rounded-xl bg-gradient-to-r from-teal-500 to-cyan-600 text-white font-semibold shadow-xl shadow-teal-500/25 hover:shadow-teal-500/40 hover:from-teal-600 hover:to-cyan-700 transition-all text-base">
+              Start as a Client
+              <i class="fas fa-arrow-right ml-2 text-sm"></i>
+            </a>
+            <a href="/business/login" class="inline-flex items-center justify-center px-8 py-3.5 rounded-xl bg-white/10 text-white font-semibold border border-white/20 hover:bg-white/20 transition-all text-base">
+              <i class="fas fa-store mr-2 text-sm"></i>
+              Register Your Business
+            </a>
+          </div>
+          <div class="mt-8 flex flex-wrap gap-3">
+            <a href="#features" class="inline-flex items-center gap-2 px-4 py-2 rounded-lg bg-white/5 text-slate-300 text-sm font-medium border border-white/10 hover:bg-white/10 hover:text-white hover:border-teal-500/30 transition-all">
+              <i class="fas fa-layer-group text-teal-400 text-xs"></i>
+              Explore Features
+            </a>
+            <a href="/business/register" class="inline-flex items-center gap-2 px-4 py-2 rounded-lg bg-white/5 text-slate-300 text-sm font-medium border border-white/10 hover:bg-white/10 hover:text-white hover:border-teal-500/30 transition-all">
+              <i class="fas fa-rocket text-teal-400 text-xs"></i>
+              Free Trial
+            </a>
+            <a href="#for-businesses" class="inline-flex items-center gap-2 px-4 py-2 rounded-lg bg-white/5 text-slate-300 text-sm font-medium border border-white/10 hover:bg-white/10 hover:text-white hover:border-teal-500/30 transition-all">
+              <i class="fas fa-chart-line text-teal-400 text-xs"></i>
+              Business Dashboard
+            </a>
+            <a href="#for-clients" class="inline-flex items-center gap-2 px-4 py-2 rounded-lg bg-white/5 text-slate-300 text-sm font-medium border border-white/10 hover:bg-white/10 hover:text-white hover:border-teal-500/30 transition-all">
+              <i class="fas fa-user text-teal-400 text-xs"></i>
+              Client Portal
+            </a>
+            <a href="#how-it-works" class="inline-flex items-center gap-2 px-4 py-2 rounded-lg bg-white/5 text-slate-300 text-sm font-medium border border-white/10 hover:bg-white/10 hover:text-white hover:border-teal-500/30 transition-all">
+              <i class="fas fa-circle-play text-teal-400 text-xs"></i>
+              How It Works
+            </a>
+          </div>
+          <div class="mt-6 flex items-center gap-8 text-sm text-slate-400">
+            <div class="flex items-center gap-2">
+              <i class="fas fa-shield-alt text-teal-400"></i>
+              <span>No credit card</span>
+            </div>
+            <div class="flex items-center gap-2">
+              <i class="fas fa-clock text-teal-400"></i>
+              <span>2-minute setup</span>
+            </div>
+            <div class="flex items-center gap-2">
+              <i class="fas fa-infinity text-teal-400"></i>
+              <span>Free tier available</span>
+            </div>
+          </div>
+        </div>
+
+        <div class="hidden lg:block relative animate-fade-in animate-delay-2">
+          <div class="relative">
+            <div class="absolute -inset-4 bg-gradient-to-r from-teal-500/20 to-cyan-500/20 rounded-3xl blur-xl"></div>
+            <div class="relative bg-slate-800/80 backdrop-blur-sm rounded-2xl border border-slate-700/50 overflow-hidden shadow-2xl">
+              <div class="px-5 py-3 border-b border-slate-700/50 flex items-center space-x-2">
+                <div class="flex space-x-1.5">
+                  <div class="w-3 h-3 rounded-full bg-red-500/80"></div>
+                  <div class="w-3 h-3 rounded-full bg-yellow-500/80"></div>
+                  <div class="w-3 h-3 rounded-full bg-green-500/80"></div>
+                </div>
+                <span class="text-xs text-slate-400 ml-3">Threadly Chat — Acme Corp</span>
+              </div>
+              <div class="p-5 space-y-4">
+                <div class="flex items-start space-x-3">
+                  <div class="w-8 h-8 rounded-full bg-gradient-to-br from-teal-400 to-cyan-500 flex items-center justify-center text-white text-xs font-bold shrink-0">S</div>
+                  <div class="flex-1">
+                    <div class="bg-slate-700/50 rounded-2xl rounded-tl-none px-4 py-2.5 max-w-xs">
+                      <p class="text-sm text-slate-200">Hi! I'd love to order the premium package for my office renovation.</p>
+                    </div>
+                    <span class="text-xs text-slate-500 mt-1 block">10:32 AM</span>
+                  </div>
+                </div>
+                <div class="flex items-start space-x-3 flex-row-reverse">
+                  <div class="w-8 h-8 rounded-full bg-gradient-to-br from-purple-400 to-pink-500 flex items-center justify-center text-white text-xs font-bold shrink-0">B</div>
+                  <div class="flex-1 flex flex-col items-end">
+                    <div class="bg-teal-600/80 rounded-2xl rounded-tr-none px-4 py-2.5 max-w-xs">
+                      <p class="text-sm text-white">Absolutely! Let me check our current inventory and create a quote for you.</p>
+                    </div>
+                    <span class="text-xs text-slate-500 mt-1 block">10:33 AM</span>
+                  </div>
+                </div>
+                <div class="flex items-start space-x-3">
+                  <div class="w-8 h-8 rounded-full bg-gradient-to-br from-teal-400 to-cyan-500 flex items-center justify-center text-white text-xs font-bold shrink-0">S</div>
+                  <div class="flex-1">
+                    <div class="bg-slate-700/50 rounded-2xl rounded-tl-none px-4 py-2.5 max-w-xs">
+                      <p class="text-sm text-slate-200">Great, what's the estimated delivery time?</p>
+                    </div>
+                    <span class="text-xs text-slate-500 mt-1 block">10:34 AM</span>
+                  </div>
+                </div>
+                <div class="flex items-start space-x-3 flex-row-reverse">
+                  <div class="w-8 h-8 rounded-full bg-gradient-to-br from-purple-400 to-pink-500 flex items-center justify-center text-white text-xs font-bold shrink-0">B</div>
+                  <div class="flex-1 flex flex-col items-end">
+                    <div class="bg-blue-600/80 rounded-2xl rounded-tr-none px-4 py-2.5">
+                      <div class="flex items-center mb-1">
+                        <i class="fas fa-shopping-cart text-blue-300 text-xs"></i>
+                        <span class="font-semibold text-white text-sm ml-2">Order #1042</span>
+                        <button class="ml-auto text-blue-300/60 hover:text-blue-300 transition-colors" title="Edit Order">
+                          <i class="fas fa-edit text-[10px]"></i>
+                        </button>
+                      </div>
+                      <p class="text-sm text-blue-100">Premium Renovation Package</p>
+                      <p class="text-sm text-blue-100">Qty: 1 — $2,499.00</p>
+                      <span class="inline-block mt-1.5 text-xs bg-yellow-500/20 text-yellow-300 px-2 py-0.5 rounded">Pending</span>
+                    </div>
+                    <span class="text-xs text-slate-500 mt-1 block">10:35 AM</span>
+                  </div>
+                </div>
+                <div class="flex items-start space-x-3 flex-row-reverse">
+                  <div class="w-8 h-8 rounded-full bg-gradient-to-br from-purple-400 to-pink-500 flex items-center justify-center text-white text-xs font-bold shrink-0">B</div>
+                  <div class="flex-1 flex flex-col items-end">
+                    <div class="bg-gradient-to-br from-purple-600/80 to-pink-600/80 rounded-2xl rounded-tr-none px-4 py-2.5">
+                      <div class="flex items-center mb-1">
+                        <i class="fas fa-calendar text-purple-300 text-xs"></i>
+                        <span class="font-semibold text-white text-sm ml-2">Booking #204</span>
+                        <button class="ml-auto text-purple-300/60 hover:text-purple-300 transition-colors" title="Edit Booking">
+                          <i class="fas fa-edit text-[10px]"></i>
+                        </button>
+                      </div>
+                      <p class="text-sm text-purple-100">Site Consultation — 2 hours</p>
+                      <p class="text-sm text-purple-100">Mar 18, 2026 at 2:00 PM</p>
+                      <span class="inline-block mt-1.5 text-xs bg-green-500/20 text-green-300 px-2 py-0.5 rounded">Confirmed</span>
+                    </div>
+                    <span class="text-xs text-slate-500 mt-1 block">10:36 AM</span>
+                  </div>
+                </div>
+              </div>
+              <div class="px-4 py-3 border-t border-slate-700/50">
+                <div class="grid grid-cols-4 gap-2">
+                  <button class="flex flex-col items-center gap-1 p-2.5 rounded-xl bg-teal-500/10 hover:bg-teal-500/20 border border-teal-500/20 transition-all group cursor-default">
+                    <i class="fas fa-shopping-cart text-teal-400 text-sm group-hover:scale-110 transition-transform"></i>
+                    <span class="text-[10px] text-slate-400 font-medium">Order</span>
+                  </button>
+                  <button class="flex flex-col items-center gap-1 p-2.5 rounded-xl bg-purple-500/10 hover:bg-purple-500/20 border border-purple-500/20 transition-all group cursor-default">
+                    <i class="fas fa-calendar text-purple-400 text-sm group-hover:scale-110 transition-transform"></i>
+                    <span class="text-[10px] text-slate-400 font-medium">Booking</span>
+                  </button>
+                  <button class="flex flex-col items-center gap-1 p-2.5 rounded-xl bg-amber-500/10 hover:bg-amber-500/20 border border-amber-500/20 transition-all group cursor-default">
+                    <i class="fas fa-file-invoice text-amber-400 text-sm group-hover:scale-110 transition-transform"></i>
+                    <span class="text-[10px] text-slate-400 font-medium">Quote</span>
+                  </button>
+                  <button class="flex flex-col items-center gap-1 p-2.5 rounded-xl bg-emerald-500/10 hover:bg-emerald-500/20 border border-emerald-500/20 transition-all group cursor-default">
+                    <i class="fas fa-credit-card text-emerald-400 text-sm group-hover:scale-110 transition-transform"></i>
+                    <span class="text-[10px] text-slate-400 font-medium">Payment</span>
+                  </button>
+                </div>
+                <div class="mt-3 flex items-center space-x-2">
+                  <div class="flex-1 bg-slate-700/30 rounded-full px-4 py-2 text-sm text-slate-400">
+                    <i class="far fa-smile mr-2"></i>Type a message...
+                  </div>
+                  <div class="w-9 h-9 rounded-full bg-teal-500 flex items-center justify-center shrink-0">
+                    <i class="fas fa-paper-plane text-white text-xs"></i>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Stats Bar -->
+    <div class="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pb-16">
+      <div class="grid grid-cols-2 md:grid-cols-4 gap-6 p-8 rounded-2xl bg-white/5 border border-white/10 backdrop-blur-sm">
+        <div class="text-center stat-card cursor-default">
+          <div class="text-3xl font-bold text-white">10K+</div>
+          <div class="text-sm text-slate-400 mt-1">Active Conversations</div>
+        </div>
+        <div class="text-center stat-card cursor-default">
+          <div class="text-3xl font-bold text-white">5K+</div>
+          <div class="text-sm text-slate-400 mt-1">Registered Businesses</div>
+        </div>
+        <div class="text-center stat-card cursor-default">
+          <div class="text-3xl font-bold text-white">99.9%</div>
+          <div class="text-sm text-slate-400 mt-1">Uptime Guarantee</div>
+        </div>
+        <div class="text-center stat-card cursor-default">
+          <div class="text-3xl font-bold text-white">50K+</div>
+          <div class="text-sm text-slate-400 mt-1">Orders Processed</div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Trusted By Bar -->
+  <section class="py-12 bg-white border-b border-slate-100">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+      <p class="text-center text-sm font-medium text-slate-400 uppercase tracking-wider mb-8">Trusted by growing businesses across industries</p>
+      <div class="flex flex-wrap items-center justify-center gap-x-12 gap-y-6 opacity-50">
+        <div class="flex items-center space-x-2 text-slate-400"><i class="fas fa-store text-2xl"></i><span class="font-semibold text-lg">RetailHub</span></div>
+        <div class="flex items-center space-x-2 text-slate-400"><i class="fas fa-cut text-2xl"></i><span class="font-semibold text-lg">StyleStudio</span></div>
+        <div class="flex items-center space-x-2 text-slate-400"><i class="fas fa-wrench text-2xl"></i><span class="font-semibold text-lg">FixIt Pro</span></div>
+        <div class="flex items-center space-x-2 text-slate-400"><i class="fas fa-spa text-2xl"></i><span class="font-semibold text-lg">ZenSpa</span></div>
+        <div class="flex items-center space-x-2 text-slate-400"><i class="fas fa-dumbbell text-2xl"></i><span class="font-semibold text-lg">FitLife</span></div>
+        <div class="flex items-center space-x-2 text-slate-400"><i class="fas fa-camera text-2xl"></i><span class="font-semibold text-lg">SnapPhoto</span></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Features Section -->
+  <section id="features" class="py-20 lg:py-28 section-gradient">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+      <div class="text-center max-w-3xl mx-auto">
+        <div class="inline-flex items-center px-4 py-1.5 rounded-full bg-teal-100 text-teal-700 text-sm font-medium mb-4">
+          <i class="fas fa-layer-group mr-2 text-xs"></i>
+          Everything You Need
+        </div>
+        <h2 class="text-3xl sm:text-4xl font-bold text-slate-900">Built for how modern businesses <span class="gradient-text">communicate</span></h2>
+        <p class="mt-4 text-lg text-slate-600">Threadly replaces a dozen scattered tools with one unified platform. Chat, sell, schedule, and analyze — all in one place.</p>
+      </div>
+
+      <!-- Carousel -->
+      <style>
+        .carousel-slides { display: flex; transition: transform 0.6s cubic-bezier(0.4,0,0.2,1); }
+        .carousel-slide { min-width: 100%; }
+        #s1:checked ~ .carousel-slides { transform: translateX(0); }
+        #s2:checked ~ .carousel-slides { transform: translateX(-100%); }
+        #s3:checked ~ .carousel-slides { transform: translateX(-200%); }
+        #s4:checked ~ .carousel-slides { transform: translateX(-300%); }
+        #s5:checked ~ .carousel-slides { transform: translateX(-400%); }
+        .carousel-dot { transition: all 0.3s ease; cursor: pointer; }
+        #s1:checked ~ .carousel-nav label[for="s1"],
+        #s2:checked ~ .carousel-nav label[for="s2"],
+        #s3:checked ~ .carousel-nav label[for="s3"],
+        #s4:checked ~ .carousel-nav label[for="s4"],
+        #s5:checked ~ .carousel-nav label[for="s5"] { background: #0d9488; width: 32px; }
+        .carousel-prev, .carousel-next { position: absolute; top: 50%; transform: translateY(-50%); z-index: 10; opacity: 0; transition: opacity 0.3s ease; }
+        .carousel-wrap:hover .carousel-prev, .carousel-wrap:hover .carousel-next { opacity: 1; }
+      </style>
+      <div class="mt-16 max-w-6xl mx-auto carousel-wrap relative">
+        <input type="radio" name="carousel" id="s1" checked hidden>
+        <input type="radio" name="carousel" id="s2" hidden>
+        <input type="radio" name="carousel" id="s3" hidden>
+        <input type="radio" name="carousel" id="s4" hidden>
+        <input type="radio" name="carousel" id="s5" hidden>
+
+        <div class="carousel-slides rounded-2xl">
+          <!-- Slide 1: Business Dashboard -->
+          <div class="carousel-slide px-2">
+            <div class="lg:grid lg:grid-cols-2 lg:gap-10 items-center bg-white rounded-2xl border border-slate-200 shadow-lg overflow-hidden">
+              <div class="p-8 lg:p-10">
+                <div class="inline-flex items-center px-3 py-1 rounded-full bg-teal-100 text-teal-700 text-xs font-medium mb-4">
+                  <i class="fas fa-store mr-1.5 text-[10px]"></i>Business
+                </div>
+                <h3 class="text-2xl font-bold text-slate-900">Business Dashboard</h3>
+                <p class="mt-3 text-slate-600 leading-relaxed">At-a-glance overview of your entire operation. Track revenue, monitor active conversations, view pending orders and bookings, and analyze conversion rates — all from one central hub.</p>
+                <ul class="mt-5 space-y-2.5">
+                  <li class="flex items-center gap-2.5 text-sm text-slate-600"><i class="fas fa-check-circle text-teal-500 text-sm"></i>Real-time revenue & performance metrics</li>
+                  <li class="flex items-center gap-2.5 text-sm text-slate-600"><i class="fas fa-check-circle text-teal-500 text-sm"></i>Active client tracking with online status</li>
+                  <li class="flex items-center gap-2.5 text-sm text-slate-600"><i class="fas fa-check-circle text-teal-500 text-sm"></i>Pending orders & bookings at a glance</li>
+                  <li class="flex items-center gap-2.5 text-sm text-slate-600"><i class="fas fa-check-circle text-teal-500 text-sm"></i>7-day revenue trend visualization</li>
+                </ul>
+              </div>
+              <div class="p-6 lg:p-8 bg-slate-900">
+                <div class="bg-slate-800/80 rounded-xl border border-slate-700/50 overflow-hidden shadow-xl">
+                  <div class="px-4 py-2.5 border-b border-slate-700/50 flex items-center justify-between">
+                    <span class="text-xs font-medium text-slate-400">Dashboard — Acme Corp</span>
+                    <span class="text-[10px] bg-teal-500/20 text-teal-300 px-2 py-0.5 rounded-full">Live</span>
+                  </div>
+                  <div class="p-4 space-y-3">
+                    <div class="grid grid-cols-2 gap-2">
+                      <div class="bg-slate-700/30 rounded-lg p-2.5">
+                        <p class="text-[10px] text-slate-400">Revenue Today</p>
+                        <p class="text-base font-bold text-white mt-0.5">$4,280</p>
+                        <p class="text-[10px] text-green-400"><i class="fas fa-arrow-up mr-0.5"></i>+12.5%</p>
+                      </div>
+                      <div class="bg-slate-700/30 rounded-lg p-2.5">
+                        <p class="text-[10px] text-slate-400">Clients</p>
+                        <p class="text-base font-bold text-white mt-0.5">48</p>
+                        <p class="text-[10px] text-green-400"><i class="fas fa-arrow-up mr-0.5"></i>+8</p>
+                      </div>
+                      <div class="bg-slate-700/30 rounded-lg p-2.5">
+                        <p class="text-[10px] text-slate-400">Orders</p>
+                        <p class="text-base font-bold text-white mt-0.5">12</p>
+                        <p class="text-[10px] text-amber-400">Pending</p>
+                      </div>
+                      <div class="bg-slate-700/30 rounded-lg p-2.5">
+                        <p class="text-[10px] text-slate-400">Conv. Rate</p>
+                        <p class="text-base font-bold text-white mt-0.5">68%</p>
+                        <p class="text-[10px] text-green-400"><i class="fas fa-arrow-up mr-0.5"></i>+5.2%</p>
+                      </div>
+                    </div>
+                    <div class="bg-slate-700/30 rounded-lg p-3">
+                      <div class="flex justify-between mb-2">
+                        <span class="text-[10px] text-slate-400">Revenue (7 days)</span>
+                        <span class="text-[10px] text-slate-500">+23%</span>
+                      </div>
+                      <div class="flex items-end gap-1 h-12">
+                        <div class="flex-1 bg-teal-500/30 rounded-t" style="height:40%"></div>
+                        <div class="flex-1 bg-teal-500/40 rounded-t" style="height:55%"></div>
+                        <div class="flex-1 bg-teal-500/50 rounded-t" style="height:45%"></div>
+                        <div class="flex-1 bg-teal-500/70 rounded-t" style="height:70%"></div>
+                        <div class="flex-1 bg-teal-500/60 rounded-t" style="height:60%"></div>
+                        <div class="flex-1 bg-teal-500/90 rounded-t" style="height:85%"></div>
+                        <div class="flex-1 bg-teal-500 rounded-t" style="height:100%"></div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Slide 2: Chat & Orders -->
+          <div class="carousel-slide px-2">
+            <div class="lg:grid lg:grid-cols-2 lg:gap-10 items-center bg-white rounded-2xl border border-slate-200 shadow-lg overflow-hidden">
+              <div class="p-8 lg:p-10">
+                <div class="inline-flex items-center px-3 py-1 rounded-full bg-cyan-100 text-cyan-700 text-xs font-medium mb-4">
+                  <i class="fas fa-comment-dots mr-1.5 text-[10px]"></i>Both
+                </div>
+                <h3 class="text-2xl font-bold text-slate-900">Chat & Inline Orders</h3>
+                <p class="mt-3 text-slate-600 leading-relaxed">WhatsApp-style messaging with integrated order and booking cards. Clients chat naturally, businesses respond with structured actions — no context switching, no missed opportunities.</p>
+                <ul class="mt-5 space-y-2.5">
+                  <li class="flex items-center gap-2.5 text-sm text-slate-600"><i class="fas fa-check-circle text-teal-500 text-sm"></i>Real-time messaging with read indicators</li>
+                  <li class="flex items-center gap-2.5 text-sm text-slate-600"><i class="fas fa-check-circle text-teal-500 text-sm"></i>Structured order cards with editable details</li>
+                  <li class="flex items-center gap-2.5 text-sm text-slate-600"><i class="fas fa-check-circle text-teal-500 text-sm"></i>Booking confirmations within the conversation</li>
+                  <li class="flex items-center gap-2.5 text-sm text-slate-600"><i class="fas fa-check-circle text-teal-500 text-sm"></i>Quick action buttons for instant responses</li>
+                </ul>
+              </div>
+              <div class="p-6 lg:p-8 bg-slate-900">
+                <div class="bg-slate-800/80 rounded-xl border border-slate-700/50 overflow-hidden shadow-xl">
+                  <div class="px-4 py-2.5 border-b border-slate-700/50 flex items-center space-x-2">
+                    <div class="w-2 h-2 rounded-full bg-green-500"></div>
+                    <span class="text-xs text-slate-300">Sarah's Design Studio</span>
+                  </div>
+                  <div class="p-4 space-y-3 max-h-[300px] overflow-hidden">
+                    <div class="flex items-start gap-2">
+                      <div class="w-6 h-6 rounded-full bg-teal-500 flex items-center justify-center text-white text-[9px] font-bold shrink-0">S</div>
+                      <div class="bg-slate-700/50 rounded-2xl rounded-tl-none px-3 py-2 max-w-[80%]">
+                        <p class="text-xs text-slate-200">Hi! I want to order the premium renovation package.</p>
+                      </div>
+                    </div>
+                    <div class="flex items-start gap-2 flex-row-reverse">
+                      <div class="w-6 h-6 rounded-full bg-purple-500 flex items-center justify-center text-white text-[9px] font-bold shrink-0">B</div>
+                      <div class="bg-teal-600/80 rounded-2xl rounded-tr-none px-3 py-2 max-w-[80%]">
+                        <p class="text-xs text-white">Let me set that up for you!</p>
+                      </div>
+                    </div>
+                    <div class="flex items-start gap-2 flex-row-reverse">
+                      <div class="w-6 h-6 rounded-full bg-purple-500 flex items-center justify-center text-white text-[9px] font-bold shrink-0">B</div>
+                      <div class="bg-blue-600/80 rounded-2xl rounded-tr-none px-3 py-2">
+                        <div class="flex items-center gap-1.5 mb-1">
+                          <i class="fas fa-shopping-cart text-blue-300 text-[10px]"></i>
+                          <span class="font-semibold text-white text-[11px]">Order #1042</span>
+                          <i class="fas fa-edit text-blue-300/50 text-[8px] ml-auto"></i>
+                        </div>
+                        <p class="text-[11px] text-blue-100">Premium Renovation Pack</p>
+                        <p class="text-[11px] text-blue-100">Qty: 1 — $2,499.00</p>
+                        <span class="inline-block mt-1 text-[9px] bg-yellow-500/20 text-yellow-300 px-1.5 py-0.5 rounded">Pending</span>
+                      </div>
+                    </div>
+                    <div class="flex items-start gap-2">
+                      <div class="w-6 h-6 rounded-full bg-teal-500 flex items-center justify-center text-white text-[9px] font-bold shrink-0">S</div>
+                      <div class="bg-slate-700/50 rounded-2xl rounded-tl-none px-3 py-2 max-w-[80%]">
+                        <p class="text-xs text-slate-200">Perfect, thank you!</p>
+                      </div>
+                    </div>
+                  </div>
+                  <div class="px-4 py-2.5 border-t border-slate-700/50 flex items-center gap-2">
+                    <div class="flex-1 bg-slate-700/30 rounded-full px-3 py-1.5 text-[11px] text-slate-400"><i class="far fa-smile mr-1.5"></i>Reply...</div>
+                    <div class="w-7 h-7 rounded-full bg-teal-500 flex items-center justify-center"><i class="fas fa-paper-plane text-white text-[9px]"></i></div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Slide 3: Booking & Scheduling -->
+          <div class="carousel-slide px-2">
+            <div class="lg:grid lg:grid-cols-2 lg:gap-10 items-center bg-white rounded-2xl border border-slate-200 shadow-lg overflow-hidden">
+              <div class="p-8 lg:p-10">
+                <div class="inline-flex items-center px-3 py-1 rounded-full bg-purple-100 text-purple-700 text-xs font-medium mb-4">
+                  <i class="fas fa-calendar mr-1.5 text-[10px]"></i>Both
+                </div>
+                <h3 class="text-2xl font-bold text-slate-900">Booking & Scheduling</h3>
+                <p class="mt-3 text-slate-600 leading-relaxed">End-to-end booking management. Clients schedule appointments directly through chat, businesses manage availability, and automated confirmations keep everyone in sync.</p>
+                <ul class="mt-5 space-y-2.5">
+                  <li class="flex items-center gap-2.5 text-sm text-slate-600"><i class="fas fa-check-circle text-teal-500 text-sm"></i>In-chat booking with service selection</li>
+                  <li class="flex items-center gap-2.5 text-sm text-slate-600"><i class="fas fa-check-circle text-teal-500 text-sm"></i>Automated conflict prevention</li>
+                  <li class="flex items-center gap-2.5 text-sm text-slate-600"><i class="fas fa-check-circle text-teal-500 text-sm"></i>Status tracking: pending → confirmed → completed</li>
+                  <li class="flex items-center gap-2.5 text-sm text-slate-600"><i class="fas fa-check-circle text-teal-500 text-sm"></i>Client self-service rescheduling & cancellation</li>
+                </ul>
+              </div>
+              <div class="p-6 lg:p-8 bg-gradient-to-br from-purple-900 to-pink-900">
+                <div class="bg-white/10 backdrop-blur-sm rounded-xl border border-white/20 overflow-hidden shadow-xl">
+                  <div class="px-4 py-2.5 border-b border-white/10 flex items-center justify-between">
+                    <span class="text-xs font-medium text-purple-200">Upcoming Bookings</span>
+                    <span class="text-[10px] bg-purple-500/30 text-purple-200 px-2 py-0.5 rounded-full">Today</span>
+                  </div>
+                  <div class="p-4 space-y-2.5">
+                    <div class="bg-white/10 rounded-lg p-3 flex items-center gap-3">
+                      <div class="w-10 h-10 rounded-full bg-purple-500/30 flex items-center justify-center text-purple-200 text-sm font-bold">10</div>
+                      <div class="flex-1">
+                        <p class="text-sm font-medium text-white">Site Consultation</p>
+                        <p class="text-[11px] text-purple-200">Sarah Johnson — 2 hrs</p>
+                      </div>
+                      <span class="text-[10px] bg-green-500/20 text-green-300 px-2 py-0.5 rounded-full">Confirmed</span>
+                    </div>
+                    <div class="bg-white/10 rounded-lg p-3 flex items-center gap-3">
+                      <div class="w-10 h-10 rounded-full bg-pink-500/30 flex items-center justify-center text-pink-200 text-sm font-bold">2</div>
+                      <div class="flex-1">
+                        <p class="text-sm font-medium text-white">Interior Design Review</p>
+                        <p class="text-[11px] text-pink-200">Mike Chen — 1 hr</p>
+                      </div>
+                      <span class="text-[10px] bg-yellow-500/20 text-yellow-300 px-2 py-0.5 rounded-full">Pending</span>
+                    </div>
+                    <div class="bg-white/10 rounded-lg p-3 flex items-center gap-3">
+                      <div class="w-10 h-10 rounded-full bg-amber-500/30 flex items-center justify-center text-amber-200 text-sm font-bold">4</div>
+                      <div class="flex-1">
+                        <p class="text-sm font-medium text-white">Material Selection</p>
+                        <p class="text-[11px] text-amber-200">Lisa Park — 1.5 hrs</p>
+                      </div>
+                      <span class="text-[10px] bg-green-500/20 text-green-300 px-2 py-0.5 rounded-full">Confirmed</span>
+                    </div>
+                  </div>
+                  <div class="px-4 py-2.5 border-t border-white/10 flex justify-center">
+                    <span class="text-[11px] text-purple-200"><i class="fas fa-plus mr-1"></i>New Booking</span>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Slide 4: Client Portal -->
+          <div class="carousel-slide px-2">
+            <div class="lg:grid lg:grid-cols-2 lg:gap-10 items-center bg-white rounded-2xl border border-slate-200 shadow-lg overflow-hidden">
+              <div class="p-8 lg:p-10">
+                <div class="inline-flex items-center px-3 py-1 rounded-full bg-amber-100 text-amber-700 text-xs font-medium mb-4">
+                  <i class="fas fa-user mr-1.5 text-[10px]"></i>Client
+                </div>
+                <h3 class="text-2xl font-bold text-slate-900">Client Experience</h3>
+                <p class="mt-3 text-slate-600 leading-relaxed">A dedicated portal where clients manage everything. Orders, bookings, chat history, and account settings — all accessible with a single OTP login, no passwords required.</p>
+                <ul class="mt-5 space-y-2.5">
+                  <li class="flex items-center gap-2.5 text-sm text-slate-600"><i class="fas fa-check-circle text-teal-500 text-sm"></i>Secure OTP-based authentication</li>
+                  <li class="flex items-center gap-2.5 text-sm text-slate-600"><i class="fas fa-check-circle text-teal-500 text-sm"></i>Unified view of all connected businesses</li>
+                  <li class="flex items-center gap-2.5 text-sm text-slate-600"><i class="fas fa-check-circle text-teal-500 text-sm"></i>Self-service order editing & cancellation</li>
+                  <li class="flex items-center gap-2.5 text-sm text-slate-600"><i class="fas fa-check-circle text-teal-500 text-sm"></i>Booking rescheduling with availability check</li>
+                </ul>
+              </div>
+              <div class="p-6 lg:p-8 bg-gradient-to-br from-amber-800 to-orange-900">
+                <div class="bg-white/10 backdrop-blur-sm rounded-xl border border-white/20 overflow-hidden shadow-xl">
+                  <div class="px-4 py-2.5 border-b border-white/10 flex items-center justify-between">
+                    <div class="flex items-center gap-2">
+                      <div class="w-7 h-7 rounded-full bg-teal-500 flex items-center justify-center text-white text-[10px] font-bold">S</div>
+                      <span class="text-xs font-medium text-amber-100">Sarah's Dashboard</span>
+                    </div>
+                    <div class="w-2 h-2 rounded-full bg-green-500"></div>
+                  </div>
+                  <div class="p-4 space-y-2.5">
+                    <div class="bg-white/10 rounded-lg p-3">
+                      <div class="flex items-center justify-between mb-1.5">
+                        <span class="text-xs font-medium text-amber-100">Connected Businesses</span>
+                        <span class="text-[10px] text-amber-200">3 active</span>
+                      </div>
+                      <div class="space-y-2">
+                        <div class="flex items-center gap-2.5 bg-white/5 rounded-lg p-2">
+                          <div class="w-8 h-8 rounded-full bg-teal-500/30 flex items-center justify-center"><i class="fas fa-store text-teal-300 text-xs"></i></div>
+                          <div class="flex-1">
+                            <p class="text-xs font-medium text-white">Acme Corp</p>
+                            <p class="text-[10px] text-amber-200">2 unread messages</p>
+                          </div>
+                          <span class="w-5 h-5 rounded-full bg-red-500 text-white text-[9px] flex items-center justify-center font-bold">2</span>
+                        </div>
+                        <div class="flex items-center gap-2.5 bg-white/5 rounded-lg p-2">
+                          <div class="w-8 h-8 rounded-full bg-purple-500/30 flex items-center justify-center"><i class="fas fa-spa text-purple-300 text-xs"></i></div>
+                          <div class="flex-1">
+                            <p class="text-xs font-medium text-white">ZenSpa</p>
+                            <p class="text-[10px] text-amber-200">Booking confirmed</p>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                    <div class="flex gap-2">
+                      <div class="flex-1 bg-white/10 rounded-lg p-2.5 text-center">
+                        <p class="text-base font-bold text-white">2</p>
+                        <p class="text-[10px] text-amber-200">Active Orders</p>
+                      </div>
+                      <div class="flex-1 bg-white/10 rounded-lg p-2.5 text-center">
+                        <p class="text-base font-bold text-white">1</p>
+                        <p class="text-[10px] text-amber-200">Upcoming</p>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Slide 5: Products & Services -->
+          <div class="carousel-slide px-2">
+            <div class="lg:grid lg:grid-cols-2 lg:gap-10 items-center bg-white rounded-2xl border border-slate-200 shadow-lg overflow-hidden">
+              <div class="p-8 lg:p-10">
+                <div class="inline-flex items-center px-3 py-1 rounded-full bg-emerald-100 text-emerald-700 text-xs font-medium mb-4">
+                  <i class="fas fa-boxes mr-1.5 text-[10px]"></i>Business
+                </div>
+                <h3 class="text-2xl font-bold text-slate-900">Catalog Management</h3>
+                <p class="mt-3 text-slate-600 leading-relaxed">Full CRUD management for your products and services. Set pricing, track inventory levels, upload media, and organize your catalog — then offer everything directly through chat.</p>
+                <ul class="mt-5 space-y-2.5">
+                  <li class="flex items-center gap-2.5 text-sm text-slate-600"><i class="fas fa-check-circle text-teal-500 text-sm"></i>Product catalog with inventory tracking</li>
+                  <li class="flex items-center gap-2.5 text-sm text-slate-600"><i class="fas fa-check-circle text-teal-500 text-sm"></i>Service catalog with duration & pricing</li>
+                  <li class="flex items-center gap-2.5 text-sm text-slate-600"><i class="fas fa-check-circle text-teal-500 text-sm"></i>Low-stock alerts and stock level monitoring</li>
+                  <li class="flex items-center gap-2.5 text-sm text-slate-600"><i class="fas fa-check-circle text-teal-500 text-sm"></i>Media upload for product images & photos</li>
+                </ul>
+              </div>
+              <div class="p-6 lg:p-8 bg-slate-900">
+                <div class="bg-slate-800/80 rounded-xl border border-slate-700/50 overflow-hidden shadow-xl">
+                  <div class="px-4 py-2.5 border-b border-slate-700/50 flex items-center justify-between">
+                    <span class="text-xs font-medium text-slate-400">Products</span>
+                    <span class="text-[10px] bg-teal-500/20 text-teal-300 px-2 py-0.5 rounded-full">12 items</span>
+                  </div>
+                  <div class="p-4 space-y-2">
+                    <div class="flex items-center gap-3 bg-slate-700/30 rounded-lg p-2.5">
+                      <div class="w-10 h-10 rounded-lg bg-teal-500/20 flex items-center justify-center"><i class="fas fa-cube text-teal-400 text-sm"></i></div>
+                      <div class="flex-1">
+                        <p class="text-xs font-medium text-white">Premium Renovation Pack</p>
+                        <p class="text-[10px] text-slate-400">$2,499.00 · 24 in stock</p>
+                      </div>
+                      <span class="text-[10px] bg-green-500/20 text-green-300 px-1.5 py-0.5 rounded">Active</span>
+                    </div>
+                    <div class="flex items-center gap-3 bg-slate-700/30 rounded-lg p-2.5">
+                      <div class="w-10 h-10 rounded-lg bg-purple-500/20 flex items-center justify-center"><i class="fas fa-cube text-purple-400 text-sm"></i></div>
+                      <div class="flex-1">
+                        <p class="text-xs font-medium text-white">Interior Design Consultation</p>
+                        <p class="text-[10px] text-slate-400">$349.00 · 1 hr</p>
+                      </div>
+                      <span class="text-[10px] bg-green-500/20 text-green-300 px-1.5 py-0.5 rounded">Active</span>
+                    </div>
+                    <div class="flex items-center gap-3 bg-slate-700/30 rounded-lg p-2.5">
+                      <div class="w-10 h-10 rounded-lg bg-amber-500/20 flex items-center justify-center"><i class="fas fa-cube text-amber-400 text-sm"></i></div>
+                      <div class="flex-1">
+                        <p class="text-xs font-medium text-white">Material Sample Kit</p>
+                        <p class="text-[10px] text-slate-400">$89.00 · 3 in stock</p>
+                      </div>
+                      <span class="text-[10px] bg-red-500/20 text-red-300 px-1.5 py-0.5 rounded">Low Stock</span>
+                    </div>
+                  </div>
+                  <div class="px-4 py-2.5 border-t border-slate-700/50 flex justify-between">
+                    <span class="text-[10px] text-slate-500">Serv. list: 8 services</span>
+                    <span class="text-[10px] text-teal-400"><i class="fas fa-plus mr-1"></i>Add Product</span>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Navigation arrows -->
+        <label for="s5" class="carousel-prev left-2 w-10 h-10 rounded-full bg-white/90 shadow-lg flex items-center justify-center text-slate-600 hover:bg-white cursor-pointer"><i class="fas fa-chevron-left text-sm"></i></label>
+        <label for="s2" class="carousel-next right-2 w-10 h-10 rounded-full bg-white/90 shadow-lg flex items-center justify-center text-slate-600 hover:bg-white cursor-pointer"><i class="fas fa-chevron-right text-sm"></i></label>
+
+        <!-- Dot navigation -->
+        <div class="carousel-nav flex items-center justify-center gap-2.5 mt-8">
+          <label for="s1" class="carousel-dot w-2.5 h-2.5 rounded-full bg-slate-300 hover:bg-teal-400"></label>
+          <label for="s2" class="carousel-dot w-2.5 h-2.5 rounded-full bg-slate-300 hover:bg-teal-400"></label>
+          <label for="s3" class="carousel-dot w-2.5 h-2.5 rounded-full bg-slate-300 hover:bg-teal-400"></label>
+          <label for="s4" class="carousel-dot w-2.5 h-2.5 rounded-full bg-slate-300 hover:bg-teal-400"></label>
+          <label for="s5" class="carousel-dot w-2.5 h-2.5 rounded-full bg-slate-300 hover:bg-teal-400"></label>
+        </div>
+        <div class="flex items-center justify-center gap-8 mt-4 text-sm text-slate-400">
+          <label for="s1" class="cursor-pointer hover:text-teal-600 transition-colors text-xs font-medium">Dashboard</label>
+          <label for="s2" class="cursor-pointer hover:text-teal-600 transition-colors text-xs font-medium">Chat</label>
+          <label for="s3" class="cursor-pointer hover:text-teal-600 transition-colors text-xs font-medium">Booking</label>
+          <label for="s4" class="cursor-pointer hover:text-teal-600 transition-colors text-xs font-medium">Client</label>
+          <label for="s5" class="cursor-pointer hover:text-teal-600 transition-colors text-xs font-medium">Catalog</label>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- How It Works -->
+  <section id="how-it-works" class="py-20 lg:py-28 bg-white">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+      <div class="text-center max-w-3xl mx-auto">
+        <div class="inline-flex items-center px-4 py-1.5 rounded-full bg-purple-100 text-purple-700 text-sm font-medium mb-4">
+          <i class="fas fa-steps mr-2 text-xs"></i>
+          Simple Setup
+        </div>
+        <h2 class="text-3xl sm:text-4xl font-bold text-slate-900">Get started in <span class="gradient-text">three steps</span></h2>
+        <p class="mt-4 text-lg text-slate-600">From zero to your first chat-processed order in under 5 minutes.</p>
+      </div>
+
+      <div class="mt-16 lg:grid lg:grid-cols-3 lg:gap-10">
+        <div class="text-center p-8 animate-slide-up">
+          <div class="relative inline-flex mb-6">
+            <div class="w-20 h-20 rounded-2xl bg-gradient-to-br from-teal-500 to-cyan-600 flex items-center justify-center shadow-xl shadow-teal-500/20">
+              <i class="fas fa-user-plus text-white text-2xl"></i>
+            </div>
+            <div class="absolute -top-2 -right-2 w-8 h-8 rounded-full bg-purple-500 text-white text-sm font-bold flex items-center justify-center shadow-lg">1</div>
+          </div>
+          <h3 class="text-xl font-semibold text-slate-900 mb-3">Create Your Account</h3>
+          <p class="text-slate-600 leading-relaxed">Register your business in under 2 minutes. No credit card, no commitment. Set up your profile and start inviting clients.</p>
+        </div>
+
+        <div class="text-center p-8 animate-slide-up animate-delay-1">
+          <div class="relative inline-flex mb-6">
+            <div class="w-20 h-20 rounded-2xl bg-gradient-to-br from-purple-500 to-pink-500 flex items-center justify-center shadow-xl shadow-purple-500/20">
+              <i class="fas fa-boxes text-white text-2xl"></i>
+            </div>
+            <div class="absolute -top-2 -right-2 w-8 h-8 rounded-full bg-purple-500 text-white text-sm font-bold flex items-center justify-center shadow-lg">2</div>
+          </div>
+          <h3 class="text-xl font-semibold text-slate-900 mb-3">Add Products & Services</h3>
+          <p class="text-slate-600 leading-relaxed">Populate your catalog with products and services. Set pricing, manage inventory, and configure availability for seamless booking.</p>
+        </div>
+
+        <div class="text-center p-8 animate-slide-up animate-delay-2">
+          <div class="relative inline-flex mb-6">
+            <div class="w-20 h-20 rounded-2xl bg-gradient-to-br from-amber-500 to-orange-500 flex items-center justify-center shadow-xl shadow-amber-500/20">
+              <i class="fas fa-comments text-white text-2xl"></i>
+            </div>
+            <div class="absolute -top-2 -right-2 w-8 h-8 rounded-full bg-purple-500 text-white text-sm font-bold flex items-center justify-center shadow-lg">3</div>
+          </div>
+          <h3 class="text-xl font-semibold text-slate-900 mb-3">Start Chatting & Selling</h3>
+          <p class="text-slate-600 leading-relaxed">Share your unique business link with clients. They join your chat in one tap, and you start converting conversations into revenue.</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- For Businesses Section -->
+  <section id="for-businesses" class="py-20 lg:py-28 bg-slate-900 overflow-hidden">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+      <div class="lg:grid lg:grid-cols-2 lg:gap-16 items-center">
+        <div class="animate-slide-up">
+          <div class="inline-flex items-center px-4 py-1.5 rounded-full bg-teal-500/10 border border-teal-500/20 text-teal-400 text-sm font-medium mb-4">
+            <i class="fas fa-store mr-2 text-xs"></i>
+            For Businesses
+          </div>
+          <h2 class="text-3xl sm:text-4xl font-bold text-white">Run your entire business from one <span class="gradient-text">conversation</span></h2>
+          <p class="mt-4 text-lg text-slate-300">Stop juggling between email, phone, spreadsheets, and POS systems. Threadly brings it all together inside a familiar chat interface.</p>
+
+          <div class="mt-10 space-y-5">
+            <div class="flex items-start space-x-4">
+              <div class="w-10 h-10 rounded-xl bg-teal-500/20 flex items-center justify-center shrink-0">
+                <i class="fas fa-check text-teal-400"></i>
+              </div>
+              <div>
+                <h4 class="font-semibold text-white">Unified Inbox</h4>
+                <p class="text-sm text-slate-400 mt-1">Every client conversation in one place with unread indicators and real-time polling.</p>
+              </div>
+            </div>
+            <div class="flex items-start space-x-4">
+              <div class="w-10 h-10 rounded-xl bg-teal-500/20 flex items-center justify-center shrink-0">
+                <i class="fas fa-check text-teal-400"></i>
+              </div>
+              <div>
+                <h4 class="font-semibold text-white">Instant Order Creation</h4>
+                <p class="text-sm text-slate-400 mt-1">Create orders and bookings directly from chat with client details auto-populated.</p>
+              </div>
+            </div>
+            <div class="flex items-start space-x-4">
+              <div class="w-10 h-10 rounded-xl bg-teal-500/20 flex items-center justify-center shrink-0">
+                <i class="fas fa-check text-teal-400"></i>
+              </div>
+              <div>
+                <h4 class="font-semibold text-white">Conversation Progress Scoring</h4>
+                <p class="text-sm text-slate-400 mt-1">Automatically track where each client is in your sales funnel with progress metrics.</p>
+              </div>
+            </div>
+            <div class="flex items-start space-x-4">
+              <div class="w-10 h-10 rounded-xl bg-teal-500/20 flex items-center justify-center shrink-0">
+                <i class="fas fa-check text-teal-400"></i>
+              </div>
+              <div>
+                <h4 class="font-semibold text-white">Product & Service Catalog</h4>
+                <p class="text-sm text-slate-400 mt-1">Full CRUD management for products and services with inventory tracking.</p>
+              </div>
+            </div>
+            <div class="flex items-start space-x-4">
+              <div class="w-10 h-10 rounded-xl bg-teal-500/20 flex items-center justify-center shrink-0">
+                <i class="fas fa-check text-teal-400"></i>
+              </div>
+              <div>
+                <h4 class="font-semibold text-white">Analytics & Revenue Reports</h4>
+                <p class="text-sm text-slate-400 mt-1">Comprehensive dashboard with revenue trends, order volumes, and conversion analytics.</p>
+              </div>
+            </div>
+          </div>
+
+          <a href="/business/register" class="mt-10 inline-flex items-center px-8 py-3.5 rounded-xl bg-gradient-to-r from-teal-500 to-cyan-600 text-white font-semibold shadow-xl shadow-teal-500/25 hover:shadow-teal-500/40 hover:from-teal-600 hover:to-cyan-700 transition-all text-base">
+            Start Your Business Trial
+            <i class="fas fa-arrow-right ml-2 text-sm"></i>
+          </a>
+        </div>
+
+        <div class="hidden lg:block relative mt-12 lg:mt-0 animate-slide-up animate-delay-1">
+          <div class="relative">
+            <div class="absolute -inset-4 bg-gradient-to-r from-purple-500/20 to-pink-500/20 rounded-3xl blur-xl"></div>
+            <div class="relative bg-slate-800/80 backdrop-blur-sm rounded-2xl border border-slate-700/50 overflow-hidden shadow-2xl">
+              <div class="px-5 py-3 border-b border-slate-700/50 flex items-center justify-between">
+                <div class="flex items-center space-x-2">
+                  <i class="fas fa-chart-simple text-teal-400 text-sm"></i>
+                  <span class="text-sm font-medium text-white">Dashboard Overview</span>
+                </div>
+                <span class="text-xs bg-teal-500/20 text-teal-300 px-2 py-0.5 rounded-full">Live</span>
+              </div>
+              <div class="p-5 space-y-4">
+                <div class="grid grid-cols-2 gap-3">
+                  <div class="bg-slate-700/30 rounded-xl p-3">
+                    <p class="text-xs text-slate-400">Revenue Today</p>
+                    <p class="text-xl font-bold text-white mt-1">$4,280</p>
+                    <p class="text-xs text-green-400 mt-1"><i class="fas fa-arrow-up mr-1"></i>+12.5%</p>
+                  </div>
+                  <div class="bg-slate-700/30 rounded-xl p-3">
+                    <p class="text-xs text-slate-400">Active Clients</p>
+                    <p class="text-xl font-bold text-white mt-1">48</p>
+                    <p class="text-xs text-green-400 mt-1"><i class="fas fa-arrow-up mr-1"></i>+8</p>
+                  </div>
+                  <div class="bg-slate-700/30 rounded-xl p-3">
+                    <p class="text-xs text-slate-400">Pending Orders</p>
+                    <p class="text-xl font-bold text-white mt-1">12</p>
+                    <p class="text-xs text-amber-400 mt-1">Awaiting action</p>
+                  </div>
+                  <div class="bg-slate-700/30 rounded-xl p-3">
+                    <p class="text-xs text-slate-400">Conv. Rate</p>
+                    <p class="text-xl font-bold text-white mt-1">68%</p>
+                    <p class="text-xs text-green-400 mt-1"><i class="fas fa-arrow-up mr-1"></i>+5.2%</p>
+                  </div>
+                </div>
+                <div class="bg-slate-700/30 rounded-xl p-4">
+                  <div class="flex items-center justify-between mb-3">
+                    <span class="text-xs font-medium text-slate-400">Revenue Trend (Last 7 Days)</span>
+                    <i class="fas fa-ellipsis-h text-slate-500 text-xs"></i>
+                  </div>
+                  <div class="flex items-end space-x-1.5 h-16">
+                    <div class="flex-1 bg-teal-500/30 rounded-t-sm" style="height:40%"></div>
+                    <div class="flex-1 bg-teal-500/40 rounded-t-sm" style="height:55%"></div>
+                    <div class="flex-1 bg-teal-500/50 rounded-t-sm" style="height:45%"></div>
+                    <div class="flex-1 bg-teal-500/70 rounded-t-sm" style="height:70%"></div>
+                    <div class="flex-1 bg-teal-500/60 rounded-t-sm" style="height:60%"></div>
+                    <div class="flex-1 bg-teal-500/90 rounded-t-sm" style="height:85%"></div>
+                    <div class="flex-1 bg-teal-500 rounded-t-sm" style="height:100%"></div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- For Clients Section -->
+  <section id="for-clients" class="py-20 lg:py-28 bg-white">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+      <div class="lg:grid lg:grid-cols-2 lg:gap-16 items-center">
+        <div class="relative order-2 lg:order-1 mt-12 lg:mt-0 animate-slide-up">
+          <div class="relative">
+            <div class="absolute -inset-4 bg-gradient-to-r from-amber-500/20 to-orange-500/20 rounded-3xl blur-xl"></div>
+            <div class="relative bg-white rounded-2xl border border-slate-200 overflow-hidden shadow-xl">
+              <div class="px-5 py-4 border-b border-slate-100 flex items-center space-x-3">
+                <div class="w-10 h-10 rounded-full bg-gradient-to-br from-teal-400 to-cyan-500 flex items-center justify-center text-white font-bold">S</div>
+                <div class="flex-1">
+                  <p class="text-sm font-semibold text-slate-900">Sarah's Design Studio</p>
+                  <p class="text-xs text-green-500"><i class="fas fa-circle mr-1 text-[8px]"></i>Online</p>
+                </div>
+                <div class="flex space-x-2">
+                  <i class="fas fa-phone text-slate-400 text-sm"></i>
+                  <i class="fas fa-ellipsis-v text-slate-400 text-sm"></i>
+                </div>
+              </div>
+              <div class="p-5 space-y-4">
+                <div class="flex items-start space-x-3">
+                  <div class="w-8 h-8 rounded-full bg-gradient-to-br from-purple-400 to-pink-500 flex items-center justify-center text-white text-xs font-bold shrink-0">S</div>
+                  <div class="flex-1">
+                    <div class="bg-slate-100 rounded-2xl rounded-tl-none px-4 py-2.5 max-w-xs">
+                      <p class="text-sm text-slate-700">Your order #1042 has been confirmed! Expected delivery: March 15th.</p>
+                    </div>
+                    <span class="text-xs text-slate-400 mt-1 block">10:35 AM</span>
+                  </div>
+                </div>
+                <div class="flex items-start space-x-3 flex-row-reverse">
+                  <div class="w-8 h-8 rounded-full bg-gradient-to-br from-teal-400 to-cyan-500 flex items-center justify-center text-white text-xs font-bold shrink-0">Y</div>
+                  <div class="flex-1 flex flex-col items-end">
+                    <div class="bg-teal-500 rounded-2xl rounded-tr-none px-4 py-2.5 max-w-xs">
+                      <p class="text-sm text-white">Perfect, thank you! Can I also schedule a consultation for next week?</p>
+                    </div>
+                    <span class="text-xs text-slate-400 mt-1 block">10:36 AM</span>
+                  </div>
+                </div>
+                <div class="bg-slate-50 rounded-xl p-3 border border-slate-200">
+                  <div class="flex items-center justify-between mb-2">
+                    <div class="flex items-center space-x-2">
+                      <i class="fas fa-calendar text-purple-500 text-sm"></i>
+                      <span class="text-sm font-semibold text-slate-900">Quick Booking</span>
+                    </div>
+                    <i class="fas fa-chevron-right text-slate-400 text-xs"></i>
+                  </div>
+                  <p class="text-xs text-slate-500">Select a service and time — no need to call</p>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="order-1 lg:order-2 animate-slide-up animate-delay-1">
+          <div class="inline-flex items-center px-4 py-1.5 rounded-full bg-amber-100 text-amber-700 text-sm font-medium mb-4">
+            <i class="fas fa-user mr-2 text-xs"></i>
+            For Clients
+          </div>
+          <h2 class="text-3xl sm:text-4xl font-bold text-slate-900">Order, book, and chat — all in <span class="gradient-text">one place</span></h2>
+          <p class="mt-4 text-lg text-slate-600">No more phone calls, emails, or visiting physical stores. Manage everything from your client portal.</p>
+
+          <div class="mt-10 space-y-5">
+            <div class="flex items-start space-x-4">
+              <div class="w-10 h-10 rounded-xl bg-amber-100 flex items-center justify-center shrink-0">
+                <i class="fas fa-key text-amber-600"></i>
+              </div>
+              <div>
+                <h4 class="font-semibold text-slate-900">Secure OTP Login</h4>
+                <p class="text-sm text-slate-500 mt-1">Access your account with a one-time password sent to your email — no passwords to remember.</p>
+              </div>
+            </div>
+            <div class="flex items-start space-x-4">
+              <div class="w-10 h-10 rounded-xl bg-amber-100 flex items-center justify-center shrink-0">
+                <i class="fas fa-message text-amber-600"></i>
+              </div>
+              <div>
+                <h4 class="font-semibold text-slate-900">Direct Business Chat</h4>
+                <p class="text-sm text-slate-500 mt-1">Message businesses directly, place orders, and book services — all within the chat interface.</p>
+              </div>
+            </div>
+            <div class="flex items-start space-x-4">
+              <div class="w-10 h-10 rounded-xl bg-amber-100 flex items-center justify-center shrink-0">
+                <i class="fas fa-pen text-amber-600"></i>
+              </div>
+              <div>
+                <h4 class="font-semibold text-slate-900">Self-Service Management</h4>
+                <p class="text-sm text-slate-500 mt-1">Edit order quantities, reschedule bookings, or cancel services — all without contacting support.</p>
+              </div>
+            </div>
+            <div class="flex items-start space-x-4">
+              <div class="w-10 h-10 rounded-xl bg-amber-100 flex items-center justify-center shrink-0">
+                <i class="fas fa-bell text-amber-600"></i>
+              </div>
+              <div>
+                <h4 class="font-semibold text-slate-900">Real-Time Updates</h4>
+                <p class="text-sm text-slate-500 mt-1">Get instant notifications on order status changes, booking confirmations, and business replies.</p>
+              </div>
+            </div>
+          </div>
+
+          <a href="/client/login" class="mt-10 inline-flex items-center px-8 py-3.5 rounded-xl bg-gradient-to-r from-amber-500 to-orange-500 text-white font-semibold shadow-xl shadow-amber-500/25 hover:shadow-amber-500/40 hover:from-amber-600 hover:to-orange-600 transition-all text-base">
+            Access Client Portal
+            <i class="fas fa-arrow-right ml-2 text-sm"></i>
+          </a>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Tech Stack Section -->
+  <section class="py-16 bg-slate-50 border-y border-slate-100">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+      <p class="text-center text-sm font-medium text-slate-400 uppercase tracking-wider mb-10">Built on a modern, production-ready stack</p>
+      <div class="flex flex-wrap items-center justify-center gap-x-10 gap-y-6">
+        <div class="flex items-center space-x-2 text-slate-500"><i class="fab fa-golang text-2xl"></i><span class="font-semibold">Go</span></div>
+        <div class="flex items-center space-x-2 text-slate-500"><i class="fas fa-bolt text-2xl"></i><span class="font-semibold">Gin</span></div>
+        <div class="flex items-center space-x-2 text-slate-500"><i class="fas fa-database text-2xl"></i><span class="font-semibold">PostgreSQL</span></div>
+        <div class="flex items-center space-x-2 text-slate-500"><i class="fab fa-js text-2xl"></i><span class="font-semibold">HTMX</span></div>
+        <div class="flex items-center space-x-2 text-slate-500"><i class="fab fa-tailwind text-2xl"></i><span class="font-semibold">Tailwind CSS</span></div>
+        <div class="flex items-center space-x-2 text-slate-500"><i class="fas fa-lock text-2xl"></i><span class="font-semibold">JWT</span></div>
+        <div class="flex items-center space-x-2 text-slate-500"><i class="fas fa-docker text-2xl"></i><span class="font-semibold">Docker</span></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Testimonials -->
+  <section class="py-20 lg:py-28 bg-white">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+      <div class="text-center max-w-3xl mx-auto">
+        <div class="inline-flex items-center px-4 py-1.5 rounded-full bg-teal-100 text-teal-700 text-sm font-medium mb-4">
+          <i class="fas fa-star mr-2 text-xs"></i>
+          Loved by Teams
+        </div>
+        <h2 class="text-3xl sm:text-4xl font-bold text-slate-900">What our users <span class="gradient-text">say</span></h2>
+      </div>
+
+      <div class="mt-12 grid md:grid-cols-2 lg:grid-cols-3 gap-6">
+        <div class="p-6 rounded-2xl bg-slate-50 border border-slate-100 animate-slide-up">
+          <div class="flex items-center space-x-1 text-amber-400 mb-4">
+            <i class="fas fa-star"></i><i class="fas fa-star"></i><i class="fas fa-star"></i><i class="fas fa-star"></i><i class="fas fa-star"></i>
+          </div>
+          <p class="text-slate-600 text-sm leading-relaxed mb-4">"Threadly completely changed how we interact with clients. The chat-to-order flow is seamless — our sales team can create orders without leaving the conversation."</p>
+          <div class="flex items-center space-x-3">
+            <div class="w-10 h-10 rounded-full bg-gradient-to-br from-teal-400 to-cyan-500 flex items-center justify-center text-white text-sm font-bold">M</div>
+            <div>
+              <p class="text-sm font-semibold text-slate-900">Marcus Chen</p>
+              <p class="text-xs text-slate-400">Owner, TechFix Solutions</p>
+            </div>
+          </div>
+        </div>
+
+        <div class="p-6 rounded-2xl bg-slate-50 border border-slate-100 animate-slide-up animate-delay-1">
+          <div class="flex items-center space-x-1 text-amber-400 mb-4">
+            <i class="fas fa-star"></i><i class="fas fa-star"></i><i class="fas fa-star"></i><i class="fas fa-star"></i><i class="fas fa-star"></i>
+          </div>
+          <p class="text-slate-600 text-sm leading-relaxed mb-4">"The booking system alone saved us hours of phone tag. Clients book directly through chat, and the calendar sync means no more double-bookings."</p>
+          <div class="flex items-center space-x-3">
+            <div class="w-10 h-10 rounded-full bg-gradient-to-br from-purple-400 to-pink-500 flex items-center justify-center text-white text-sm font-bold">L</div>
+            <div>
+              <p class="text-sm font-semibold text-slate-900">Lisa Park</p>
+              <p class="text-xs text-slate-400">Director, ZenSpa Wellness</p>
+            </div>
+          </div>
+        </div>
+
+        <div class="p-6 rounded-2xl bg-slate-50 border border-slate-100 animate-slide-up animate-delay-2">
+          <div class="flex items-center space-x-1 text-amber-400 mb-4">
+            <i class="fas fa-star"></i><i class="fas fa-star"></i><i class="fas fa-star"></i><i class="fas fa-star"></i><i class="fas fa-star"></i>
+          </div>
+          <p class="text-slate-600 text-sm leading-relaxed mb-4">"As a client, I love being able to see my order history, reschedule appointments, and message the business all from one dashboard. It just works."</p>
+          <div class="flex items-center space-x-3">
+            <div class="w-10 h-10 rounded-full bg-gradient-to-br from-amber-400 to-orange-500 flex items-center justify-center text-white text-sm font-bold">J</div>
+            <div>
+              <p class="text-sm font-semibold text-slate-900">Jordan Rivera</p>
+              <p class="text-xs text-slate-400">Frequent Client</p>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- CTA Section -->
+  <section class="py-20 lg:py-28 relative overflow-hidden">
+    <div class="absolute inset-0 bg-gradient-to-br from-slate-900 via-teal-900 to-slate-900 animate-gradient"></div>
+    <div class="absolute inset-0 opacity-20">
+      <div class="absolute -top-40 -right-40 w-96 h-96 bg-teal-500 rounded-full blur-3xl"></div>
+      <div class="absolute -bottom-40 -left-40 w-96 h-96 bg-cyan-500 rounded-full blur-3xl"></div>
+    </div>
+    <div class="relative max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
+      <h2 class="text-3xl sm:text-5xl font-bold text-white">Ready to transform your <span class="gradient-text">customer relationships</span>?</h2>
+      <p class="mt-4 text-lg sm:text-xl text-slate-300 max-w-2xl mx-auto">Join thousands of businesses using Threadly to turn conversations into revenue. Start free — no credit card required.</p>
+      <div class="mt-10 flex flex-col sm:flex-row items-center justify-center gap-4">
+        <a href="/business/register" class="inline-flex items-center px-8 py-3.5 rounded-xl bg-gradient-to-r from-teal-500 to-cyan-600 text-white font-semibold shadow-xl shadow-teal-500/25 hover:shadow-teal-500/40 hover:from-teal-600 hover:to-cyan-700 transition-all text-base">
+          <i class="fas fa-rocket mr-2"></i>
+          Start Free Trial
+        </a>
+        <a href="/client/login" class="inline-flex items-center px-8 py-3.5 rounded-xl bg-white/10 text-white font-semibold border border-white/20 hover:bg-white/20 transition-all text-base">
+          <i class="fas fa-user mr-2"></i>
+          I'm a Client
+        </a>
+      </div>
+      <p class="mt-6 text-sm text-slate-400">Free forever plan available · No credit card · 2-minute setup</p>
+    </div>
+  </section>
+
+  <!-- Footer -->
+  <footer class="bg-slate-950 border-t border-slate-800">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12 lg:py-16">
+      <div class="lg:grid lg:grid-cols-4 lg:gap-12">
+        <div class="col-span-2">
+          <a href="/" class="flex items-center space-x-2 mb-4">
+            <div class="w-8 h-8 rounded-lg bg-gradient-to-br from-teal-500 to-cyan-600 flex items-center justify-center">
+              <i class="fas fa-comments text-white text-xs"></i>
+            </div>
+            <span class="text-lg font-bold text-white">Threadly</span>
+          </a>
+          <p class="text-sm text-slate-400 max-w-md leading-relaxed">Transforming customer relationships through intelligent communication and management tools. The all-in-one chat CRM for modern businesses.</p>
+          <div class="flex items-center space-x-4 mt-6">
+            <a href="#" class="w-9 h-9 rounded-lg bg-slate-800 flex items-center justify-center text-slate-400 hover:bg-teal-500/20 hover:text-teal-400 transition-all"><i class="fab fa-github"></i></a>
+            <a href="#" class="w-9 h-9 rounded-lg bg-slate-800 flex items-center justify-center text-slate-400 hover:bg-teal-500/20 hover:text-teal-400 transition-all"><i class="fab fa-twitter"></i></a>
+            <a href="#" class="w-9 h-9 rounded-lg bg-slate-800 flex items-center justify-center text-slate-400 hover:bg-teal-500/20 hover:text-teal-400 transition-all"><i class="fab fa-linkedin-in"></i></a>
+            <a href="#" class="w-9 h-9 rounded-lg bg-slate-800 flex items-center justify-center text-slate-400 hover:bg-teal-500/20 hover:text-teal-400 transition-all"><i class="fab fa-discord"></i></a>
+          </div>
+        </div>
+        <div class="mt-10 lg:mt-0">
+          <h4 class="font-semibold text-white text-sm uppercase tracking-wider mb-4">Platform</h4>
+          <ul class="space-y-3">
+            <li><a href="#features" class="text-sm text-slate-400 hover:text-teal-400 transition-colors">Features</a></li>
+            <li><a href="#for-businesses" class="text-sm text-slate-400 hover:text-teal-400 transition-colors">For Businesses</a></li>
+            <li><a href="#for-clients" class="text-sm text-slate-400 hover:text-teal-400 transition-colors">For Clients</a></li>
+            <li><a href="#how-it-works" class="text-sm text-slate-400 hover:text-teal-400 transition-colors">How It Works</a></li>
+            <li><a href="#" class="text-sm text-slate-400 hover:text-teal-400 transition-colors">Pricing</a></li>
+          </ul>
+        </div>
+        <div class="mt-10 lg:mt-0">
+          <h4 class="font-semibold text-white text-sm uppercase tracking-wider mb-4">Get Started</h4>
+          <ul class="space-y-3">
+            <li><a href="/business/login" class="text-sm text-slate-400 hover:text-teal-400 transition-colors">Business Login</a></li>
+            <li><a href="/business/register" class="text-sm text-slate-400 hover:text-teal-400 transition-colors">Register Business</a></li>
+            <li><a href="/client/login" class="text-sm text-slate-400 hover:text-teal-400 transition-colors">Client Portal</a></li>
+            <li><a href="#" class="text-sm text-slate-400 hover:text-teal-400 transition-colors">API Docs</a></li>
+            <li><a href="#" class="text-sm text-slate-400 hover:text-teal-400 transition-colors">Support</a></li>
+          </ul>
+        </div>
+      </div>
+      <div class="mt-12 pt-8 border-t border-slate-800 flex flex-col sm:flex-row items-center justify-between gap-4">
+        <p class="text-sm text-slate-500">&copy; 2026 Threadly. All rights reserved.</p>
+        <div class="flex items-center space-x-6">
+          <a href="#" class="text-xs text-slate-500 hover:text-slate-300 transition-colors">Privacy Policy</a>
+          <a href="#" class="text-xs text-slate-500 hover:text-slate-300 transition-colors">Terms of Service</a>
+          <a href="#" class="text-xs text-slate-500 hover:text-slate-300 transition-colors">Cookie Policy</a>
+        </div>
+      </div>
+    </div>
+  </footer>
+
 </body>
 </html>

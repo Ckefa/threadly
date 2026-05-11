@@ -101,7 +101,7 @@ func (h *BusinessHandler) GetBizHome(c *gin.Context) {
 func (h *BusinessHandler) GetDashboard(c *gin.Context) {
 	businessID := c.GetUint("business_id")
 	if businessID == 0 {
-		c.HTML(http.StatusUnauthorized, "login.html", gin.H{"error": "Business not authenticated"})
+		c.HTML(http.StatusUnauthorized, "business_login.html", gin.H{"error": "Business not authenticated"})
 		return
 	}
 
@@ -158,7 +158,7 @@ func (h *BusinessHandler) GetDashboard(c *gin.Context) {
 		LowStockProducts:    lowStockProducts,
 	}
 
-	c.HTML(http.StatusOK, "client_dashboard.html", data)
+	c.HTML(http.StatusOK, "dashboard.html", data)
 }
 
 // Helper function to get or create conversation by client and business ID

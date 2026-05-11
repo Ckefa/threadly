@@ -1,0 +1,471 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Bookings - Threadly</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+</head>
+
+<body class="bg-gray-100 h-screen overflow-hidden">
+  <!-- Header -->
+  <header class="bg-teal-600 text-white p-4 flex items-center justify-between">
+    <div class="flex items-center space-x-4">
+      <a href="/business" class="hover:bg-teal-700 px-3 py-2 rounded-lg">
+        <i class="fas fa-arrow-left"></i>
+      </a>
+      <h1 class="text-xl font-semibold">Bookings</h1>
+    </div>
+    <div class="flex items-center space-x-4">
+      <a href="/business" class="bg-purple-600 hover:bg-purple-700 px-4 py-2 rounded-lg flex items-center space-x-2">
+        <i class="fas fa-chart-line"></i>
+        <span>Dashboard</span>
+      </a>
+      <a href="/business/logout" class="hover:bg-teal-700 px-3 py-2 rounded-lg">
+        <i class="fas fa-sign-out-alt"></i>
+      </a>
+    </div>
+  </header>
+
+  <div class="flex h-screen pt-16">
+    <!-- Sidebar -->
+    <aside class="w-64 bg-white shadow-lg">
+      <nav class="mt-8">
+        <div class="px-4 space-y-2">
+          <a href="/business/dashboard"
+            class="sidebar-item flex items-center px-4 py-2 text-sm font-medium rounded-md text-gray-700 hover:bg-gray-100">
+            <i class="fas fa-chart-line mr-3"></i>
+            Dashboard Overview
+          </a>
+          <a href="/business/products"
+            class="sidebar-item flex items-center px-4 py-2 text-sm font-medium rounded-md text-gray-700 hover:bg-gray-100">
+            <i class="fas fa-box mr-3"></i>
+            Products
+          </a>
+          <a href="/business/services"
+            class="sidebar-item flex items-center px-4 py-2 text-sm font-medium rounded-md text-gray-700 hover:bg-gray-100">
+            <i class="fas fa-concierge-bell mr-3"></i>
+            Services
+          </a>
+          <a href="/business/orders"
+            class="sidebar-item flex items-center px-4 py-2 text-sm font-medium rounded-md text-gray-700 hover:bg-gray-100">
+            <i class="fas fa-shopping-cart mr-3"></i>
+            Orders
+          </a>
+          <a href="/business/bookings"
+            class="sidebar-item flex items-center px-4 py-2 text-sm font-medium rounded-md bg-teal-50 text-teal-700">
+            <i class="fas fa-calendar-check mr-3"></i>
+            Bookings
+          </a>
+          <a href="/business/payments"
+            class="sidebar-item flex items-center px-4 py-2 text-sm font-medium rounded-md text-gray-700 hover:bg-gray-100">
+            <i class="fas fa-credit-card mr-3"></i>
+            Payments
+          </a>
+          <a href="/business/inventory"
+            class="sidebar-item flex items-center px-4 py-2 text-sm font-medium rounded-md text-gray-700 hover:bg-gray-100">
+            <i class="fas fa-warehouse mr-3"></i>
+            Inventory
+          </a>
+          <a href="/business/analytics"
+            class="sidebar-item flex items-center px-4 py-2 text-sm font-medium rounded-md text-gray-700 hover:bg-gray-100">
+            <i class="fas fa-chart-bar mr-3"></i>
+            Analytics
+          </a>
+          <a href="/business/customers"
+            class="sidebar-item flex items-center px-4 py-2 text-sm font-medium rounded-md text-gray-700 hover:bg-gray-100">
+            <i class="fas fa-users mr-3"></i>
+            Customers
+          </a>
+        </div>
+      </nav>
+    </aside>
+
+    <!-- Main Content -->
+    <main class="flex-1 overflow-y-auto">
+      <div class="py-6">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <!-- Page Header -->
+          <div class="mb-8 flex justify-between items-center">
+            <div>
+              <h2 class="text-2xl font-bold text-gray-900">Bookings Management</h2>
+              <p class="mt-1 text-sm text-gray-600">View and manage your service bookings</p>
+            </div>
+            <button onclick="openQuickBookingModal()"
+              class="bg-teal-600 hover:bg-teal-700 text-white px-4 py-2 rounded-lg flex items-center space-x-2">
+              <i class="fas fa-plus"></i>
+              <span>New Booking</span>
+            </button>
+          </div>
+
+          <!-- Stats Cards -->
+          <div class="grid grid-cols-1 md:grid-cols-6 gap-4 mb-8">
+            <!-- Pending Bookings -->
+            <div class="bg-white p-6 rounded-lg shadow">
+              <div class="flex items-center">
+                <div class="flex-shrink-0 bg-yellow-100 rounded-md p-3">
+                  <i class="fas fa-clock text-yellow-600"></i>
+                </div>
+                <div class="ml-4">
+                  <p class="text-sm font-medium text-gray-600">Pending</p>
+                  <p class="text-2xl font-bold text-gray-900">{{.PendingCount}}</p>
+                </div>
+              </div>
+            </div>
+
+            <!-- Confirmed Bookings -->
+            <div class="bg-white p-6 rounded-lg shadow">
+              <div class="flex items-center">
+                <div class="flex-shrink-0 bg-blue-100 rounded-md p-3">
+                  <i class="fas fa-check-circle text-blue-600"></i>
+                </div>
+                <div class="ml-4">
+                  <p class="text-sm font-medium text-gray-600">Confirmed</p>
+                  <p class="text-2xl font-bold text-gray-900">{{.ConfirmedCount}}</p>
+                </div>
+              </div>
+            </div>
+
+            <!-- Completed Bookings -->
+            <div class="bg-white p-6 rounded-lg shadow">
+              <div class="flex items-center">
+                <div class="flex-shrink-0 bg-green-100 rounded-md p-3">
+                  <i class="fas fa-check text-green-600"></i>
+                </div>
+                <div class="ml-4">
+                  <p class="text-sm font-medium text-gray-600">Completed</p>
+                  <p class="text-2xl font-bold text-gray-900">{{.CompletedCount}}</p>
+                </div>
+              </div>
+            </div>
+
+            <!-- Canceled Bookings -->
+            <div class="bg-white p-6 rounded-lg shadow">
+              <div class="flex items-center">
+                <div class="flex-shrink-0 bg-red-100 rounded-md p-3">
+                  <i class="fas fa-times text-red-600"></i>
+                </div>
+                <div class="ml-4">
+                  <p class="text-sm font-medium text-gray-600">Canceled</p>
+                  <p class="text-2xl font-bold text-gray-900">{{.CanceledCount}}</p>
+                </div>
+              </div>
+            </div>
+
+            <!-- Total Bookings -->
+            <div class="bg-white p-6 rounded-lg shadow">
+              <div class="flex items-center">
+                <div class="flex-shrink-0 bg-indigo-100 rounded-md p-3">
+                  <i class="fas fa-calendar-check text-indigo-600"></i>
+                </div>
+                <div class="ml-4">
+                  <p class="text-sm font-medium text-gray-600">Total Bookings</p>
+                  <p class="text-2xl font-bold text-gray-900">{{.TotalBookings}}</p>
+                </div>
+              </div>
+            </div>
+
+            <!-- Total Revenue -->
+            <div class="bg-white p-6 rounded-lg shadow">
+              <div class="flex items-center">
+                <div class="flex-shrink-0 bg-purple-100 rounded-md p-3">
+                  <i class="fas fa-dollar-sign text-purple-600"></i>
+                </div>
+                <div class="ml-4">
+                  <p class="text-sm font-medium text-gray-600">Total Revenue</p>
+                  <p class="text-2xl font-bold text-gray-900">${{printf "%.2f" .TotalRevenue}}</p>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Bookings Table -->
+          <div class="bg-white shadow rounded-lg overflow-hidden">
+            <div class="px-6 py-4 border-b border-gray-200">
+              <h3 class="text-lg font-medium text-gray-900">All Bookings</h3>
+            </div>
+            <div class="overflow-x-auto">
+              <table class="min-w-full divide-y divide-gray-200">
+                <thead class="bg-gray-50">
+                  <tr>
+                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Booking #
+                    </th>
+                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Customer
+                    </th>
+                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Service
+                    </th>
+                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Date</th>
+                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status
+                    </th>
+                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Amount
+                    </th>
+                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Actions
+                    </th>
+                  </tr>
+                </thead>
+                <tbody class="bg-white divide-y divide-gray-200">
+                  {{range .Bookings}}
+                  <tr>
+                    <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">{{.BookingNumber}}</td>
+                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{{.Customer.Name}}</td>
+                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{{range
+                      .BookingItems}}{{.Service.Name}}{{end}}</td>
+                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{{.ScheduledDate.Format "2006-01-02 15:04"}}</td>
+                    <td class="px-6 py-4 whitespace-nowrap">
+                      <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full 
+                                                {{if eq .Status " pending"}}bg-yellow-100 text-yellow-800 {{else if eq
+                        .Status "confirmed" }}bg-green-100 text-green-800 {{else if eq .Status "completed" }}bg-blue-100
+                        text-blue-800 {{else if eq .Status "cancelled" }}bg-red-100 text-red-800 {{else}}bg-gray-100
+                        text-gray-800{{end}}">
+                        {{.Status}}
+                      </span>
+                    </td>
+                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">${{.TotalAmount}}</td>
+                    <td class="px-6 py-4 whitespace-nowrap text-sm font-medium">
+                      <div class="flex items-center space-x-2">
+                        <select onchange="updateBookingStatus(this)" data-booking-id="{{.ID}}"
+                          class="border border-gray-300 rounded-md px-2 py-1 text-sm">
+                          <option value="pending" {{if eq .Status "pending" }}selected{{end}}>Pending</option>
+                          <option value="confirmed" {{if eq .Status "confirmed" }}selected{{end}}>Confirmed</option>
+                          <option value="completed" {{if eq .Status "completed" }}selected{{end}}>Completed</option>
+                          <option value="cancelled" {{if eq .Status "cancelled" }}selected{{end}}>Cancelled</option>
+                        </select>
+                        <button onclick="editBooking({{.ID}})" class="text-blue-600 hover:text-blue-800 text-sm"
+                          title="Edit Booking">
+                          <i class="fas fa-edit"></i>
+                        </button>
+                      </div>
+                    </td>
+                  </tr>
+                  {{else}}
+                  <tr>
+                    <td colspan="7" class="px-6 py-4 text-center text-sm text-gray-500">
+                      No bookings found. Create your first booking to get started.
+                    </td>
+                  </tr>
+                  {{end}}
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+      </div>
+    </main>
+  </div>
+
+  <!-- Quick Booking Modal -->
+  <div id="quickBookingModal" class="fixed inset-0 bg-gray-600 bg-opacity-50 hidden items-center justify-center z-50">
+    <div class="bg-white rounded-lg shadow-xl max-w-md w-full mx-4">
+      <div class="px-6 py-4 border-b border-gray-200">
+        <h3 class="text-lg font-medium text-gray-900">Create New Booking</h3>
+      </div>
+      <form id="quickBookingForm" class="px-6 py-4 space-y-4">
+        <div>
+          <label class="block text-sm font-medium text-gray-700">Service</label>
+          <select id="bookingService" required
+            class="mt-1 block w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-teal-500 focus:border-teal-500">
+            <option value="">Select a service</option>
+            <!-- Services will be loaded dynamically -->
+          </select>
+        </div>
+        <div>
+          <label class="block text-sm font-medium text-gray-700">Customer Name</label>
+          <input type="text" id="bookingCustomerName" required
+            class="mt-1 block w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-teal-500 focus:border-teal-500">
+        </div>
+        <div>
+          <label class="block text-sm font-medium text-gray-700">Customer Email</label>
+          <input type="email" id="bookingCustomerEmail"
+            class="mt-1 block w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-teal-500 focus:border-teal-500">
+        </div>
+        <div>
+          <label class="block text-sm font-medium text-gray-700">Customer Phone</label>
+          <input type="tel" id="bookingCustomerPhone"
+            class="mt-1 block w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-teal-500 focus:border-teal-500">
+        </div>
+        <div>
+          <label class="block text-sm font-medium text-gray-700">Booking Date</label>
+          <input type="date" id="bookingDate" required
+            class="mt-1 block w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-teal-500 focus:border-teal-500">
+        </div>
+        <div>
+          <label class="block text-sm font-medium text-gray-700">Booking Time</label>
+          <input type="time" id="bookingTime" required
+            class="mt-1 block w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-teal-500 focus:border-teal-500">
+        </div>
+        <div>
+          <label class="block text-sm font-medium text-gray-700">Notes</label>
+          <textarea id="bookingNotes" rows="2"
+            class="mt-1 block w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-teal-500 focus:border-teal-500"></textarea>
+        </div>
+        <div class="flex justify-end space-x-3 pt-4">
+          <button type="button" onclick="hideQuickBookingModal()"
+            class="bg-gray-300 hover:bg-gray-400 text-gray-800 px-4 py-2 rounded">
+            Cancel
+          </button>
+          <button type="submit" class="bg-purple-600 hover:bg-purple-700 text-white px-4 py-2 rounded">
+            Create Booking
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <script>
+    function openQuickBookingModal() {
+      document.getElementById('quickBookingModal').classList.remove('hidden');
+      document.getElementById('quickBookingModal').classList.add('flex');
+      loadServices();
+    }
+
+    function hideQuickBookingModal() {
+      document.getElementById('quickBookingModal').classList.add('hidden');
+      document.getElementById('quickBookingModal').classList.remove('flex');
+      document.getElementById('quickBookingForm').reset();
+    }
+
+    function loadServices() {
+      return fetch('/services')
+        .then(response => response.json())
+        .then(data => {
+          const select = document.getElementById('bookingService');
+          select.innerHTML = '<option value="">Select a service</option>';
+          data.services.forEach(service => {
+            select.innerHTML += `<option value="${service.id}">${service.name} - $${service.max_price}</option>`;
+          });
+          return data.services;
+        })
+        .catch(error => {
+          console.error('Error loading services:', error);
+          return [];
+        });
+    }
+
+    function updateBookingStatus(selectElement) {
+      const bookingId = selectElement.getAttribute('data-booking-id');
+      const status = selectElement.value;
+
+      fetch(`/bookings/${bookingId}/status`, {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({status: status})
+      })
+        .then(response => response.json())
+        .then(data => {
+          if (data.success) {
+            location.reload();
+          } else {
+            alert('Failed to update booking status');
+          }
+        })
+        .catch(error => console.error('Error:', error));
+    }
+
+    function editBooking(bookingId) {
+      // Fetch booking data and populate form
+      fetch(`/bookings/${bookingId}`)
+        .then(response => response.json())
+        .then(data => {
+          if (data.success) {
+            const booking = data.booking;
+
+            // Change modal title to Edit
+            document.querySelector('#quickBookingModal h3').textContent = 'Edit Booking';
+
+            // Store booking ID for update
+            document.getElementById('quickBookingForm').setAttribute('data-booking-id', booking.id);
+
+            // Populate form fields
+            document.getElementById('bookingCustomerName').value = booking.customer_name || '';
+            document.getElementById('bookingCustomerEmail').value = booking.customer_email || '';
+            document.getElementById('bookingCustomerPhone').value = booking.customer_phone || '';
+            document.getElementById('bookingNotes').value = booking.notes || '';
+
+            // Handle date and time
+            if (booking.scheduled_date) {
+              const dateObj = new Date(booking.scheduled_date);
+              const dateStr = dateObj.toISOString().split('T')[0];
+              const timeStr = dateObj.toTimeString().slice(0, 5);
+              document.getElementById('bookingDate').value = dateStr;
+              document.getElementById('bookingTime').value = timeStr;
+            }
+
+            // Load services and select the current one
+            loadServices().then(() => {
+              // Assuming the first booking item's service is the one to select
+              if (booking.booking_items && booking.booking_items.length > 0) {
+                document.getElementById('bookingService').value = booking.booking_items[0].service_id;
+              }
+            });
+
+            // Show modal
+            document.getElementById('quickBookingModal').classList.remove('hidden');
+            document.getElementById('quickBookingModal').classList.add('flex');
+          } else {
+            alert('Failed to load booking data');
+          }
+        })
+        .catch(error => {
+          console.error('Error:', error);
+          alert('Failed to load booking data');
+        });
+    }
+
+    document.getElementById('quickBookingForm').addEventListener('submit', function (e) {
+      e.preventDefault();
+
+      // Combine date and time values
+      const bookingDate = document.getElementById('bookingDate').value;
+      const bookingTime = document.getElementById('bookingTime').value;
+      // Ensure time is in HH:MM format by padding with leading zeros if needed
+      const [hours, minutes] = bookingTime.split(':');
+      const formattedTime = `${hours.padStart(2, '0')}:${minutes.padStart(2, '0')}`;
+      const bookingDateTime = `${bookingDate}T${formattedTime}`;
+
+      const bookingData = {
+        service_id: parseInt(document.getElementById('bookingService').value),
+        customer_name: document.getElementById('bookingCustomerName').value,
+        customer_email: document.getElementById('bookingCustomerEmail').value,
+        customer_phone: document.getElementById('bookingCustomerPhone').value,
+        booking_date: bookingDateTime,
+        notes: document.getElementById('bookingNotes').value
+      };
+
+      // Check if this is an edit or create
+      const bookingId = this.getAttribute('data-booking-id');
+      const isEdit = bookingId && bookingId !== '';
+
+      const url = isEdit ? `/bookings/${bookingId}` : '/bookings';
+      const method = isEdit ? 'PUT' : 'POST';
+
+      fetch(url, {
+        method: method,
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(bookingData)
+      })
+        .then(response => response.json())
+        .then(data => {
+          if (data.success) {
+            hideQuickBookingModal();
+            // Reset the form's data-booking-id attribute
+            this.removeAttribute('data-booking-id');
+            location.reload();
+          } else {
+            alert(data.error || `Failed to ${isEdit ? 'update' : 'create'} booking`);
+          }
+        })
+        .catch(error => {
+          console.error('Error:', error);
+          alert(`Failed to ${isEdit ? 'update' : 'create'} booking`);
+        });
+    });
+  </script>
+</body>
+
+</html>
