@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"log"
 	"strconv"
+	"time"
 
 	"threadly/internal/db"
 	"threadly/internal/models"
@@ -11,17 +12,30 @@ import (
 	"github.com/gin-gonic/gin"
 )
 
+type MessageObj struct {
+	ID        uint        `json:"id"`
+	MsgType   string      `json:"msgtype"` // "message", "order", "booking"
+	Value     string      `json:"value"`   // string content for normal messages, empty for orders/bookings
+	Data      interface{} `json:"data"`    // order object or booking object as JSON, null for normal messages
+	Sender    string      `json:"sender"`
+	CreatedAt time.Time   `json:"created_at"`
+}
+
 func GetMessages(c *gin.Context) {
 	businessID := c.GetUint("business_id")
 	clientID, err := strconv.ParseUint(c.Param("id"), 10, 32)
 	if err != nil {
+		log.Println("GetMessages: =>> Invalid customer ID")
 		c.String(400, "Invalid customer ID")
 		return
 	}
 
+	log.Println("Getting messages bizID, clientID", businessID, clientID)
+
 	// Verify client belongs to business
 	var client models.Client
 	if err := db.DB.Where("id = ? AND business_id = ?", clientID, businessID).First(&client).Error; err != nil {
+		log.Println("GetMessages: =>> Customer not found by id", clientID)
 		c.String(404, "Customer not found")
 		return
 	}
@@ -29,6 +43,7 @@ func GetMessages(c *gin.Context) {
 	// Get conversation
 	var conversation models.Conversation
 	if err := db.DB.Where("client_id = ?", clientID).First(&conversation).Error; err != nil {
+		log.Println("GetMessages: =>> Conversation not found", clientID, businessID)
 		c.String(404, "Conversation not found")
 		return
 	}
@@ -46,6 +61,7 @@ func GetMessages(c *gin.Context) {
 			ProgressScore:  10,
 		}
 		if err := db.DB.Create(&progress).Error; err != nil {
+			log.Println("GetMessages: =>> Failed to Crete conversation progress", clientID, businessID)
 			c.String(500, "Failed to create conversation progress")
 			return
 		}
@@ -159,7 +175,7 @@ func GetMessages(c *gin.Context) {
 	fmt.Printf("Loading chat for client %d, conversation ID: %d\n", clientID, conversation.ID)
 	fmt.Printf("Progress data: %+v\n", progress)
 
-	c.HTML(200, "chat.html", gin.H{
+	c.HTML(200, "business_chat.html", gin.H{
 		"Customer": client,
 		"Messages": messageObjs,
 		"Progress": progress,
@@ -237,4 +253,54 @@ func UpdateMessage(c *gin.Context) {
 	}
 
 	c.JSON(200, gin.H{"success": true, "message": message})
+}
+
+func MarkConversationAsRead(c *gin.Context) {
+	businessID := c.GetUint("business_id")
+	clientID, err := strconv.ParseUint(c.Param("id"), 10, 32)
+	if err != nil {
+		c.JSON(400, gin.H{"error": "Invalid client ID"})
+		return
+	}
+
+	// Update conversation's last read time
+	now := time.Now()
+	if err := db.DB.Model(&models.Conversation{}).
+		Where("business_id = ? AND client_id = ?", businessID, clientID).
+		Update("last_read_by_business_at", &now).Error; err != nil {
+		c.JSON(500, gin.H{"error": "Failed to mark conversation as read"})
+		return
+	}
+
+	// Also mark all unread messages as read by business
+	if err := db.DB.Model(&models.Message{}).
+		Where("conversation_id IN (SELECT id FROM conversations WHERE business_id = ? AND client_id = ?) AND sender = 'client' AND read_by_business = ?", businessID, clientID, false).
+		Updates(map[string]interface{}{
+			"read_by_business": true,
+			"read_at":          &now,
+		}).Error; err != nil {
+		c.JSON(500, gin.H{"error": "Failed to mark messages as read"})
+		return
+	}
+
+	c.JSON(200, gin.H{"status": "ok"})
+}
+
+func MarkClientConversationAsRead(c *gin.Context) {
+	clientID := c.GetUint("client_id")
+	businessID, err := strconv.ParseUint(c.Param("business_id"), 10, 32)
+	if err != nil {
+		c.JSON(400, gin.H{"error": "Invalid business ID"})
+		return
+	}
+
+	now := time.Now()
+	if err := db.DB.Model(&models.Conversation{}).
+		Where("client_id = ? AND business_id = ?", clientID, businessID).
+		Update("last_read_by_client_at", &now).Error; err != nil {
+		c.JSON(500, gin.H{"error": "Failed to mark conversation as read"})
+		return
+	}
+
+	c.JSON(200, gin.H{"status": "ok"})
 }

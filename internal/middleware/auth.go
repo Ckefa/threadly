@@ -9,18 +9,18 @@ import (
 	"github.com/gin-gonic/gin"
 )
 
-func RequireAuth() gin.HandlerFunc {
+func BizzMiddleware() gin.HandlerFunc {
 	return func(c *gin.Context) {
 		token := extractToken(c)
 		if token == "" {
-			c.Redirect(http.StatusFound, "/login")
+			c.Redirect(http.StatusFound, "/business/login")
 			c.Abort()
 			return
 		}
 
 		claims, err := services.ValidateToken(token)
 		if err != nil {
-			c.Redirect(http.StatusFound, "/login")
+			c.Redirect(http.StatusFound, "/business/login")
 			c.Abort()
 			return
 		}

@@ -1,0 +1,49 @@
+{{define "message_input"}}
+<div class="bg-white border-t border-gray-200 p-4">
+  <form id="message-form" hx-post="clients/{{.Customer.ID}}/messages" hx-target="#messages-container"
+    hx-swap="beforeend" hx-on::after-request="this.reset()">
+    <div class="flex space-x-3">
+      <div class="relative" data-client-id="{{.Customer.ID}}">
+        <button type="button" onclick="toggleActionButtons()"
+          class="bg-purple-600 hover:bg-purple-700 text-white w-10 h-10 rounded-full flex items-center justify-center">
+          <i class="fas fa-plus" id="action-icon"></i>
+        </button>
+        <div id="action-buttons" class="absolute bottom-12 left-0 space-y-2 hidden">
+          <button onclick="openQuickBookingModal(this.closest('[data-client-id]').dataset.clientId)"
+            class="bg-green-500 hover:bg-green-600 text-white px-3 py-2 rounded-lg shadow-lg flex items-center space-x-1 text-sm">
+            <i class="fas fa-calendar-plus"></i>
+            <span>Booking</span>
+          </button>
+          <button onclick="openQuickOrderModal(this.closest('[data-client-id]').dataset.clientId)"
+            class="bg-blue-500 hover:bg-blue-600 text-white px-3 py-2 rounded-lg shadow-lg flex items-center space-x-1 text-sm">
+            <i class="fas fa-shopping-cart"></i>
+            <span>Order</span>
+          </button>
+          <button onclick="openQuotationModal(this.closest('[data-client-id]').dataset.clientId)"
+            class="bg-orange-500 hover:bg-orange-600 text-white px-3 py-2 rounded-lg shadow-lg flex items-center space-x-1 text-sm">
+            <i class="fas fa-file-invoice"></i>
+            <span>Quotation</span>
+          </button>
+          <button onclick="openPaymentModal(this.closest('[data-client-id]').dataset.clientId)"
+            class="bg-yellow-500 hover:bg-yellow-600 text-white px-3 py-2 rounded-lg shadow-lg flex items-center space-x-1 text-sm">
+            <i class="fas fa-credit-card"></i>
+            <span>Payment</span>
+          </button>
+          <button onclick="openGoalModal(this.closest('[data-client-id]').dataset.clientId)"
+            class="bg-purple-500 hover:bg-purple-600 text-white px-3 py-2 rounded-lg shadow-lg flex items-center space-x-1 text-sm">
+            <i class="fas fa-bullseye"></i>
+            <span>Goal</span>
+          </button>
+        </div>
+      </div>
+      <input type="text" name="content" placeholder="Type a message..."
+        class="flex-1 px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-teal-500"
+        required>
+      <input type="hidden" name="sender" value="business">
+      <button type="submit" class="bg-teal-600 text-white px-6 py-2 rounded-lg hover:bg-teal-700">
+        <i class="fas fa-paper-plane"></i>
+      </button>
+    </div>
+  </form>
+</div>
+{{end}}

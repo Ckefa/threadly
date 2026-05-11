@@ -1,0 +1,97 @@
+{{ define "client-content" }}
+<div class="min-h-screen flex items-center justify-center bg-gray-50 py-12 px-4 sm:px-6 lg:px-8">
+    <div class="max-w-md w-full space-y-8">
+        <div>
+            <div class="mx-auto h-12 w-12 flex items-center justify-center rounded-full bg-teal-100">
+                <i class="fas fa-key text-teal-600 text-xl"></i>
+            </div>
+            <h2 class="mt-6 text-center text-3xl font-extrabold text-gray-900">
+                Verify Your Email
+            </h2>
+            <p class="mt-2 text-center text-sm text-gray-600">
+                Enter the code sent to {{.Email}}
+            </p>
+        </div>
+        
+        <!-- OTP Form -->
+        <form class="mt-8 space-y-6" hx-post="/client/verify-otp" hx-target="#verify-result">
+            <input type="hidden" name="email" value="{{.Email}}">
+            
+            <div class="space-y-4">
+                <div>
+                    <label for="otp" class="block text-sm font-medium text-gray-700">
+                        Verification Code
+                    </label>
+                    <div class="mt-1">
+                        <input id="otp" name="otp" type="text" required maxlength="6"
+                            class="appearance-none block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm placeholder-gray-400 focus:outline-none focus:ring-teal-500 focus:border-teal-500 sm:text-sm text-center text-2xl tracking-widest"
+                            placeholder="000000">
+                    </div>
+                    <p class="mt-1 text-xs text-gray-500">
+                        Enter the 6-digit code
+                    </p>
+                </div>
+            </div>
+
+            <div>
+                <button type="submit" 
+                    class="group relative w-full flex justify-center py-2 px-4 border border-transparent text-sm font-medium rounded-md text-white bg-teal-600 hover:bg-teal-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-teal-500">
+                    <span class="absolute left-0 inset-y-0 flex items-center pl-3">
+                        <i class="fas fa-check text-teal-500 group-hover:text-teal-400"></i>
+                    </span>
+                    Verify Code
+                </button>
+            </div>
+        </form>
+
+        <!-- Result Container -->
+        <div id="verify-result"></div>
+        
+        <!-- Error Display -->
+        {{if .Error}}
+            <div class="rounded-md bg-red-50 p-4">
+                <div class="flex">
+                    <div class="flex-shrink-0">
+                        <i class="fas fa-exclamation-circle text-red-400"></i>
+                    </div>
+                    <div class="ml-3">
+                        <h3 class="text-sm font-medium text-red-800">
+                            Error
+                        </h3>
+                        <div class="mt-2 text-sm text-red-700">
+                            {{.Error}}
+                        </div>
+                    </div>
+                </div>
+            </div>
+        {{end}}
+        
+        <!-- Test Info (for development) -->
+        {{if .OTP}}
+            <div class="rounded-md bg-yellow-50 p-4">
+                <div class="flex">
+                    <div class="flex-shrink-0">
+                        <i class="fas fa-info-circle text-yellow-400"></i>
+                    </div>
+                    <div class="ml-3">
+                        <h3 class="text-sm font-medium text-yellow-800">
+                            Test Code
+                        </h3>
+                        <div class="mt-2 text-sm text-yellow-700">
+                            Your test code is: <strong>{{.OTP}}</strong>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        {{end}}
+    </div>
+</div>
+{{ end }}
+
+{{ define "verify.html" }}
+{{ template "layouts/base.html" . }}
+{{ end }}
+
+{{ define "page" }}
+{{ template "layouts/base.html" . }}
+{{ end }}

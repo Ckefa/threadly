@@ -11,7 +11,7 @@ import (
 )
 
 func ShowLogin(c *gin.Context) {
-	c.HTML(200, "login.html", gin.H{
+	c.HTML(200, "business_login.html", gin.H{
 		"Title": "Login - Threadly",
 	})
 }
@@ -80,8 +80,8 @@ func Login(c *gin.Context) {
 		return
 	}
 
-	c.SetCookie("token", token, 86400, "/", "", false, true)
-	c.Redirect(http.StatusFound, "/")
+	c.SetCookie("token", token, 86400, "/business", "", false, true)
+	c.Redirect(http.StatusFound, "/business")
 }
 
 func Logout(c *gin.Context) {

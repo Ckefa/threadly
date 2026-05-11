@@ -1,0 +1,29 @@
+{{define "progress_controls"}}
+<div class="bg-gray-50 border-b border-gray-200 px-6 py-3">
+  <div class="flex items-center justify-between">
+    <div class="flex items-center space-x-3">
+      <span class="text-sm font-medium text-gray-700">Conversation Progress:</span>
+      <select
+        class="conversation-progress-dropdown px-3 py-1 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-teal-500"
+        data-conversation-id="{{.Customer.ConversationID}}">
+        <option value="initial" {{if eq .Progress.CurrentStage "initial" }}selected{{end}}>Initial Contact</option>
+        <option value="qualification" {{if eq .Progress.CurrentStage "qualification" }}selected{{end}}>Qualification
+        </option>
+        <option value="negotiation" {{if eq .Progress.CurrentStage "negotiation" }}selected{{end}}>Negotiation</option>
+        <option value="confirmation" {{if eq .Progress.CurrentStage "confirmation" }}selected{{end}}>Confirmation
+        </option>
+        <option value="in_progress" {{if eq .Progress.CurrentStage "in_progress" }}selected{{end}}>In Progress</option>
+        <option value="completed" {{if eq .Progress.CurrentStage "completed" }}selected{{end}}>Completed</option>
+        <option value="follow_up" {{if eq .Progress.CurrentStage "follow_up" }}selected{{end}}>Follow Up</option>
+      </select>
+      <button class="save-chat-progress-btn px-3 py-1 bg-teal-600 text-white rounded-lg text-sm hover:bg-teal-700"
+        data-conversation-id="{{.Customer.ConversationID}}">
+        <i class="fas fa-save mr-1"></i>Save Progress
+      </button>
+    </div>
+    <div class="text-xs text-gray-500">
+      Progress Score: {{.Progress.ProgressScore}}%
+    </div>
+  </div>
+</div>
+{{end}}

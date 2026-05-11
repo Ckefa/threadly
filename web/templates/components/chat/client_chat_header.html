@@ -1,0 +1,17 @@
+{{define "client_chat_header"}}
+<div class="bg-white border-b border-gray-200 p-4 flex items-center justify-between flex-shrink-0">
+  <div class="flex items-center space-x-3">
+    <div class="w-10 h-10 bg-teal-100 rounded-full flex items-center justify-center">
+      <i class="fas fa-store text-teal-600"></i>
+    </div>
+    <div>
+      <h2 class="font-semibold text-gray-900">{{.Business.Name}}</h2>
+      <p class="text-sm text-gray-500">{{.Business.Type}}</p>
+    </div>
+  </div>
+  <div class="flex items-center space-x-2">
+    <span class="inline-block w-2 h-2 bg-green-500 rounded-full"></span>
+    <span class="text-sm text-gray-500">Online</span>
+  </div>
+</div>
+{{end}}

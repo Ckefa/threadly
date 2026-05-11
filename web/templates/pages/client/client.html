@@ -1,0 +1,52 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>{{.Title}}</title>
+  <script src="https://unpkg.com/htmx.org@1.9.10"></script>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  <style>
+    .unread-badge {
+      background-color: #ef4444; color: white; font-size: 12px; font-weight: bold;
+      min-width: 20px; height: 20px; border-radius: 10px; display: inline-flex;
+      align-items: center; justify-content: center; padding: 0 6px;
+      animation: pulse 2s infinite;
+    }
+    .unread-badge[data-count="1"] { background-color: #f59e0b; }
+    @keyframes pulse { 0%,100% { transform: scale(1); } 50% { transform: scale(1.1); } }
+  </style>
+</head>
+
+<body class="bg-gray-100 h-screen overflow-hidden">
+  <header class="bg-teal-600 text-white p-4 flex items-center justify-between">
+    <div class="flex items-center space-x-4">
+      <i class="fas fa-user text-2xl"></i>
+      <h1 class="text-xl font-semibold">Threadly</h1>
+      <span class="text-sm opacity-90">Customer Portal</span>
+    </div>
+    <div class="flex items-center space-x-4">
+      <span class="text-sm">{{.Email}}</span>
+      <a href="/client/logout" class="hover:bg-teal-700 px-3 py-2 rounded-lg">
+        <i class="fas fa-sign-out-alt"></i>
+      </a>
+    </div>
+  </header>
+
+  <div class="flex h-[calc(100vh-72px)]">
+    {{template "business_list" .}}
+    <main class="flex-1 flex flex-col bg-gray-50" id="chat-area">
+      {{template "empty_state" "Select a business to start chatting"}}
+    </main>
+  </div>
+
+  {{template "client_order" .}}
+  {{template "client_booking" .}}
+
+  <script src="/static/js/modules/shared.js"></script>
+  <script src="/static/js/modules/client.js"></script>
+</body>
+
+</html>

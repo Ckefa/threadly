@@ -1,0 +1,8 @@
+{{define "unread-badge"}}
+{{if gt .UnreadCount 0}}
+<span class="unread-badge" hx-put="clients/{{.ID}}/read" hx-target="#chat-panel"
+  hx-on::after-request="this.style.display='none'">
+  {{.UnreadCount}}
+</span>
+{{end}}
+{{end}}

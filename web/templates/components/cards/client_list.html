@@ -1,0 +1,58 @@
+{{ define "client-list" }}
+
+<div class="flex-1 overflow-y-auto" id="client-list">
+  {{range .Clients}}
+  <div class="client-item px-4 py-3 hover:bg-gray-50 cursor-pointer border-b border-gray-100"
+    onclick="loadClient('{{.ID}}')" data-client-id="{{.ID}}">
+    <div class="flex items-center space-x-3">
+      <div class="w-12 h-12 bg-teal-100 rounded-full flex items-center justify-center">
+        <i class="fas fa-user text-teal-600"></i>
+      </div>
+      <div class="flex-1">
+        <h3 class="font-semibold text-gray-900">{{.Name}}</h3>
+        <p class="text-sm text-gray-500 truncate">{{.Email}}</p>
+      </div>
+
+
+      <div class="flex flex-col items-end space-y-1">
+        <div class="flex items-center space-x-1">
+          {{if .IsOnline}}
+          <div class="w-2 h-2 bg-green-500 rounded-full"></div>
+          <span class="text-xs text-green-600">Online</span>
+          {{else}}
+          <div class="w-2 h-2 bg-gray-400 rounded-full"></div>
+          <span class="text-xs text-gray-500">Offline</span>
+          {{end}}
+
+          <!-- UNREAD BADGE -->
+          {{template "unread-badge" .}}
+        </div>
+
+        <!-- STATUS -->
+        {{ $status := .Status }}
+        <span class="status-badge inline-block px-2 py-1 text-xs rounded-full
+      {{if eq $status " new"}}bg-blue-100 text-blue-800 {{else if eq $status "active" }}bg-green-100 text-green-800
+          {{else if eq $status "awaiting_payment" }}bg-yellow-100 text-yellow-800 {{else}}bg-gray-100
+          text-gray-800{{end}}">
+          {{$status}}
+        </span>
+
+      </div>
+      <button onclick="deleteClient('{{.ID}}', '{{.Name}}')" class="text-red-500 hover:text-red-700 text-base"
+        title="Delete Customer">
+        <i class="fas fa-trash"></i>
+      </button>
+    </div>
+  </div>
+  {{else}}
+  <div class="p-8 text-center text-gray-500">
+    <i class="fas fa-users text-4xl mb-4"></i>
+    <p>No clients yet</p>
+    <button onclick="showNewClientModal()" class="mt-4 text-teal-600 hover:text-teal-700">
+      <i class="fas fa-plus mr-2"></i>Add your first client
+    </button>
+  </div>
+  {{end}}
+</div>
+
+{{end}}
