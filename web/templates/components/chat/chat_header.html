@@ -1,0 +1,33 @@
+{{define "chat_header"}}
+<div class="bg-white border-b border-gray-200 px-6 py-4">
+  <div class="flex items-center justify-between">
+    <div class="flex items-center space-x-3">
+      <div class="w-10 h-10 bg-teal-100 rounded-full flex items-center justify-center">
+        <i class="fas fa-user text-teal-600"></i>
+      </div>
+      <div>
+        <h2 class="font-semibold text-gray-900">{{.Customer.Name}}</h2>
+        <p class="text-sm text-gray-500">{{.Customer.Email}}</p>
+      </div>
+    </div>
+    <div class="flex items-center space-x-3">
+      <div class="flex items-center space-x-1">
+        {{if .Customer.IsOnline}}
+        <div class="w-2 h-2 bg-green-500 rounded-full"></div>
+        <span class="text-xs text-green-600">Online</span>
+        {{else}}
+        <div class="w-2 h-2 bg-gray-400 rounded-full"></div>
+        <span class="text-xs text-gray-500">Offline</span>
+        {{if .Customer.LastSeenAt}}
+        <span class="text-xs text-gray-400">• {{.Customer.LastSeenAt.Format "3:04 PM"}}</span>
+        {{end}}
+        {{end}}
+      </div>
+      <button data-client-id="{{.Customer.ID}}"
+        class="progress-btn px-3 py-1 bg-blue-100 text-blue-700 rounded-lg text-sm hover:bg-blue-200">
+        <i class="fas fa-chart-line mr-1"></i>Analytics
+      </button>
+    </div>
+  </div>
+</div>
+{{end}}

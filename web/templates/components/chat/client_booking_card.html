@@ -1,0 +1,33 @@
+{{define "client_booking_card"}}
+<div class='flex {{if eq .Sender "client"}}justify-end{{else}}justify-start{{end}}'>
+  <div class="max-w-xs lg:max-w-md w-full">
+    <div class="bg-purple-50 border border-purple-200 rounded-lg px-4 py-3" data-message-id="{{.ID}}"
+      data-booking-id="{{if .Data}}{{.Data.id}}{{end}}">
+      <div class="flex items-center justify-between mb-2">
+        <div class="flex items-center space-x-2">
+          <i class="fas fa-calendar-plus text-purple-600"></i>
+          <span class="font-semibold text-purple-800 text-sm">[{{.Data.id}}]</span>
+          <span class="text-gray-700 text-sm">{{index .Data.service_names 0}}</span>
+          {{if .Data}}
+          <span class="text-xs bg-yellow-100 text-yellow-800 px-2 py-1 rounded booking-status">{{.Data.status}}</span>
+          {{end}}
+        </div>
+        <button onclick="openEditBookingModal({{.ID}})" class="text-purple-600 hover:text-purple-800 text-xs"
+          title="Edit Booking">
+          <i class="fas fa-edit"></i>
+        </button>
+      </div>
+      <div class="booking-details text-sm text-gray-700">
+        {{if .Data}}
+        <p class="text-sm">{{index .Data.service_names 0}}</p>
+        <p class="text-xs text-gray-600 booking-date-data">{{.Data.scheduled_date}}</p>
+        <p class="hidden booking-notes-data">{{.Data.notes}}</p>
+        {{end}}
+      </div>
+      <div class="flex items-center justify-between mt-2">
+        <p class="text-xs text-gray-500">{{.CreatedAt.Format "3:04 PM"}}</p>
+      </div>
+    </div>
+  </div>
+</div>
+{{end}}

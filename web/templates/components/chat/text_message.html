@@ -1,0 +1,29 @@
+{{define "text_message"}}
+<div class="flex {{if eq .Sender "business"}}justify-end{{else}}justify-start{{end}}">
+  <div class="max-w-xs lg:max-w-md">
+    <div class="{{if eq .Sender "business"}}bg-teal-600 text-white{{else}}bg-gray-200 text-gray-800{{end}} rounded-lg
+      px-4 py-2">
+      <p class="text-sm">{{.Value}}</p>
+    </div>
+    <div class="flex items-center justify-between mt-1">
+      <p class="text-xs text-gray-500">{{.CreatedAt.Format "3:04 PM"}}</p>
+      {{if eq .Sender "client"}}
+      <div class="flex space-x-1">
+        <button data-message-id="{{.ID}}" data-action-type="task"
+          class="action-btn text-xs text-blue-600 hover:text-blue-800" title="Create Task">
+          <i class="fas fa-tasks"></i>
+        </button>
+        <button data-message-id="{{.ID}}" data-action-type="reminder"
+          class="action-btn text-xs text-yellow-600 hover:text-yellow-800" title="Create Reminder">
+          <i class="fas fa-bell"></i>
+        </button>
+        <button data-message-id="{{.ID}}" data-action-type="booking"
+          class="action-btn text-xs text-green-600 hover:text-green-800" title="Create Booking">
+          <i class="fas fa-calendar"></i>
+        </button>
+      </div>
+      {{end}}
+    </div>
+  </div>
+</div>
+{{end}}

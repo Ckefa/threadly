@@ -1,0 +1,33 @@
+{{define "order_card"}}
+<div class="flex {{if eq .Sender "business"}}justify-end{{else}}justify-start{{end}}">
+  <div class="max-w-xs lg:max-w-md w-full">
+    <div class="bg-blue-50 border border-blue-200 rounded-lg px-4 py-3" data-message-id="{{.ID}}"
+      data-order-id="{{.Data.id}}">
+      <div class="flex items-center justify-between mb-2">
+        <div class="flex items-center space-x-2">
+          <i class="fas fa-shopping-cart text-blue-600"></i>
+          <span class="font-semibold text-blue-800 text-sm">[{{.Data.id}}]</span>
+          <span class="text-gray-700 text-sm">{{index .Data.product_names 0}}</span>
+        </div>
+        <button onclick="openEditOrderModal({{.Data.id}})" class="text-blue-600 hover:text-blue-800 text-xs"
+          title="Edit Order">
+          <i class="fas fa-edit"></i>
+        </button>
+      </div>
+      <div class="order-details text-sm text-gray-700">
+        {{if .Data}}
+        <p class="text-sm">Order #{{.Data.order_number}} - {{if .Data.quantity}}{{.Data.quantity}}{{else}}1{{end}}x
+          ${{printf "%.2f" .Data.total_amount}}</p>
+        <p class="hidden order-notes-data">{{.Data.notes}}</p>
+        {{end}}
+      </div>
+      <div class="flex items-center justify-between mt-2">
+        <p class="text-xs text-gray-500">{{.CreatedAt.Format "3:04 PM"}}</p>
+        {{if .Data.status}}
+        <span class="text-xs bg-yellow-100 text-yellow-800 px-2 py-1 rounded">{{.Data.status}}</span>
+        {{end}}
+      </div>
+    </div>
+  </div>
+</div>
+{{end}}
