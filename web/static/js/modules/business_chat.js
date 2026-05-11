@@ -6,14 +6,14 @@ startMessagePolling();
 
 function scrollToBottom() {
   var container = document.getElementById('messages-container');
-  if (container) requestAnimationFrame(function () {
+  if (container) requestAnimationFrame(function() {
     container.scrollTop = container.scrollHeight;
   });
 }
 
 function markAsRead() {
   fetch(`/business/clients/${clientId}/read`, { method: 'PUT' })
-    .then(function () {
+    .then(function() {
       var badge = document.querySelector('.client-item[data-client-id="' + clientId + '"] .unread-badge');
       if (badge) badge.remove();
     })
@@ -21,13 +21,13 @@ function markAsRead() {
 }
 
 function startMessagePolling() {
-  pollingInterval = setInterval(function () {
+  pollingInterval = setInterval(function() {
     fetchMessages();
   }, 5000);
 }
 
 function fetchMessages() {
-  fetch(`clients/${clientId}/messages`)
+  fetch(`/business/clients/${clientId}/messages`)
     .then(response => response.text())
     .then(html => {
       const parser = new DOMParser();
@@ -46,13 +46,13 @@ function fetchMessages() {
     });
 }
 
-window.addEventListener('beforeunload', function () {
+window.addEventListener('beforeunload', function() {
   if (pollingInterval) {
     clearInterval(pollingInterval);
   }
 });
 
-document.addEventListener('click', function (e) {
+document.addEventListener('click', function(e) {
   const progressBtn = e.target.closest('.view-chat-progress-btn');
   if (progressBtn) {
     const clientId = progressBtn.getAttribute('data-client-id');
@@ -80,7 +80,7 @@ function updateClientStatus(clientId, status) {
   const formData = new FormData();
   formData.append('status', status);
 
-  fetch('/clients/' + clientId + '/status', {
+  fetch('/business/clients/' + clientId + '/status', {
     method: 'PUT',
     body: formData
   })
@@ -119,7 +119,7 @@ function showEnhancedActionModal(messageId) {
 }
 
 function showConversationProgress(clientId) {
-  fetch('/clients/' + clientId + '/conversation-id')
+  fetch('/business/clients/' + clientId + '/conversation-id')
     .then(response => response.json())
     .then(data => {
       if (data.conversation_id) {
@@ -148,7 +148,7 @@ function createQuickAction(messageId, actionType) {
   formData.append('type', actionType);
   formData.append('title', actionType.charAt(0).toUpperCase() + actionType.slice(1) + ' from message');
 
-  htmx.ajax('POST', '/messages/' + messageId + '/actions', {
+  htmx.ajax('POST', 'business/messages/' + messageId + '/actions', {
     values: formData,
     target: '#action-result',
     swap: 'innerHTML'
@@ -161,7 +161,7 @@ function updateConversationStatus(conversationId, stage) {
   formData.append('stage', stage);
   formData.append('reason', 'Manual status update by business');
 
-  fetch('/conversations/' + conversationId + '/status', {
+  fetch('/business/conversations/' + conversationId + '/status', {
     method: 'PUT',
     body: formData
   })
@@ -198,7 +198,7 @@ function saveChatProgress(conversationId, stage) {
   formData.append('stage', stage);
   formData.append('reason', 'Manual progress update from chat');
 
-  fetch('/conversations/' + conversationId + '/status', {
+  fetch('/business/conversations/' + conversationId + '/status', {
     method: 'PUT',
     body: formData
   })
@@ -277,12 +277,12 @@ function editBookingMessage(messageId) {
 }
 
 function updateMessageContent(messageId, newContent) {
-  fetch(`/messages/${messageId}`, {
+  fetch(`/business/messages/${messageId}`, {
     method: 'PUT',
     headers: {
       'Content-Type': 'application/json'
     },
-    body: JSON.stringify({content: newContent})
+    body: JSON.stringify({ content: newContent })
   })
     .then(response => response.json())
     .then(data => {
@@ -430,7 +430,7 @@ function submitEditOrder() {
   formData.append('notes', notes);
   formData.append('quantity', quantity);
 
-  fetch(`/client/orders/${orderId}/update`, {
+  fetch(`/business/client/orders/${orderId}/update`, {
     method: 'POST',
     headers: {
       'Content-Type': 'application/x-www-form-urlencoded'
@@ -464,7 +464,7 @@ function submitEditBooking() {
     booking_date: `${date}T${time}:00Z`
   };
 
-  fetch(`/bookings/${bookingId}`, {
+  fetch(`/business/bookings/${bookingId}`, {
     method: 'PUT',
     headers: {
       'Content-Type': 'application/json'

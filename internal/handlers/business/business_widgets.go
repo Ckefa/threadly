@@ -57,7 +57,7 @@ func QuickBooking(c *gin.Context) {
 	message := models.Message{
 		ConversationID: conversation.ID,
 		Content:        "📅 **Booking Created**\n\nClient: " + client.Name + "\nTitle: " + title + "\n\nClick to set date and details.",
-		Sender:         "user",
+		Sender:         "business",
 	}
 
 	if err := db.DB.Create(&message).Error; err != nil {
@@ -122,7 +122,7 @@ func QuickOrder(c *gin.Context) {
 	message := models.Message{
 		ConversationID: conversation.ID,
 		Content:        "🛒 **Order Created**\n\nClient: " + client.Name + "\nTitle: " + title + "\n\nClick to set order details.",
-		Sender:         "user",
+		Sender:         "business",
 	}
 
 	if err := db.DB.Create(&message).Error; err != nil {
@@ -187,7 +187,7 @@ func RequestPayment(c *gin.Context) {
 	message := models.Message{
 		ConversationID: conversation.ID,
 		Content:        "💳 **Payment Requested**\n\nClient: " + client.Name + "\nTitle: " + title + "\n\nClick to set payment details.",
-		Sender:         "user",
+		Sender:         "business",
 	}
 
 	if err := db.DB.Create(&message).Error; err != nil {
@@ -262,7 +262,7 @@ func SetGoal(c *gin.Context) {
 	message := models.Message{
 		ConversationID: conversation.ID,
 		Content:        "🎯 **Goal Set**\n\nClient: " + client.Name + "\nGoal: " + goalText + "\n\nClick to track progress.",
-		Sender:         "user",
+		Sender:         "business",
 	}
 
 	if err := db.DB.Create(&message).Error; err != nil {
