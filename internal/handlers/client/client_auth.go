@@ -392,7 +392,7 @@ func GetClientMessages(c *gin.Context) {
 		Name string `json:"name"`
 		Type string `json:"business_type"`
 	}
-	db.DB.Raw("SELECT id, first_name || ' ' || last_name as name, business_type FROM businesses WHERE id = ?", businessID).First(&business)
+	db.DB.Raw("SELECT id, name, business_type FROM businesses WHERE id = ?", businessID).First(&business)
 
 	c.HTML(200, "client_chat.html", gin.H{
 		"Business":    business,
