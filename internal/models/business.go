@@ -9,6 +9,7 @@ type Business struct {
 	Name         string    `json:"name"`
 	Username     string    `json:"username"`
 	BusinessType string    `json:"business_type"`
+	Logo         string    `json:"logo"`
 	CreatedAt    time.Time `json:"created_at"`
 	UpdatedAt    time.Time `json:"updated_at"`
 
