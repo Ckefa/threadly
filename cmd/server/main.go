@@ -99,8 +99,8 @@ func main() {
 	r.Static("/static", "./web/static")
 
 	routes.Setup(r)
-	routes.SetupClientRoutes(r)
 	routes.SetupBusinessRoutes(r)
+	routes.SetupClientRoutes(r)
 
 	log.Println("🚀 Running on :" + os.Getenv("APP_PORT"))
 	r.Run(":" + os.Getenv("APP_PORT"))

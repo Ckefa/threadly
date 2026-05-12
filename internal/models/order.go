@@ -5,19 +5,24 @@ import (
 )
 
 type Order struct {
-	ID           uint       `gorm:"primaryKey" json:"id"`
-	BusinessID   uint       `gorm:"not null;index" json:"business_id"`
-	ClientID     uint       `gorm:"not null;index" json:"client_id"`
-	OrderNumber  string     `gorm:"unique;not null" json:"order_number"`
-	Status       string     `gorm:"default:'pending'" json:"status"` // pending, confirmed, fulfilled, cancelled
-	Sender       string     `gorm:"default:'client'" json:"sender"`  // client, business
-	Quantity     int        `gorm:"default:1" json:"quantity"`
-	TotalAmount  float64    `gorm:"not null" json:"total_amount"`
-	PaidAmount   float64    `gorm:"default:0" json:"paid_amount"`
-	DeliveryDate *time.Time `json:"delivery_date"`
-	Notes        string     `gorm:"type:text" json:"notes"`
-	CreatedAt    time.Time  `json:"created_at"`
-	UpdatedAt    time.Time  `json:"updated_at"`
+	ID                 uint       `gorm:"primaryKey" json:"id"`
+	BusinessID         uint       `gorm:"not null;index" json:"business_id"`
+	ClientID           uint       `gorm:"not null;index" json:"client_id"`
+	OrderNumber        string     `gorm:"unique;not null" json:"order_number"`
+	Status             string     `gorm:"default:'draft'" json:"status"` // draft, pending, client_confirmed, confirmed, fulfilled, cancelled
+	Sender             string     `gorm:"default:'client'" json:"sender"` // client, business
+	Quantity           int        `gorm:"default:1" json:"quantity"`
+	TotalAmount        float64    `gorm:"not null" json:"total_amount"`
+	PaidAmount         float64    `gorm:"default:0" json:"paid_amount"`
+	DeliveryDate       *time.Time `json:"delivery_date"`
+	Notes              string     `gorm:"type:text" json:"notes"`
+	ConfirmedByClient  bool       `gorm:"default:false" json:"confirmed_by_client"`
+	ConfirmedByBusiness bool      `gorm:"default:false" json:"confirmed_by_business"`
+	ConfirmedByClientAt *time.Time `json:"confirmed_by_client_at,omitempty"`
+	ConfirmedByBusinessAt *time.Time `json:"confirmed_by_business_at,omitempty"`
+	Draft              bool       `gorm:"default:true" json:"draft"`
+	CreatedAt          time.Time  `json:"created_at"`
+	UpdatedAt          time.Time  `json:"updated_at"`
 
 	// Relationships
 	Business   Business    `gorm:"foreignKey:BusinessID" json:"business,omitempty"`
@@ -44,7 +49,7 @@ type Booking struct {
 	BusinessID    uint      `gorm:"not null;index" json:"business_id"`
 	ClientID      uint      `gorm:"not null;index" json:"client_id"`
 	BookingNumber string    `gorm:"unique;not null" json:"booking_number"`
-	Status        string    `gorm:"default:'pending'" json:"status"` // pending, confirmed, fulfilled, cancelled
+	Status        string    `gorm:"default:'pending'" json:"status"` // pending, confirmed, completed, cancelled
 	Sender        string    `gorm:"default:'client'" json:"sender"`  // client, business
 	ScheduledDate time.Time `gorm:"not null" json:"scheduled_date"`
 	Duration      int       `gorm:"not null" json:"duration"` // in minutes

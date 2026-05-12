@@ -222,6 +222,17 @@ Threadly is a comprehensive customer relationship management (CRM) system built 
 
 ## 📈 Upcoming Features
 
+## Planning
+ - order/service => payment tracking
+   flow: buzz creates 
+         order/service modal appears in client chat 
+         client confirms the order/service
+         buzz initiate payment via quick action buttons
+         the payment invoice modal card will contain order/service id, category order/service, name and price
+         after
+         client confirms payment the buzz approve payments
+        
+   
 ### **Enhanced Communication**
 - **File Sharing**: Multi-format file sharing (images, documents, media)
 - **Business Products Page**: Detailed product catalog with images

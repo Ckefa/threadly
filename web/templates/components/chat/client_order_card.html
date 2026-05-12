@@ -1,31 +1,143 @@
 {{define "client_order_card"}}
-<div class='flex {{if eq .Sender "client"}}justify-end{{else}}justify-start{{end}}'>
-  <div class="max-w-xs lg:max-w-md w-full">
-    <div class="bg-blue-50 border border-blue-200 rounded-lg px-4 py-3" data-message-id="{{.ID}}"
-      data-order-id="{{if .Data}}{{.Data.id}}{{end}}">
-      <div class="flex items-center justify-between mb-2">
-        <div class="flex items-center space-x-2">
-          <i class="fas fa-shopping-cart text-blue-600"></i>
-          <span class="font-semibold text-blue-800 text-sm order-id">[{{.Data.id}}]</span>
-          {{if .Data}}
-          <span class="text-gray-700 text-sm product-name">{{index .Data.product_names 0}}</span>
-          <span class="text-xs bg-yellow-100 text-yellow-800 px-2 py-1 rounded order-status">{{.Data.status}}</span>
-          {{end}}
+{{$order := .Data}}
+{{$status := $order.status}}
+{{$isDraft := eq $status "draft"}}
+{{$isPending := eq $status "pending"}}
+{{$isClientConfirmed := eq $status "client_confirmed"}}
+{{$isConfirmed := eq $status "confirmed"}}
+{{$isFulfilled := eq $status "fulfilled"}}
+{{$isCancelled := eq $status "cancelled"}}
+{{$actionRequired := $order.action_required}}
+<div class="flex {{if eq .Sender "client"}}justify-end{{else}}justify-start{{end}}">
+  <div class="max-w-sm lg:max-w-md w-full">
+    <div class="rounded-xl border-2 p-4 shadow-sm transition-all duration-200
+      {{if $isDraft}}border-dashed border-gray-300 bg-gray-50{{else if $isCancelled}}border-red-200 bg-red-50{{else if $isConfirmed}}border-green-400 bg-green-50{{else if $isFulfilled}}border-teal-400 bg-teal-50{{else if $isClientConfirmed}}border-yellow-400 bg-yellow-50{{else}}border-blue-300 bg-blue-50{{end}}"
+      data-message-id="{{.ID}}"
+      data-order-id="{{$order.id}}"
+      data-order-status="{{$status}}">
+      <!-- Header -->
+      <div class="flex items-start justify-between mb-3">
+        <div class="flex items-center gap-2 min-w-0">
+          <div class="w-8 h-8 rounded-full bg-white flex items-center justify-center shadow-sm flex-shrink-0">
+            <i class="fas fa-shopping-cart {{if $isDraft}}text-gray-400{{else if $isCancelled}}text-red-500{{else}}text-blue-600{{end}}"></i>
+          </div>
+          <div class="min-w-0">
+            <h4 class="font-semibold text-sm text-gray-900 truncate">
+              {{if $order.order_number}}Order {{$order.order_number}}{{else}}New Order{{end}}
+            </h4>
+            <span class="text-xs font-medium px-2 py-0.5 rounded-full
+              {{if $isDraft}}bg-gray-200 text-gray-600
+              {{else if $isPending}}bg-blue-100 text-blue-700
+              {{else if $isClientConfirmed}}bg-yellow-100 text-yellow-700
+              {{else if $isConfirmed}}bg-green-100 text-green-700
+              {{else if $isFulfilled}}bg-teal-100 text-teal-700
+              {{else if $isCancelled}}bg-red-100 text-red-700
+              {{else}}bg-gray-100 text-gray-600{{end}} order-status-badge">
+              {{if $isDraft}}Draft{{else if $isPending}}Pending{{else if $isClientConfirmed}}Confirmed{{else if $isConfirmed}}Confirmed{{else if $isFulfilled}}Fulfilled{{else if $isCancelled}}Cancelled{{else}}{{$status}}{{end}}
+            </span>
+          </div>
         </div>
-        <button onclick="openEditOrderModal({{.ID}})" class="text-blue-600 hover:text-blue-800 text-xs"
-          title="Edit Order">
-          <i class="fas fa-edit"></i>
-        </button>
+        <div class="flex items-center gap-2 flex-shrink-0 ml-2">
+          {{if eq $actionRequired "client"}}
+          <span class="text-xs font-bold text-orange-600 animate-pulse">REQUIRES ACTION</span>
+          {{end}}
+          <button onclick="openEditOrderModal({{$order.id}})" class="text-gray-400 hover:text-blue-600 text-xs p-1" title="Edit Order">
+            <i class="fas fa-edit"></i>
+          </button>
+        </div>
       </div>
-      <div class="order-details text-sm text-gray-700">
-        {{if .Data}}
-        <p class="text-sm">Order #{{.Data.order_number}} - {{if .Data.quantity}}{{.Data.quantity}}{{else}}1{{end}}x
-          ${{printf "%.2f" .Data.total_amount}}</p>
-        <p class="hidden order-notes-data">{{.Data.notes}}</p>
+
+      <!-- Items -->
+      <div class="space-y-2 mb-3">
+        {{range $order.items}}
+        <div class="flex items-center justify-between py-2 border-b border-gray-100 last:border-0">
+          <div class="flex items-center gap-2 min-w-0 flex-1">
+            {{if .image_url}}
+            <img src="{{.image_url}}" class="w-8 h-8 rounded-lg object-cover flex-shrink-0" alt="">
+            {{else}}
+            <div class="w-8 h-8 rounded-lg bg-gray-200 flex items-center justify-center flex-shrink-0 text-xs">📦</div>
+            {{end}}
+            <div class="min-w-0">
+              <p class="font-medium text-sm text-gray-900 truncate">{{.name}}</p>
+              <p class="text-xs text-gray-500">${{printf "%.2f" .unit_price}} each</p>
+            </div>
+          </div>
+          <div class="flex items-center gap-2 flex-shrink-0 ml-2">
+            {{if and $order.editable (eq $actionRequired "client")}}
+            <div class="flex items-center gap-1 bg-white rounded-lg shadow-sm border" data-item-product-id="{{.product_id}}">
+              <button class="qty-btn w-6 h-6 rounded-l flex items-center justify-center text-gray-600 hover:bg-gray-100 text-xs"
+                onclick="clientOrderItemDecrement({{$order.id}}, {{.product_id}}, this)">−</button>
+              <span class="w-6 text-center text-xs font-semibold qty-value">{{.quantity}}</span>
+              <button class="qty-btn w-6 h-6 rounded-r flex items-center justify-center text-gray-600 hover:bg-gray-100 text-xs"
+                onclick="clientOrderItemIncrement({{$order.id}}, {{.product_id}}, this)">+</button>
+            </div>
+            {{else}}
+            <span class="text-sm font-semibold text-gray-800">x{{.quantity}}</span>
+            {{end}}
+            <span class="text-sm font-bold text-gray-900 w-14 text-right">${{printf "%.2f" .total_price}}</span>
+          </div>
+        </div>
         {{end}}
       </div>
-      <div class="flex items-center justify-between mt-2">
-        <p class="text-xs text-gray-500">{{.CreatedAt.Format "3:04 PM"}}</p>
+
+      <p class="hidden order-notes-data">{{$order.notes}}</p>
+      <p class="hidden order-quantity-data">{{$order.quantity}}</p>
+
+      <!-- Total & Notes -->
+      <div class="border-t border-gray-200 pt-3 mb-3">
+        <div class="flex justify-between items-center mb-2">
+          <span class="text-sm text-gray-600 font-medium">Total</span>
+          <span class="text-lg font-bold text-gray-900">${{printf "%.2f" $order.total_amount}}</span>
+        </div>
+        {{if $order.notes}}
+        <div class="bg-white/60 rounded-lg p-2 text-xs text-gray-600 italic">
+          <i class="far fa-sticky-note mr-1"></i>{{$order.notes}}
+        </div>
+        {{end}}
+      </div>
+
+      <!-- Action Buttons -->
+      <div class="flex gap-2">
+        {{if eq $actionRequired "client"}}
+        <button class="flex-1 py-2 px-3 rounded-lg border border-gray-300 text-gray-700 hover:bg-gray-100 text-sm font-medium transition"
+          onclick="clientRequestChanges({{$order.id}})">
+          <i class="fas fa-comment mr-1"></i>Request Changes
+        </button>
+        <button class="flex-1 py-2 px-3 rounded-lg bg-green-600 text-white hover:bg-green-700 text-sm font-medium transition shadow-sm"
+          onclick="clientConfirmOrder({{$order.id}})">
+          <i class="fas fa-check mr-1"></i>Confirm Order
+        </button>
+
+        {{else if $isClientConfirmed}}
+        <div class="w-full text-center py-2 bg-yellow-100 rounded-lg text-yellow-800 text-sm font-medium">
+          <i class="fas fa-clock mr-1"></i>Waiting for business approval
+        </div>
+
+        {{else if $isConfirmed}}
+        <div class="w-full text-center py-2 bg-green-100 rounded-lg text-green-800 text-sm font-medium">
+          <i class="fas fa-check-circle mr-1"></i>Order confirmed
+        </div>
+
+        {{else if $isFulfilled}}
+        <div class="w-full text-center py-2 bg-teal-100 rounded-lg text-teal-800 text-sm font-medium">
+          <i class="fas fa-check-double mr-1"></i>Order fulfilled
+        </div>
+
+        {{else if $isCancelled}}
+        <div class="w-full text-center py-2 bg-red-100 rounded-lg text-red-800 text-sm font-medium">
+          <i class="fas fa-ban mr-1"></i>Order cancelled
+        </div>
+
+        {{else}}
+        <div class="w-full text-center py-2 bg-gray-100 rounded-lg text-gray-600 text-sm font-medium">
+          {{$status}}
+        </div>
+        {{end}}
+      </div>
+
+      <!-- Timestamp -->
+      <div class="mt-2 text-right">
+        <span class="text-xs text-gray-400">{{.CreatedAt.Format "3:04 PM"}}</span>
       </div>
     </div>
   </div>

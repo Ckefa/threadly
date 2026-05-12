@@ -250,24 +250,78 @@ func GetClientMessages(c *gin.Context) {
 
 	for _, order := range orders {
 		var orderItems []models.OrderItem
-		db.DB.Where("order_id = ?", order.ID).Find(&orderItems)
+		db.DB.Where("order_id = ?", order.ID).Preload("Product").Find(&orderItems)
 
 		var productNames []string
+		var firstProductName string
 		for _, item := range orderItems {
-			var product models.Product
-			db.DB.First(&product, item.ProductID)
-			productNames = append(productNames, product.Name)
+			if firstProductName == "" {
+				firstProductName = item.Product.Name
+			}
+			productNames = append(productNames, item.Product.Name)
+		}
+
+		var items []map[string]interface{}
+		for _, item := range orderItems {
+			itemMap := map[string]interface{}{
+				"product_id":  item.ProductID,
+				"name":        item.Product.Name,
+				"quantity":    item.Quantity,
+				"unit_price":  item.UnitPrice,
+				"total_price": item.TotalPrice,
+				"image_url":   item.Product.ImageURL,
+			}
+			if item.Product.ID == 0 {
+				itemMap["name"] = "Product"
+			}
+			items = append(items, itemMap)
+		}
+
+		var actionRequired string
+		editable := false
+
+		switch order.Status {
+		case "draft":
+			actionRequired = "none"
+			editable = true
+		case "pending":
+			if order.Sender == "business" && !order.ConfirmedByClient {
+				actionRequired = "client"
+				editable = true
+			} else if order.Sender == "client" && !order.ConfirmedByBusiness {
+				actionRequired = "business"
+			} else {
+				actionRequired = "none"
+			}
+		case "client_confirmed":
+			actionRequired = "business"
+		case "confirmed":
+			actionRequired = "none"
+		case "fulfilled":
+			actionRequired = "none"
+		case "cancelled":
+			actionRequired = "none"
+		default:
+			actionRequired = "none"
 		}
 
 		orderData := map[string]interface{}{
-			"id":            order.ID,
-			"order_number":  order.OrderNumber,
-			"status":        order.Status,
-			"quantity":      order.Quantity,
-			"total_amount":  order.TotalAmount,
-			"notes":         order.Notes,
-			"created_at":    order.CreatedAt,
-			"product_names": productNames,
+			"id":                 order.ID,
+			"order_number":       order.OrderNumber,
+			"status":             order.Status,
+			"client_confirmed":   order.ConfirmedByClient,
+			"business_confirmed": order.ConfirmedByBusiness,
+			"action_required":    actionRequired,
+			"editable":           editable,
+			"sender":             order.Sender,
+			"draft":              order.Draft,
+			"items":              items,
+			"total_amount":       order.TotalAmount,
+			"quantity":           order.Quantity,
+			"notes":              order.Notes,
+			"product_names":      productNames,
+			"first_product_name": firstProductName,
+			"created_at":         order.CreatedAt,
 		}
 
 		messageObjs = append(messageObjs, MessageObj{
@@ -520,6 +574,135 @@ func ClientUpdateOrder(c *gin.Context) {
 	c.JSON(http.StatusOK, gin.H{"success": true, "order": order})
 }
 
+// ClientConfirmOrder allows the client to confirm an order
+func ClientConfirmOrder(c *gin.Context) {
+	clientID := c.GetUint("client_id")
+	orderIDStr := c.Param("id")
+
+	orderID, err := strconv.ParseUint(orderIDStr, 10, 32)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid order ID"})
+		return
+	}
+
+	var order models.Order
+	if err := db.DB.Where("id = ? AND client_id = ?", orderID, clientID).First(&order).Error; err != nil {
+		c.JSON(http.StatusNotFound, gin.H{"error": "Order not found"})
+		return
+	}
+
+	if order.Status != "pending" {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Order cannot be confirmed in current status"})
+		return
+	}
+
+	if order.ConfirmedByClient {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Order already confirmed by client"})
+		return
+	}
+
+	// Update client-side items if quantities changed
+	var request struct {
+		Items []struct {
+			ProductID uint `json:"product_id"`
+			Quantity  int  `json:"quantity"`
+		} `json:"items,omitempty"`
+	}
+	c.ShouldBindJSON(&request)
+
+	if len(request.Items) > 0 {
+		var totalAmount float64
+		for _, reqItem := range request.Items {
+			var orderItem models.OrderItem
+			if err := db.DB.Where("order_id = ? AND product_id = ?", order.ID, reqItem.ProductID).First(&orderItem).Error; err != nil {
+				continue
+			}
+			oldQty := orderItem.Quantity
+			orderItem.Quantity = reqItem.Quantity
+			orderItem.TotalPrice = float64(reqItem.Quantity) * orderItem.UnitPrice
+			totalAmount += orderItem.TotalPrice
+			db.DB.Save(&orderItem)
+
+			// Adjust stock for quantity change
+			diff := oldQty - reqItem.Quantity
+			if diff != 0 {
+				var product models.Product
+				db.DB.First(&product, reqItem.ProductID)
+				product.Stock += diff
+				db.DB.Save(&product)
+				db.DB.Create(&models.InventoryLog{
+					ProductID: product.ID,
+					Type: func() string {
+						if diff > 0 { return "in" } else { return "out" }
+					}(),
+					Quantity: func() int {
+						if diff < 0 { return -diff } else { return diff }
+					}(),
+					Reason: fmt.Sprintf("Client qty change on confirm #%s", order.OrderNumber),
+				})
+			}
+		}
+		if totalAmount > 0 {
+			order.TotalAmount = totalAmount
+		}
+	}
+
+	now := time.Now()
+	order.ConfirmedByClient = true
+	order.ConfirmedByClientAt = &now
+	order.Status = "client_confirmed"
+	order.UpdatedAt = now
+
+	if err := db.DB.Save(&order).Error; err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to confirm order"})
+		return
+	}
+
+	c.JSON(http.StatusOK, gin.H{
+		"success": true,
+		"order":   order,
+		"message": "Order confirmed! Waiting for business approval.",
+	})
+}
+
+// ClientCancelOrder allows a client to cancel their own order
+func ClientCancelOrder(c *gin.Context) {
+	clientID := c.GetUint("client_id")
+	orderIDStr := c.Param("id")
+
+	orderID, err := strconv.ParseUint(orderIDStr, 10, 32)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid order ID"})
+		return
+	}
+
+	var order models.Order
+	if err := db.DB.Where("id = ? AND client_id = ?", orderID, clientID).First(&order).Error; err != nil {
+		c.JSON(http.StatusNotFound, gin.H{"error": "Order not found"})
+		return
+	}
+
+	if order.Status == "confirmed" || order.Status == "fulfilled" {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Cannot cancel a confirmed/fulfilled order"})
+		return
+	}
+
+	if order.Status == "cancelled" {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Order is already cancelled"})
+		return
+	}
+
+	order.Status = "cancelled"
+	order.UpdatedAt = time.Now()
+	db.DB.Save(&order)
+
+	c.JSON(http.StatusOK, gin.H{
+		"success": true,
+		"order":   order,
+		"message": "Order cancelled",
+	})
+}
+
 // ClientUpdateBooking allows clients to update their booking notes and date
 func ClientUpdateBooking(c *gin.Context) {
 	clientID := c.GetUint("client_id")
@@ -545,4 +728,42 @@ func ClientUpdateBooking(c *gin.Context) {
 
 	db.DB.Save(&booking)
 	c.JSON(http.StatusOK, gin.H{"success": true, "booking": booking})
+}
+
+// ClientCancelBooking allows a client to cancel their own booking
+func ClientCancelBooking(c *gin.Context) {
+	clientID := c.GetUint("client_id")
+	bookingIDStr := c.Param("id")
+
+	bookingID, err := strconv.ParseUint(bookingIDStr, 10, 32)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid booking ID"})
+		return
+	}
+
+	var booking models.Booking
+	if err := db.DB.Where("id = ? AND client_id = ?", bookingID, clientID).First(&booking).Error; err != nil {
+		c.JSON(http.StatusNotFound, gin.H{"error": "Booking not found"})
+		return
+	}
+
+	if booking.Status == "completed" {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Cannot cancel a completed booking"})
+		return
+	}
+
+	if booking.Status == "cancelled" {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Booking is already cancelled"})
+		return
+	}
+
+	booking.Status = "cancelled"
+	booking.UpdatedAt = time.Now()
+	db.DB.Save(&booking)
+
+	c.JSON(http.StatusOK, gin.H{
+		"success": true,
+		"booking": booking,
+		"message": "Booking cancelled successfully",
+	})
 }

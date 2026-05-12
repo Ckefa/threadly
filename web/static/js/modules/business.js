@@ -9,18 +9,6 @@ function hideNewClientModal() {
   document.getElementById('new-client-form').reset();
 }
 
-function openQuickBookingModal(clientId) {
-  populateClientData(clientId);
-  loadServicesForBooking();
-  document.getElementById('quickBookingModal').classList.remove('hidden');
-}
-
-function openQuickOrderModal(clientId) {
-  populateClientData(clientId);
-  loadProductsForOrder();
-  document.getElementById('quickOrderModal').classList.remove('hidden');
-}
-
 function openQuotationModal(clientId) {
   showNotification('Create quotation feature coming soon!', 'info');
 }
@@ -44,70 +32,6 @@ function loadClient(clientId) {
     target: '#chat-area',
     swap: 'innerHTML'
   });
-}
-
-function populateClientData(clientId) {
-  const el = document.querySelector(`[data-client-id="${clientId}"]`);
-  if (el) {
-    const name = el.querySelector('h3')?.textContent || '';
-    const email = el.querySelector('.text-gray-500')?.textContent || '';
-    document.getElementById('orderCustomerName').value = name;
-    document.getElementById('orderCustomerEmail').value = email;
-    document.getElementById('bookingCustomerName').value = name;
-    document.getElementById('bookingCustomerEmail').value = email;
-  }
-}
-
-async function loadProductsForOrder() {
-  try {
-    const response = await fetch('/products');
-    const data = await response.text();
-    const parser = new DOMParser();
-    const doc = parser.parseFromString(data, 'text/html');
-    const productCards = doc.querySelectorAll('[data-product-id]');
-    const select = document.getElementById('orderProduct');
-    select.innerHTML = '<option value="">Choose a product...</option>';
-    productCards.forEach(card => {
-      const opt = document.createElement('option');
-      opt.value = card.dataset.productId;
-      opt.textContent = card.querySelector('h3')?.textContent || 'Unknown Product';
-      select.appendChild(opt);
-    });
-  } catch (error) {
-    console.error('Failed to load products:', error);
-    showNotification('Failed to load products', 'error');
-  }
-}
-
-async function loadServicesForBooking() {
-  try {
-    const response = await fetch('/services');
-    const data = await response.text();
-    const parser = new DOMParser();
-    const doc = parser.parseFromString(data, 'text/html');
-    const serviceCards = doc.querySelectorAll('[data-service-id]');
-    const select = document.getElementById('bookingService');
-    select.innerHTML = '<option value="">Choose a service...</option>';
-    serviceCards.forEach(card => {
-      const opt = document.createElement('option');
-      opt.value = card.dataset.serviceId;
-      opt.textContent = card.querySelector('h3')?.textContent || 'Unknown Service';
-      select.appendChild(opt);
-    });
-  } catch (error) {
-    console.error('Failed to load services:', error);
-    showNotification('Failed to load services', 'error');
-  }
-}
-
-function hideQuickOrderModal() {
-  document.getElementById('quickOrderModal').classList.add('hidden');
-  document.getElementById('quickOrderForm').reset();
-}
-
-function hideQuickBookingModal() {
-  document.getElementById('quickBookingModal').classList.add('hidden');
-  document.getElementById('quickBookingForm').reset();
 }
 
 function deleteClient(clientId, clientName) {
@@ -198,73 +122,6 @@ function saveConversationProgress(clientId, stage) {
 }
 
 document.addEventListener('DOMContentLoaded', function () {
-  document.getElementById('quickOrderForm')?.addEventListener('submit', function (e) {
-    e.preventDefault();
-    const data = {
-      client_id: parseInt(currentClientId),
-      product_id: parseInt(document.getElementById('orderProduct').value),
-      quantity: parseInt(document.getElementById('orderQuantity').value),
-      customer_name: document.getElementById('orderCustomerName').value,
-      customer_email: document.getElementById('orderCustomerEmail').value,
-      customer_phone: document.getElementById('orderCustomerPhone').value,
-      delivery_address: document.getElementById('orderDeliveryAddress').value,
-      notes: document.getElementById('orderNotes').value
-    };
-    fetch('/orders', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(data)
-    })
-      .then(r => r.json())
-      .then(data => {
-        if (data.success) {
-          const sel = document.getElementById('orderProduct');
-          const name = sel.options[sel.selectedIndex].text;
-          hideQuickOrderModal();
-          showNotification(data.message || 'Order created successfully!', 'success');
-          if (data.order) addOrderMessageToChat({ ...data.order, product_name: name, quantity: data.quantity });
-        } else {
-          showNotification(data.error || 'Failed to create order', 'error');
-        }
-      })
-      .catch(e => { console.error(e); showNotification('Failed to create order', 'error'); });
-  });
-
-  document.getElementById('quickBookingForm')?.addEventListener('submit', function (e) {
-    e.preventDefault();
-    const bookingDate = document.getElementById('bookingDate').value;
-    const bookingTime = document.getElementById('bookingTime').value;
-    const [hours, minutes] = bookingTime.split(':');
-    const formattedTime = `${hours.padStart(2, '0')}:${minutes.padStart(2, '0')}`;
-    const data = {
-      client_id: parseInt(currentClientId),
-      service_id: parseInt(document.getElementById('bookingService').value),
-      customer_name: document.getElementById('bookingCustomerName').value,
-      customer_email: document.getElementById('bookingCustomerEmail').value,
-      customer_phone: document.getElementById('bookingCustomerPhone').value,
-      booking_date: `${bookingDate}T${formattedTime}`,
-      notes: document.getElementById('bookingNotes').value
-    };
-    fetch('/bookings', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(data)
-    })
-      .then(r => r.json())
-      .then(data => {
-        if (data.success) {
-          const sel = document.getElementById('bookingService');
-          const name = sel.options[sel.selectedIndex].text;
-          hideQuickBookingModal();
-          showNotification(data.message || 'Booking created successfully!', 'success');
-          if (data.booking) addBookingMessageToChat({ ...data.booking, service_name: name });
-        } else {
-          showNotification(data.error || 'Failed to create booking', 'error');
-        }
-      })
-      .catch(e => { console.error(e); showNotification('Failed to create booking', 'error'); });
-  });
-
   document.getElementById('new-client-form')?.addEventListener('submit', function (e) {
     e.preventDefault();
     fetch('clients', { method: 'POST', body: new FormData(this) })

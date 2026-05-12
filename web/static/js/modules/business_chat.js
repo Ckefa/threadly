@@ -322,11 +322,34 @@ function openEditOrderModal(orderId) {
   }
 
   const notesEl = messageEl.querySelector('.order-notes-data');
+  const qtyEl = messageEl.querySelector('.order-quantity-data');
+  const statusEl = messageEl.querySelector('.order-status-badge');
   const notes = notesEl ? notesEl.textContent.trim() : '';
+  const quantity = qtyEl ? parseInt(qtyEl.textContent.trim()) || 1 : 1;
+  const orderNumber = messageEl.querySelector('h4')?.textContent?.trim() || `#${orderIdFromEl}`;
+  const orderStatus = statusEl ? statusEl.textContent.trim() : 'pending';
 
   document.getElementById('editOrderId').value = orderIdFromEl;
   document.getElementById('editOrderNotes').value = notes;
-  document.getElementById('editOrderQuantity').value = 1;
+  document.getElementById('editOrderQuantity').value = quantity;
+
+  const numberEl = document.getElementById('editOrderNumber');
+  if (numberEl) numberEl.textContent = orderNumber;
+
+  const statusBadge = document.getElementById('editOrderStatusBadge');
+  if (statusBadge) {
+    statusBadge.textContent = orderStatus;
+    const statusColors = {
+      draft: 'bg-gray-200 text-gray-600',
+      pending: 'bg-blue-100 text-blue-700',
+      client_confirmed: 'bg-yellow-100 text-yellow-700',
+      confirmed: 'bg-green-100 text-green-700',
+      fulfilled: 'bg-teal-100 text-teal-700',
+      cancelled: 'bg-red-100 text-red-700'
+    };
+    statusBadge.className = 'text-xs font-medium px-2 py-0.5 rounded-full ' + (statusColors[orderStatus] || 'bg-gray-100 text-gray-600');
+  }
+
   document.getElementById('editOrderModal').classList.remove('hidden');
 }
 
@@ -347,15 +370,35 @@ function openEditBookingModal(bookingId) {
   const notesEl = messageEl.querySelector('.booking-notes-data');
   const dateEl = messageEl.querySelector('.booking-date-data');
   const timeEl = messageEl.querySelector('.booking-time-data');
+  const numberEl = messageEl.querySelector('.booking-number-data');
+  const statusEl = messageEl.querySelector('.booking-status');
 
   const notes = notesEl ? notesEl.textContent.trim() : '';
   const date = dateEl ? dateEl.textContent.trim() : '';
   const time = timeEl ? timeEl.textContent.trim() : '';
+  const bookingNumber = numberEl ? numberEl.textContent.trim() : `#${bookingIdFromEl}`;
+  const bookingStatus = statusEl ? statusEl.textContent.trim() : 'pending';
 
   document.getElementById('editBookingId').value = bookingIdFromEl;
   document.getElementById('editBookingNotes').value = notes;
   document.getElementById('editBookingDate').value = date;
   document.getElementById('editBookingTime').value = time;
+
+  const numberElModal = document.getElementById('editBookingNumber');
+  if (numberElModal) numberElModal.textContent = bookingNumber;
+
+  const statusBadge = document.getElementById('editBookingStatusBadge');
+  if (statusBadge) {
+    statusBadge.textContent = bookingStatus;
+    const statusColors = {
+      pending: 'bg-yellow-100 text-yellow-800',
+      confirmed: 'bg-green-100 text-green-800',
+      completed: 'bg-blue-100 text-blue-800',
+      cancelled: 'bg-red-100 text-red-800'
+    };
+    statusBadge.className = 'text-xs font-medium px-2 py-0.5 rounded-full ' + (statusColors[bookingStatus] || 'bg-gray-100 text-gray-800');
+  }
+
   document.getElementById('editBookingModal').classList.remove('hidden');
 }
 
@@ -389,17 +432,15 @@ function updateBookingCard(bookingId, updatedBooking) {
   const bookingCard = document.querySelector(`[data-booking-id="${bookingId}"]`);
   if (!bookingCard) return;
 
-  const bookingDetails = bookingCard.querySelector('.booking-details p');
+  const bookingDetails = bookingCard.querySelector('.booking-details');
   if (bookingDetails && updatedBooking.scheduled_date) {
     const date = new Date(updatedBooking.scheduled_date);
-    bookingDetails.textContent = date.toLocaleString('en-US', {
-      month: 'short',
-      day: 'numeric',
-      year: 'numeric',
-      hour: 'numeric',
-      minute: '2-digit',
-      hour12: true
-    });
+    const dateStr = date.toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' });
+    const timeStr = date.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' });
+    const timeSpan = bookingDetails.querySelector('.flex.items-center.space-x-1 span');
+    if (timeSpan) {
+      timeSpan.textContent = `${dateStr} at ${timeStr}`;
+    }
   }
 
   const notesData = bookingCard.querySelector('.booking-notes-data');
@@ -417,7 +458,31 @@ function updateBookingCard(bookingId, updatedBooking) {
 
   const statusBadge = bookingCard.querySelector('.booking-status');
   if (statusBadge && updatedBooking.status) {
-    statusBadge.textContent = updatedBooking.status;
+    const status = updatedBooking.status;
+    statusBadge.textContent = status;
+    const statusColors = {
+      pending: 'bg-yellow-100 text-yellow-800',
+      confirmed: 'bg-green-100 text-green-800',
+      completed: 'bg-blue-100 text-blue-800',
+      cancelled: 'bg-red-100 text-red-800'
+    };
+    statusBadge.className = 'text-xs font-medium px-2 py-0.5 rounded-full booking-status ' + (statusColors[status] || 'bg-gray-100 text-gray-800');
+  }
+
+  const actionBtns = bookingCard.querySelector('.flex.items-center.space-x-2.mt-2');
+  if (actionBtns) {
+    const status = updatedBooking.status;
+    if (status === 'pending') {
+      actionBtns.innerHTML = `
+        <button onclick="updateBookingStatusFromCard(${bookingId}, 'confirmed')" class="flex-1 text-xs bg-green-100 text-green-700 hover:bg-green-200 px-2 py-1 rounded font-medium"><i class="fas fa-check mr-1"></i>Confirm</button>
+        <button onclick="updateBookingStatusFromCard(${bookingId}, 'cancelled')" class="flex-1 text-xs bg-red-100 text-red-700 hover:bg-red-200 px-2 py-1 rounded font-medium"><i class="fas fa-times mr-1"></i>Cancel</button>`;
+    } else if (status === 'confirmed') {
+      actionBtns.innerHTML = `
+        <button onclick="updateBookingStatusFromCard(${bookingId}, 'completed')" class="flex-1 text-xs bg-blue-100 text-blue-700 hover:bg-blue-200 px-2 py-1 rounded font-medium"><i class="fas fa-check-double mr-1"></i>Complete</button>
+        <button onclick="updateBookingStatusFromCard(${bookingId}, 'cancelled')" class="flex-1 text-xs bg-red-100 text-red-700 hover:bg-red-200 px-2 py-1 rounded font-medium"><i class="fas fa-times mr-1"></i>Cancel</button>`;
+    } else {
+      actionBtns.remove();
+    }
   }
 }
 
@@ -443,6 +508,7 @@ function submitEditOrder() {
         showNotification('Order updated successfully!', 'success');
         hideEditOrderModal();
         updateOrderCard(orderId, data.order);
+        fetchMessages();
       } else {
         showNotification(data.error || 'Failed to update order', 'error');
       }
@@ -451,6 +517,107 @@ function submitEditOrder() {
       console.error('Error:', error);
       showNotification('Failed to update order', 'error');
     });
+}
+
+// ========== Order Lifecycle Functions ==========
+
+function sendOrderToClient(orderId) {
+  if (!confirm('Send this order to the client?')) return;
+  fetch(`/business/orders/${orderId}/send`, { method: 'POST' })
+    .then(r => r.json())
+    .then(data => {
+      if (data.success) {
+        showNotification('Order sent to client!', 'success');
+        fetchMessages();
+      } else {
+        showNotification(data.error || 'Failed to send order', 'error');
+      }
+    })
+    .catch(e => { console.error(e); showNotification('Failed to send order', 'error'); });
+}
+
+function confirmOrderBusiness(orderId) {
+  if (!confirm('Confirm and process this order?')) return;
+  fetch(`/business/orders/${orderId}/confirm`, { method: 'POST' })
+    .then(r => r.json())
+    .then(data => {
+      if (data.success) {
+        showNotification('Order confirmed!', 'success');
+        fetchMessages();
+      } else {
+        showNotification(data.error || 'Failed to confirm order', 'error');
+      }
+    })
+    .catch(e => { console.error(e); showNotification('Failed to confirm order', 'error'); });
+}
+
+function rejectOrder(orderId) {
+  if (!confirm('Reject this order?')) return;
+  fetch(`/business/orders/${orderId}/reject`, { method: 'POST' })
+    .then(r => r.json())
+    .then(data => {
+      if (data.success) {
+        showNotification('Order rejected', 'info');
+        fetchMessages();
+      } else {
+        showNotification(data.error || 'Failed to reject order', 'error');
+      }
+    })
+    .catch(e => { console.error(e); showNotification('Failed to reject order', 'error'); });
+}
+
+function cancelDraftOrder(orderId) {
+  if (!confirm('Discard this draft order?')) return;
+  fetch(`/business/orders/${orderId}/reject`, { method: 'POST' })
+    .then(r => r.json())
+    .then(data => {
+      if (data.success) {
+        showNotification('Draft discarded', 'info');
+        fetchMessages();
+      } else {
+        showNotification(data.error || 'Failed to discard draft', 'error');
+      }
+    })
+    .catch(e => { console.error(e); showNotification('Failed to discard draft', 'error'); });
+}
+
+function orderItemIncrement(orderId, productId, btn) {
+  fetch(`/business/orders/${orderId}/items/${productId}/increment`, { method: 'POST' })
+    .then(r => r.json())
+    .then(data => {
+      if (data.success) fetchMessages();
+    })
+    .catch(console.error);
+}
+
+function orderItemDecrement(orderId, productId, btn) {
+  fetch(`/business/orders/${orderId}/items/${productId}/decrement`, { method: 'POST' })
+    .then(r => r.json())
+    .then(data => {
+      if (data.success) fetchMessages();
+    })
+    .catch(console.error);
+}
+
+function updateBookingStatusFromCard(bookingId, newStatus) {
+  const action = newStatus === 'confirmed' ? 'confirm' : newStatus === 'completed' ? 'complete' : 'cancel';
+  if (!confirm(`Are you sure you want to ${action} this booking?`)) return;
+
+  fetch(`/business/bookings/${bookingId}/status`, {
+    method: 'PUT',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ status: newStatus })
+  })
+    .then(r => r.json())
+    .then(data => {
+      if (data.success) {
+        showNotification(`Booking ${action}ed successfully!`, 'success');
+        fetchMessages();
+      } else {
+        showNotification(data.error || `Failed to ${action} booking`, 'error');
+      }
+    })
+    .catch(e => { console.error(e); showNotification(`Failed to ${action} booking`, 'error'); });
 }
 
 function submitEditBooking() {
@@ -486,3 +653,5 @@ function submitEditBooking() {
       showNotification('Failed to update booking', 'error');
     });
 }
+
+

@@ -10,12 +10,12 @@ import (
 	"github.com/gin-gonic/gin"
 )
 
-var businessHandler business.BusinessHandler
+var businessHandler *business.BusinessHandler
 
 func SetupBusinessRoutes(r *gin.Engine) {
 
 	// Initialize business handler
-	businessHandler := business.NewBusinessHandler(db.DB)
+	businessHandler = business.NewBusinessHandler(db.DB)
 
 	// PUBLIC - Business Auth Routes
 	r.GET("/business/login", handlers.ShowLogin)
@@ -82,6 +82,14 @@ func SetupBusinessRoutes(r *gin.Engine) {
 		protected.POST("/clients/:id/quick-order", business.QuickOrder)
 		protected.POST("/clients/:id/request-payment", business.RequestPayment)
 		protected.POST("/clients/:id/set-goal", business.SetGoal)
+
+		// Product picker & order lifecycle routes
+		protected.GET("/conversations/:conversation_id/products", businessHandler.GetConversationProducts)
+		protected.GET("/conversations/:conversation_id/services", businessHandler.GetConversationServices)
+		protected.POST("/conversations/:conversation_id/order-draft", businessHandler.CreateOrderDraft)
+		protected.POST("/orders/:id/send", businessHandler.SendOrderToClient)
+		protected.POST("/orders/:id/confirm", businessHandler.ConfirmOrderBusiness)
+		protected.POST("/orders/:id/reject", businessHandler.RejectOrder)
 
 		// Conversation progress routes
 		protected.GET("/conversations/:conversation_id/progress", handlers.GetConversationProgress)

@@ -26,9 +26,12 @@ func SetupClientRoutes(r *gin.Engine) {
 		clientProtected.GET("/businesses/:business_id/services", businessHandler.GetBusinessServices)
 		clientProtected.POST("/businesses/:business_id/bookings", businessHandler.ClientCreateBooking)
 		clientProtected.POST("/orders", businessHandler.ClientCreateOrder)
-		clientProtected.POST("/bookings", businessHandler.ClientCreateBooking)
+		clientProtected.POST("/orders/:id/confirm", client.ClientConfirmOrder)
+		clientProtected.POST("/orders/:id/cancel", client.ClientCancelOrder)
 		clientProtected.POST("/orders/:id/update", client.ClientUpdateOrder)
+		clientProtected.POST("/bookings", businessHandler.ClientCreateBooking)
 		clientProtected.POST("/bookings/:id/update", client.ClientUpdateBooking)
+		clientProtected.POST("/bookings/:id/cancel", client.ClientCancelBooking)
 		clientProtected.PUT("/businesses/:business_id/read", handlers.MarkClientConversationAsRead)
 		clientProtected.POST("/heartbeat", client.ClientHeartbeat)
 	}

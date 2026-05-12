@@ -93,24 +93,77 @@ func GetMessages(c *gin.Context) {
 
 	for _, order := range orders {
 		var orderItems []models.OrderItem
-		db.DB.Where("order_id = ?", order.ID).Find(&orderItems)
+		db.DB.Where("order_id = ?", order.ID).Preload("Product").Find(&orderItems)
 
 		var productNames []string
+		var firstProductName string
 		for _, item := range orderItems {
-			var product models.Product
-			db.DB.First(&product, item.ProductID)
-			productNames = append(productNames, product.Name)
+			if firstProductName == "" {
+				firstProductName = item.Product.Name
+			}
+			productNames = append(productNames, item.Product.Name)
+		}
+
+		var items []map[string]interface{}
+		for _, item := range orderItems {
+			itemMap := map[string]interface{}{
+				"product_id":  item.ProductID,
+				"name":        item.Product.Name,
+				"quantity":    item.Quantity,
+				"unit_price":  item.UnitPrice,
+				"total_price": item.TotalPrice,
+				"image_url":   item.Product.ImageURL,
+			}
+			if item.Product.ID == 0 {
+				itemMap["name"] = "Product"
+			}
+			items = append(items, itemMap)
+		}
+
+		var actionRequired string
+		editable := false
+
+		switch order.Status {
+		case "draft":
+			actionRequired = "none"
+			editable = true
+		case "pending":
+			if order.Sender == "business" && !order.ConfirmedByClient {
+				actionRequired = "client"
+			} else if order.Sender == "client" && !order.ConfirmedByBusiness {
+				actionRequired = "business"
+			} else {
+				actionRequired = "none"
+			}
+		case "client_confirmed":
+			actionRequired = "business"
+		case "confirmed":
+			actionRequired = "none"
+		case "fulfilled":
+			actionRequired = "none"
+		case "cancelled":
+			actionRequired = "none"
+		default:
+			actionRequired = "none"
 		}
 
 		orderData := map[string]interface{}{
-			"id":            order.ID,
-			"order_number":  order.OrderNumber,
-			"status":        order.Status,
-			"quantity":      order.Quantity,
-			"total_amount":  order.TotalAmount,
-			"notes":         order.Notes,
-			"created_at":    order.CreatedAt,
-			"product_names": productNames,
+			"id":                 order.ID,
+			"order_number":       order.OrderNumber,
+			"status":             order.Status,
+			"client_confirmed":   order.ConfirmedByClient,
+			"business_confirmed": order.ConfirmedByBusiness,
+			"action_required":    actionRequired,
+			"editable":           editable,
+			"sender":             order.Sender,
+			"draft":              order.Draft,
+			"items":              items,
+			"total_amount":       order.TotalAmount,
+			"quantity":           order.Quantity,
+			"notes":              order.Notes,
+			"product_names":      productNames,
+			"first_product_name": firstProductName,
+			"created_at":         order.CreatedAt,
 		}
 
 		messageObjs = append(messageObjs, MessageObj{
@@ -131,6 +184,7 @@ func GetMessages(c *gin.Context) {
 
 	for _, booking := range bookings {
 		var serviceName string
+		var serviceNames []string
 		var bookingItems []models.BookingItem
 		db.DB.Where("booking_id = ?", booking.ID).Find(&bookingItems)
 
@@ -138,14 +192,18 @@ func GetMessages(c *gin.Context) {
 			var service models.Service
 			if err := db.DB.First(&service, item.ServiceID).Error; err == nil {
 				serviceName = service.Name
-				break
+				serviceNames = append(serviceNames, service.Name)
 			}
 		}
 
 		bookingData := map[string]interface{}{
 			"id":             booking.ID,
+			"booking_number": booking.BookingNumber,
 			"service_name":   serviceName,
+			"service_names":  serviceNames,
 			"scheduled_date": booking.ScheduledDate,
+			"duration":       booking.Duration,
+			"total_amount":   booking.TotalAmount,
 			"notes":          booking.Notes,
 			"status":         booking.Status,
 			"created_at":     booking.CreatedAt,

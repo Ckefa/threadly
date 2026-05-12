@@ -128,7 +128,7 @@ func (h *BusinessHandler) GetDashboard(c *gin.Context) {
 	// Calculate total revenue from completed orders and bookings
 	var ordersRevenue, bookingsRevenue float64
 	h.db.Model(&models.Order{}).Select("COALESCE(SUM(total_amount), 0)").Where("business_id = ? AND status IN ?", businessID, []string{"confirmed", "fulfilled"}).Scan(&ordersRevenue)
-	h.db.Model(&models.Booking{}).Select("COALESCE(SUM(total_amount), 0)").Where("business_id = ? AND status IN ?", businessID, []string{"confirmed", "fulfilled"}).Scan(&bookingsRevenue)
+	h.db.Model(&models.Booking{}).Select("COALESCE(SUM(total_amount), 0)").Where("business_id = ? AND status IN ?", businessID, []string{"confirmed", "completed"}).Scan(&bookingsRevenue)
 	totalRevenue = ordersRevenue + bookingsRevenue
 
 	// Get recent orders with client info

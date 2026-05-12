@@ -120,7 +120,7 @@ func (h *BusinessHandler) GetBookings(c *gin.Context) {
 	var bookings []models.Booking
 	h.db.Where("business_id = ?", businessID).Find(&bookings)
 
-	var pendingCount, confirmedCount, completedCount, canceledCount int64
+	var pendingCount, confirmedCount, completedCount, cancelledCount int64
 	var totalRevenue float64
 
 	for _, booking := range bookings {
@@ -131,21 +131,21 @@ func (h *BusinessHandler) GetBookings(c *gin.Context) {
 			confirmedCount++
 		case "completed":
 			completedCount++
-		case "canceled":
-			canceledCount++
+			totalRevenue += booking.TotalAmount
+		case "cancelled":
+			cancelledCount++
 		}
-		totalRevenue += booking.TotalAmount
 	}
 
 	c.HTML(http.StatusOK, "bookings.html", gin.H{
-		"Business":       gin.H{},
-		"Bookings":       bookings,
-		"PendingCount":   pendingCount,
-		"ConfirmedCount": confirmedCount,
-		"CompletedCount": completedCount,
-		"CanceledCount":  canceledCount,
-		"TotalBookings":  len(bookings),
-		"TotalRevenue":   totalRevenue,
+		"Business":        gin.H{},
+		"Bookings":        bookings,
+		"PendingCount":    pendingCount,
+		"ConfirmedCount":  confirmedCount,
+		"CompletedCount":  completedCount,
+		"CancelledCount":  cancelledCount,
+		"TotalBookings":   len(bookings),
+		"TotalRevenue":    totalRevenue,
 	})
 }
 
@@ -194,7 +194,36 @@ func (h *BusinessHandler) UpdateBookingStatus(c *gin.Context) {
 		return
 	}
 
-	booking.Status = request.Status
+	newStatus := request.Status
+	validTransitions := map[string][]string{
+		"pending":   {"confirmed", "cancelled"},
+		"confirmed": {"completed", "cancelled"},
+		"completed": {},
+		"cancelled": {},
+	}
+
+	allowed, ok := validTransitions[booking.Status]
+	if !ok {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid current booking status"})
+		return
+	}
+
+	transitionAllowed := false
+	for _, s := range allowed {
+		if s == newStatus {
+			transitionAllowed = true
+			break
+		}
+	}
+
+	if !transitionAllowed {
+		c.JSON(http.StatusBadRequest, gin.H{
+			"error": fmt.Sprintf("Cannot transition booking from '%s' to '%s'", booking.Status, newStatus),
+		})
+		return
+	}
+
+	booking.Status = newStatus
 	if err := h.db.Save(&booking).Error; err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to update booking status"})
 		return

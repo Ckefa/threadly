@@ -1,32 +1,99 @@
 {{define "client_booking_card"}}
+{{$statusColor := "bg-gray-100 text-gray-800"}}
+{{$statusBg := "bg-gray-50 border-gray-200"}}
+{{$iconColor := "text-gray-600"}}
+{{if eq .Data.status "pending"}}
+  {{$statusColor = "bg-yellow-100 text-yellow-800"}}
+  {{$statusBg = "bg-yellow-50 border-yellow-200"}}
+  {{$iconColor = "text-yellow-600"}}
+{{else if eq .Data.status "confirmed"}}
+  {{$statusColor = "bg-green-100 text-green-800"}}
+  {{$statusBg = "bg-green-50 border-green-200"}}
+  {{$iconColor = "text-green-600"}}
+{{else if eq .Data.status "completed"}}
+  {{$statusColor = "bg-blue-100 text-blue-800"}}
+  {{$statusBg = "bg-blue-50 border-blue-200"}}
+  {{$iconColor = "text-blue-600"}}
+{{else if eq .Data.status "cancelled"}}
+  {{$statusColor = "bg-red-100 text-red-800"}}
+  {{$statusBg = "bg-red-50 border-red-200"}}
+  {{$iconColor = "text-red-600"}}
+{{end}}
 <div class='flex {{if eq .Sender "client"}}justify-end{{else}}justify-start{{end}}'>
   <div class="max-w-xs lg:max-w-md w-full">
-    <div class="bg-purple-50 border border-purple-200 rounded-lg px-4 py-3" data-message-id="{{.ID}}"
+    <div class="{{$statusBg}} border rounded-lg px-4 py-3" data-message-id="{{.ID}}"
       data-booking-id="{{if .Data}}{{.Data.id}}{{end}}">
       <div class="flex items-center justify-between mb-2">
-        <div class="flex items-center space-x-2">
-          <i class="fas fa-calendar-plus text-purple-600"></i>
-          <span class="font-semibold text-purple-800 text-sm">[{{.Data.id}}]</span>
-          <span class="text-gray-700 text-sm">{{index .Data.service_names 0}}</span>
-          {{if .Data}}
-          <span class="text-xs bg-yellow-100 text-yellow-800 px-2 py-1 rounded booking-status">{{.Data.status}}</span>
-          {{end}}
+        <div class="flex items-center space-x-2 min-w-0">
+          <i class="fas fa-calendar-plus {{$iconColor}}"></i>
+          <span class="font-semibold text-sm {{$iconColor}}">#{{.Data.booking_number}}</span>
+          <span class="text-gray-700 text-sm truncate">{{index .Data.service_names 0}}</span>
         </div>
-        <button onclick="openEditBookingModal({{.ID}})" class="text-purple-600 hover:text-purple-800 text-xs"
-          title="Edit Booking">
-          <i class="fas fa-edit"></i>
-        </button>
+        <div class="flex items-center space-x-1 flex-shrink-0 ml-2">
+          {{if and .Data (eq .Data.status "pending")}}
+          <button onclick="cancelBooking({{.Data.id}})" class="text-red-500 hover:text-red-700 text-xs" title="Cancel Booking">
+            <i class="fas fa-times"></i>
+          </button>
+          {{end}}
+          <button onclick="openEditBookingModal({{.ID}})" class="{{$iconColor}} hover:opacity-80 text-xs" title="Edit Booking">
+            <i class="fas fa-edit"></i>
+          </button>
+        </div>
       </div>
-      <div class="booking-details text-sm text-gray-700">
+      <div class="booking-details text-sm text-gray-700 space-y-1">
         {{if .Data}}
-        <p class="text-sm">{{index .Data.service_names 0}}</p>
-        <p class="text-xs text-gray-600 booking-date-data">{{.Data.scheduled_date}}</p>
+        <p class="flex items-center space-x-1">
+          <i class="fas fa-clock text-xs text-gray-400"></i>
+          <span>{{.Data.scheduled_date}}</span>
+        </p>
+        {{if .Data.duration}}
+        <p class="flex items-center space-x-1">
+          <i class="fas fa-hourglass-half text-xs text-gray-400"></i>
+          <span>{{.Data.duration}} min</span>
+        </p>
+        {{end}}
+        {{if .Data.total_amount}}
+        <p class="flex items-center space-x-1">
+          <i class="fas fa-tag text-xs text-gray-400"></i>
+          <span>${{printf "%.2f" .Data.total_amount}}</span>
+        </p>
+        {{end}}
+        {{if .Data.notes}}
+        <p class="text-xs text-gray-500 italic mt-1 border-t border-gray-200 pt-1">{{.Data.notes}}</p>
+        {{end}}
         <p class="hidden booking-notes-data">{{.Data.notes}}</p>
+        <p class="hidden booking-number-data">{{.Data.booking_number}}</p>
         {{end}}
       </div>
-      <div class="flex items-center justify-between mt-2">
-        <p class="text-xs text-gray-500">{{.CreatedAt.Format "3:04 PM"}}</p>
+      <div class="flex items-center justify-between mt-3 pt-2 border-t border-gray-200 border-opacity-50">
+        <p class="text-xs text-gray-400">{{.CreatedAt.Format "3:04 PM"}}</p>
+        <span class="text-xs font-medium {{$statusColor}} px-2 py-0.5 rounded-full booking-status">{{.Data.status}}</span>
       </div>
+      {{if eq .Data.status "pending"}}
+      <div class="mt-2 pt-2 border-t border-gray-200 border-opacity-50">
+        <p class="text-xs text-center text-yellow-600 font-medium">
+          <i class="fas fa-clock mr-1"></i>Awaiting business confirmation
+        </p>
+      </div>
+      {{else if eq .Data.status "confirmed"}}
+      <div class="mt-2 pt-2 border-t border-gray-200 border-opacity-50">
+        <p class="text-xs text-center text-green-600 font-medium">
+          <i class="fas fa-check-circle mr-1"></i>Your booking is confirmed
+        </p>
+      </div>
+      {{else if eq .Data.status "completed"}}
+      <div class="mt-2 pt-2 border-t border-gray-200 border-opacity-50">
+        <p class="text-xs text-center text-blue-600 font-medium">
+          <i class="fas fa-check-double mr-1"></i>Service completed
+        </p>
+      </div>
+      {{else if eq .Data.status "cancelled"}}
+      <div class="mt-2 pt-2 border-t border-gray-200 border-opacity-50">
+        <p class="text-xs text-center text-red-600 font-medium">
+          <i class="fas fa-ban mr-1"></i>This booking was cancelled
+        </p>
+      </div>
+      {{end}}
     </div>
   </div>
 </div>
