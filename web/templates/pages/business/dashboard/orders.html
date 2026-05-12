@@ -449,7 +449,7 @@
       const orderId = selectElement.dataset.orderId;
       const status = selectElement.value;
 
-      fetch(`/orders/${orderId}/status`, {
+      fetch(`business/orders/${orderId}/status`, {
         method: 'PUT',
         headers: {
           'Content-Type': 'application/json',
@@ -485,7 +485,7 @@
         notes: document.getElementById('orderNotes').value
       };
 
-      fetch('/orders', {
+      fetch('orders', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -520,7 +520,7 @@
         notes: document.getElementById('bookingNotes').value
       };
 
-      fetch('/bookings', {
+      fetch('bookings', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',

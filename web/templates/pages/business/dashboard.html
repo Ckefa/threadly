@@ -96,7 +96,8 @@
           <button class="text-gray-500 hover:text-gray-700">
             <i class="fas fa-bell"></i>
           </button>
-          <button onclick="showBusinessProfile()" class="flex items-center space-x-2 hover:opacity-80">
+          <button id="profileTrigger" onclick="showBusinessProfile()"
+            class="flex items-center space-x-2 hover:opacity-80">
             {{if .Business.Logo}}
             <img src="/static/{{.Business.Logo}}" alt="Logo" class="w-8 h-8 rounded-full object-cover">
             {{else}}
@@ -141,29 +142,29 @@
             <span
               class="ml-auto bg-yellow-200 text-yellow-800 text-xs px-2 py-1 rounded-full">{{.PendingOrderCount}}</span>
           </a>
-          <a href="/bookings"
+          <a href="/business/bookings"
             class="sidebar-item flex items-center px-4 py-2 text-sm font-medium rounded-md text-gray-700 hover:bg-gray-100">
             <i class="fas fa-calendar-check mr-3"></i>
             Bookings
             <span
               class="ml-auto bg-blue-200 text-blue-800 text-xs px-2 py-1 rounded-full">{{.PendingBookingCount}}</span>
           </a>
-          <a href="/payments"
+          <a href="/business/payments"
             class="sidebar-item flex items-center px-4 py-2 text-sm font-medium rounded-md text-gray-700 hover:bg-gray-100">
             <i class="fas fa-credit-card mr-3"></i>
             Payments
           </a>
-          <a href="/inventory"
+          <a href="/business/inventory"
             class="sidebar-item flex items-center px-4 py-2 text-sm font-medium rounded-md text-gray-700 hover:bg-gray-100">
             <i class="fas fa-warehouse mr-3"></i>
             Inventory
           </a>
-          <a href="/analytics"
+          <a href="/business/analytics"
             class="sidebar-item flex items-center px-4 py-2 text-sm font-medium rounded-md text-gray-700 hover:bg-gray-100">
             <i class="fas fa-chart-bar mr-3"></i>
             Analytics
           </a>
-          <a href="/customers"
+          <a href="/business/customers"
             class="sidebar-item flex items-center px-4 py-2 text-sm font-medium rounded-md text-gray-700 hover:bg-gray-100">
             <i class="fas fa-users mr-3"></i>
             Customers
@@ -290,20 +291,30 @@
   {{template "business_profile" .}}
 
   <script>
-    // Business Profile Modal - must be on window for inline onclick handlers
-    window.showBusinessProfile = function() {
+    // Business Profile Modal
+    function showBusinessProfile() {
       const el = document.getElementById('businessProfileModal');
       if (el) el.classList.remove('hidden');
-    };
-    window.hideBusinessProfile = function() {
+    }
+    function hideBusinessProfile() {
       const el = document.getElementById('businessProfileModal');
       if (el) el.classList.add('hidden');
-    };
+    }
 
-    document.addEventListener('DOMContentLoaded', function() {
+    // Bind profile trigger directly (script is at bottom, DOM is ready)
+    (function () {
+      var trigger = document.getElementById('profileTrigger');
+      if (trigger) {
+        trigger.addEventListener('click', showBusinessProfile);
+      } else {
+        console.warn('profileTrigger not found');
+      }
+    })();
+
+    document.addEventListener('DOMContentLoaded', function () {
       const profileForm = document.getElementById('businessProfileForm');
       if (profileForm) {
-        profileForm.addEventListener('submit', function(e) {
+        profileForm.addEventListener('submit', function (e) {
           e.preventDefault();
           const formData = new FormData();
           formData.append('name', document.getElementById('profileName').value);
@@ -319,25 +330,25 @@
             method: 'PUT',
             body: formData
           })
-          .then(response => response.json())
-          .then(data => {
-            if (data.success) {
-              hideBusinessProfile();
-              location.reload();
-            } else {
-              alert(data.error || 'Failed to update profile');
-            }
-          })
-          .catch(error => {
-            console.error('Profile update error:', error);
-            alert('Failed to update profile');
-          });
+            .then(response => response.json())
+            .then(data => {
+              if (data.success) {
+                hideBusinessProfile();
+                location.reload();
+              } else {
+                alert(data.error || 'Failed to update profile');
+              }
+            })
+            .catch(error => {
+              console.error('Profile update error:', error);
+              alert('Failed to update profile');
+            });
         });
 
-        document.getElementById('profileLogoInput').addEventListener('change', function(e) {
+        document.getElementById('profileLogoInput').addEventListener('change', function (e) {
           if (e.target.files.length === 0) return;
           const reader = new FileReader();
-          reader.onload = function(ev) {
+          reader.onload = function (ev) {
             const preview = document.querySelector('#profileLogoPreview');
             preview.innerHTML = '<img src="' + ev.target.result + '" class="w-full h-full object-cover">';
           };
