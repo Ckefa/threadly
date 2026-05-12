@@ -77,7 +77,7 @@
       <a href="/business/dashboard"
         class="bg-purple-600 hover:bg-purple-700 px-4 py-2 rounded-lg flex items-center space-x-2 relative">
         <i class="fas fa-chart-line"></i>
-        <span>Business</span>
+        <span>Dashboard</span>
         {{if gt .TotalPending 0}}
         <span
           class="shake-notification absolute -top-2 -right-2 bg-red-500 text-white text-xs font-bold rounded-full h-5 w-5 flex items-center justify-center">
@@ -109,10 +109,10 @@
   {{template "product_picker" .}}
   {{template "service_picker" .}}
 
-  <script src="/static/js/modules/shared.js"></script>
-  <script src="/static/js/modules/product_picker.js"></script>
-  <script src="/static/js/modules/service_picker.js"></script>
-  <script src="/static/js/modules/business.js"></script>
+  <script src="/static/js/modules/shared.js?v=2"></script>
+  <script src="/static/js/modules/product_picker.js?v=2"></script>
+  <script src="/static/js/modules/service_picker.js?v=2"></script>
+  <script src="/static/js/modules/business.js?v=2"></script>
 </body>
 
 </html>

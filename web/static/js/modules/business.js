@@ -121,8 +121,8 @@ function saveConversationProgress(clientId, stage) {
     .catch(e => { console.error(e); showNotification('Failed to get conversation information', 'error'); });
 }
 
-document.addEventListener('DOMContentLoaded', function () {
-  document.getElementById('new-client-form')?.addEventListener('submit', function (e) {
+document.addEventListener('DOMContentLoaded', function() {
+  document.getElementById('new-client-form')?.addEventListener('submit', function(e) {
     e.preventDefault();
     fetch('clients', { method: 'POST', body: new FormData(this) })
       .then(r => r.json())
@@ -130,7 +130,7 @@ document.addEventListener('DOMContentLoaded', function () {
         if (data.success) {
           hideNewClientModal();
           showNotification('Client added successfully!', 'success');
-          setTimeout(() => window.location.href = '/', 1500);
+          setTimeout(() => window.location.href = '/business', 1500);
         } else {
           showNotification(data.error || 'Failed to add client', 'error');
         }
@@ -138,7 +138,7 @@ document.addEventListener('DOMContentLoaded', function () {
       .catch(e => { console.error(e); showNotification('Failed to add client', 'error'); });
   });
 
-  document.addEventListener('click', function (e) {
+  document.addEventListener('click', function(e) {
     const saveBtn = e.target.closest('.save-progress-btn');
     if (saveBtn) {
       const id = saveBtn.getAttribute('data-customer-id');
