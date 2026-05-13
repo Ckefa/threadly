@@ -37,6 +37,16 @@
       font-weight: 600;
     }
   </style>
+  <script>
+    function showBusinessProfile() {
+      var el = document.getElementById('businessProfileModal');
+      if (el) el.classList.remove('hidden');
+    }
+    function hideBusinessProfile() {
+      var el = document.getElementById('businessProfileModal');
+      if (el) el.classList.add('hidden');
+    }
+  </script>
 </head>
 
 <body class="bg-gray-50">
@@ -291,26 +301,6 @@
   {{template "business_profile" .}}
 
   <script>
-    // Business Profile Modal
-    function showBusinessProfile() {
-      const el = document.getElementById('businessProfileModal');
-      if (el) el.classList.remove('hidden');
-    }
-    function hideBusinessProfile() {
-      const el = document.getElementById('businessProfileModal');
-      if (el) el.classList.add('hidden');
-    }
-
-    // Bind profile trigger directly (script is at bottom, DOM is ready)
-    (function () {
-      var trigger = document.getElementById('profileTrigger');
-      if (trigger) {
-        trigger.addEventListener('click', showBusinessProfile);
-      } else {
-        console.warn('profileTrigger not found');
-      }
-    })();
-
     document.addEventListener('DOMContentLoaded', function () {
       const profileForm = document.getElementById('businessProfileForm');
       if (profileForm) {

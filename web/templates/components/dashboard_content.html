@@ -73,13 +73,12 @@
             <div class="flex items-center justify-between">
               <div>
                 <p class="text-sm font-medium text-gray-900">#{{.OrderNumber}}</p>
-                <p class="text-sm text-gray-600">{{.Customer.FirstName}} {{.Customer.LastName}}</p>
+                <p class="text-sm text-gray-600">{{.Client.Name}}</p>
               </div>
               <div class="text-right">
                 <p class="text-sm font-medium text-gray-900">${{.TotalAmount}}</p>
-                <span class="badge-status {{if eq .Status " pending"}}bg-yellow-100 text-yellow-800{{else if eq
-                  .Status "confirmed" }}bg-blue-100 text-blue-800{{else if eq .Status "fulfilled" }}bg-green-100
-                  text-green-800{{else}}bg-red-100 text-red-800{{end}}">
+                <span
+                  class="badge-status {{if eq .Status `pending`}}bg-yellow-100 text-yellow-800{{else if eq .Status `confirmed` }}bg-blue-100 text-blue-800{{else if eq .Status `completed` }}bg-green-100 text-green-800{{else}}bg-red-100 text-red-800{{end}}">
                   {{.Status}}
                 </span>
               </div>
@@ -107,14 +106,17 @@
             <div class="flex items-center justify-between">
               <div>
                 <p class="text-sm font-medium text-gray-900">#{{.BookingNumber}}</p>
-                <p class="text-sm text-gray-600">{{.Customer.FirstName}} {{.Customer.LastName}}</p>
+                <p class="text-sm text-gray-600">{{.Client.Name}}</p>
                 <p class="text-xs text-gray-500">{{.ScheduledDate.Format "Jan 2, 2006"}}</p>
               </div>
               <div class="text-right">
                 <p class="text-sm font-medium text-gray-900">${{.TotalAmount}}</p>
-                <span class="badge-status {{if eq .Status " pending"}}bg-yellow-100 text-yellow-800{{else if eq
-                  .Status "confirmed" }}bg-blue-100 text-blue-800{{else if eq .Status "fulfilled" }}bg-green-100
-                  text-green-800{{else}}bg-red-100 text-red-800{{end}}">
+                <span class="badge-status 
+                  {{if eq .Status `pending`}}bg-yellow-100 text-yellow-800
+                  {{else if eq .Status `confirmed` }}bg-blue-100 text-blue-800
+                  {{else if eq .Status `completed` }}bg-green-100
+                  text-green-800
+                  {{else}}bg-red-100 text-red-800{{end}}">
                   {{.Status}}
                 </span>
               </div>
