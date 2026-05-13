@@ -25,8 +25,8 @@ func ShowRegister(c *gin.Context) {
 func Register(c *gin.Context) {
 	email := c.PostForm("email")
 	password := c.PostForm("password")
-	firstName := c.PostForm("first_name")
-	lastName := c.PostForm("last_name")
+	name := c.PostForm("name")
+	username := c.PostForm("username")
 	businessType := c.PostForm("business_type")
 
 	hashedPassword := services.Hash(password)
@@ -34,8 +34,8 @@ func Register(c *gin.Context) {
 	user := models.Business{
 		Email:        email,
 		Password:     hashedPassword,
-		FirstName:    firstName,
-		LastName:     lastName,
+		Name:         name,
+		Username:     username,
 		BusinessType: businessType,
 	}
 

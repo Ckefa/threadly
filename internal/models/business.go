@@ -6,9 +6,10 @@ type Business struct {
 	ID           uint      `gorm:"primaryKey" json:"id"`
 	Email        string    `gorm:"unique;not null" json:"email"`
 	Password     string    `gorm:"not null" json:"-"`
-	FirstName    string    `json:"first_name"`
-	LastName     string    `json:"last_name"`
+	Name         string    `json:"name"`
+	Username     string    `json:"username"`
 	BusinessType string    `json:"business_type"`
+	Logo         string    `json:"logo"`
 	CreatedAt    time.Time `json:"created_at"`
 	UpdatedAt    time.Time `json:"updated_at"`
 

@@ -42,6 +42,12 @@ func main() {
 	)
 	log.Println("✅ Database auto-migration completed successfully")
 
+	// Data migration: copy old first_name/last_name to name/username for existing records
+	log.Println("🔄 Running data migration for business fields...")
+	db.DB.Exec("UPDATE businesses SET name = first_name WHERE (name IS NULL OR name = '') AND (first_name IS NOT NULL AND first_name != '')")
+	db.DB.Exec("UPDATE businesses SET username = last_name WHERE (username IS NULL OR username = '') AND (last_name IS NOT NULL AND last_name != '')")
+	log.Println("✅ Data migration completed")
+
 	r := gin.Default()
 	if err := r.SetTrustedProxies(nil); err != nil {
 		log.Fatalf("failed to set trusted proxies: %v", err)

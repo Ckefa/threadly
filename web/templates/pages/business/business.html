@@ -65,6 +65,16 @@
       background-color: #f59e0b;
     }
   </style>
+  <script>
+    function showBusinessProfile() {
+      const el = document.getElementById('businessProfileModal');
+      if (el) el.classList.remove('hidden');
+    }
+    function hideBusinessProfile() {
+      const el = document.getElementById('businessProfileModal');
+      if (el) el.classList.add('hidden');
+    }
+  </script>
 </head>
 
 <body class="bg-gray-100 h-screen overflow-hidden">
@@ -74,6 +84,16 @@
       <h1 class="text-xl font-semibold">Threadly</h1>
     </div>
     <div class="flex items-center space-x-4">
+      <button onclick="showBusinessProfile()" class="flex items-center space-x-2 hover:opacity-80">
+        {{if .Business.Logo}}
+        <img src="/static/{{.Business.Logo}}" alt="Logo" class="w-8 h-8 rounded-full object-cover">
+        {{else}}
+        <div class="w-8 h-8 bg-teal-700 rounded-full flex items-center justify-center">
+          <i class="fas fa-store text-white text-sm"></i>
+        </div>
+        {{end}}
+        <span class="text-sm font-medium">{{.Business.Name}}</span>
+      </button>
       <a href="/business/dashboard"
         class="bg-purple-600 hover:bg-purple-700 px-4 py-2 rounded-lg flex items-center space-x-2 relative">
         <i class="fas fa-chart-line"></i>
@@ -108,6 +128,55 @@
   {{template "quick-booking" .}}
   {{template "product_picker" .}}
   {{template "service_picker" .}}
+  {{template "business_profile" .}}
+
+  <script>
+    document.addEventListener('DOMContentLoaded', function() {
+      const profileForm = document.getElementById('businessProfileForm');
+      if (profileForm) {
+        profileForm.addEventListener('submit', function(e) {
+          e.preventDefault();
+          const formData = new FormData();
+          formData.append('name', document.getElementById('profileName').value);
+          formData.append('username', document.getElementById('profileUsername').value);
+          formData.append('email', document.getElementById('profileEmail').value);
+          const password = document.getElementById('profilePassword').value;
+          if (password) formData.append('password', password);
+          const logoInput = document.getElementById('profileLogoInput');
+          if (logoInput && logoInput.files.length > 0) {
+            formData.append('logo', logoInput.files[0]);
+          }
+          fetch('/business/profile', {
+            method: 'PUT',
+            body: formData
+          })
+          .then(response => response.json())
+          .then(data => {
+            if (data.success) {
+              hideBusinessProfile();
+              location.reload();
+            } else {
+              alert(data.error || 'Failed to update profile');
+            }
+          })
+          .catch(error => {
+            console.error('Profile update error:', error);
+            alert('Failed to update profile');
+          });
+        });
+
+        document.getElementById('profileLogoInput').addEventListener('change', function(e) {
+          if (e.target.files.length === 0) return;
+          const reader = new FileReader();
+          reader.onload = function(ev) {
+            const preview = document.querySelector('#profileLogoPreview');
+            preview.innerHTML = '<img src="' + ev.target.result + '" class="w-full h-full object-cover">';
+          };
+          reader.readAsDataURL(e.target.files[0]);
+        });
+      }
+    });
+  </script>
 
   <script src="/static/js/modules/shared.js?v=2"></script>
   <script src="/static/js/modules/product_picker.js?v=2"></script>

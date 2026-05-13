@@ -117,6 +117,12 @@ func (h *BusinessHandler) GetBookings(c *gin.Context) {
 		return
 	}
 
+	var currentBusiness models.Business
+	if err := h.db.First(&currentBusiness, businessID).Error; err != nil {
+		c.HTML(http.StatusInternalServerError, "login.html", gin.H{"error": "Business not found"})
+		return
+	}
+
 	var bookings []models.Booking
 	h.db.Where("business_id = ?", businessID).Find(&bookings)
 
@@ -138,7 +144,7 @@ func (h *BusinessHandler) GetBookings(c *gin.Context) {
 	}
 
 	c.HTML(http.StatusOK, "bookings.html", gin.H{
-		"Business":        gin.H{},
+		"Business":        currentBusiness,
 		"Bookings":        bookings,
 		"PendingCount":    pendingCount,
 		"ConfirmedCount":  confirmedCount,

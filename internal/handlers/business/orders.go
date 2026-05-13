@@ -115,10 +115,16 @@ func (h *BusinessHandler) GetOrders(c *gin.Context) {
 		return
 	}
 
+	var currentBusiness models.Business
+	if err := h.db.First(&currentBusiness, businessID).Error; err != nil {
+		c.HTML(http.StatusInternalServerError, "login.html", gin.H{"error": "Business not found"})
+		return
+	}
+
 	var orders []models.Order
 	h.db.Where("business_id = ?", businessID).Find(&orders)
 
-	var pendingCount, confirmedCount, fulfilledCount, canceledCount int64
+	var pendingCount, confirmedCount, completedCount, canceledCount int64
 	var totalRevenue float64
 
 	for _, order := range orders {
@@ -127,8 +133,8 @@ func (h *BusinessHandler) GetOrders(c *gin.Context) {
 			pendingCount++
 		case "confirmed":
 			confirmedCount++
-		case "fulfilled":
-			fulfilledCount++
+		case "completed":
+			completedCount++
 		case "canceled":
 			canceledCount++
 		}
@@ -136,11 +142,11 @@ func (h *BusinessHandler) GetOrders(c *gin.Context) {
 	}
 
 	c.HTML(http.StatusOK, "orders.html", gin.H{
-		"Business":       gin.H{},
+		"Business":       currentBusiness,
 		"Orders":         orders,
 		"PendingCount":   pendingCount,
 		"ConfirmedCount": confirmedCount,
-		"FulfilledCount": fulfilledCount,
+		"CompletedCount": completedCount,
 		"CanceledCount":  canceledCount,
 		"TotalOrders":    len(orders),
 		"TotalRevenue":   totalRevenue,
@@ -189,10 +195,10 @@ func (h *BusinessHandler) ClientCreateOrder(c *gin.Context) {
 	}
 
 	var request struct {
-		BusinessID      uint   `json:"business_id" binding:"required"`
-		ProductID       uint   `json:"product_id"`
-		Quantity        int    `json:"quantity"`
-		Items           []struct {
+		BusinessID uint `json:"business_id" binding:"required"`
+		ProductID  uint `json:"product_id"`
+		Quantity   int  `json:"quantity"`
+		Items      []struct {
 			ProductID uint `json:"product_id"`
 			Quantity  int  `json:"quantity"`
 		} `json:"items"`
@@ -266,16 +272,16 @@ func (h *BusinessHandler) ClientCreateOrder(c *gin.Context) {
 
 	now := time.Now()
 	order := models.Order{
-		BusinessID:   request.BusinessID,
-		ClientID:     client.ID,
-		OrderNumber:  generateOrderNumber(),
-		Status:       "pending",
-		Sender:       "client",
-		Quantity:     len(itemList),
-		TotalAmount:  totalAmount,
-		Notes:        request.Notes,
-		Draft:        false,
-		CreatedAt:    now,
+		BusinessID:  request.BusinessID,
+		ClientID:    client.ID,
+		OrderNumber: generateOrderNumber(),
+		Status:      "pending",
+		Sender:      "client",
+		Quantity:    len(itemList),
+		TotalAmount: totalAmount,
+		Notes:       request.Notes,
+		Draft:       false,
+		CreatedAt:   now,
 	}
 
 	if err := h.db.Create(&order).Error; err != nil {
@@ -626,12 +632,12 @@ func buildOrderData(order models.Order, orderItems []models.OrderItem, productNa
 	var items []map[string]interface{}
 	for _, item := range orderItems {
 		itemMap := map[string]interface{}{
-			"product_id":   item.ProductID,
-			"name":         item.Product.Name,
-			"quantity":     item.Quantity,
-			"unit_price":   item.UnitPrice,
-			"total_price":  item.TotalPrice,
-			"image_url":    item.Product.ImageURL,
+			"product_id":  item.ProductID,
+			"name":        item.Product.Name,
+			"quantity":    item.Quantity,
+			"unit_price":  item.UnitPrice,
+			"total_price": item.TotalPrice,
+			"image_url":   item.Product.ImageURL,
 		}
 		if item.Product.ID == 0 {
 			itemMap["name"] = "Product"

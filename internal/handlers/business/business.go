@@ -2,8 +2,13 @@ package business
 
 import (
 	"fmt"
+	"io"
 	"net/http"
+	"os"
+	"path/filepath"
+	"strings"
 	"threadly/internal/models"
+	"threadly/internal/services"
 	"time"
 
 	"github.com/gin-gonic/gin"
@@ -89,8 +94,12 @@ func (h *BusinessHandler) GetBizHome(c *gin.Context) {
 
 	totalPending := int(pendingOrderCount + pendingBookingCount)
 
+	var business models.Business
+	h.db.First(&business, businessID)
+
 	c.HTML(200, "business.html", gin.H{
 		"Title":               "Threadly",
+		"Business":            business,
 		"Clients":             clientsWithUnread,
 		"PendingOrderCount":   int(pendingOrderCount),
 		"PendingBookingCount": int(pendingBookingCount),
@@ -158,7 +167,11 @@ func (h *BusinessHandler) GetDashboard(c *gin.Context) {
 		LowStockProducts:    lowStockProducts,
 	}
 
-	c.HTML(http.StatusOK, "dashboard.html", data)
+	if c.GetHeader("HX-Request") == "true" {
+		c.HTML(http.StatusOK, "dashboard_content", data)
+	} else {
+		c.HTML(http.StatusOK, "dashboard.html", data)
+	}
 }
 
 // Helper function to get or create conversation by client and business ID
@@ -177,6 +190,171 @@ func (h *BusinessHandler) getOrCreateConversation(clientID uint, businessID uint
 			conversation.ID, clientID, businessID)
 	}
 	return &conversation, nil
+}
+
+func (h *BusinessHandler) UpdateBusinessProfile(c *gin.Context) {
+	businessID := c.GetUint("business_id")
+
+	var business models.Business
+	if err := h.db.First(&business, businessID).Error; err != nil {
+		c.JSON(http.StatusNotFound, gin.H{"error": "Business not found"})
+		return
+	}
+
+	name := c.PostForm("name")
+	username := c.PostForm("username")
+	email := c.PostForm("email")
+	password := c.PostForm("password")
+
+	updates := map[string]interface{}{}
+	if name != "" {
+		updates["name"] = name
+	}
+	if username != "" {
+		updates["username"] = username
+	}
+	if email != "" {
+		updates["email"] = email
+	}
+	if password != "" {
+		updates["password"] = services.Hash(password)
+	}
+
+	file, header, err := c.Request.FormFile("logo")
+	if err == nil {
+		defer file.Close()
+
+		ext := strings.ToLower(filepath.Ext(header.Filename))
+		if ext == ".jpg" || ext == ".jpeg" || ext == ".png" || ext == ".gif" || ext == ".webp" {
+			if header.Size <= 5*1024*1024 {
+				uploadDir := filepath.Join("web", "static", "uploads", "logos")
+				os.MkdirAll(uploadDir, 0755)
+				filename := fmt.Sprintf("business_%d_%d%s", businessID, time.Now().Unix(), ext)
+				dst, err := os.Create(filepath.Join(uploadDir, filename))
+				if err == nil {
+					defer dst.Close()
+					if _, err := io.Copy(dst, file); err == nil {
+						logoPath := filepath.Join("uploads", "logos", filename)
+						updates["logo"] = logoPath
+					}
+				}
+			}
+		}
+	}
+
+	if len(updates) > 0 {
+		if err := h.db.Model(&business).Updates(updates).Error; err != nil {
+			c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to update profile"})
+			return
+		}
+	}
+
+	c.JSON(http.StatusOK, gin.H{"success": true})
+}
+
+func (h *BusinessHandler) UploadBusinessLogo(c *gin.Context) {
+	businessID := c.GetUint("business_id")
+
+	file, header, err := c.Request.FormFile("logo")
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "No file provided"})
+		return
+	}
+	defer file.Close()
+
+	ext := strings.ToLower(filepath.Ext(header.Filename))
+	if ext != ".jpg" && ext != ".jpeg" && ext != ".png" && ext != ".gif" && ext != ".webp" {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Only image files (jpg, jpeg, png, gif, webp) are allowed"})
+		return
+	}
+
+	if header.Size > 5*1024*1024 {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "File size must be less than 5MB"})
+		return
+	}
+
+	uploadDir := filepath.Join("web", "static", "uploads", "logos")
+	if err := os.MkdirAll(uploadDir, 0755); err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to create upload directory"})
+		return
+	}
+
+	filename := fmt.Sprintf("business_%d_%d%s", businessID, time.Now().Unix(), ext)
+	dst, err := os.Create(filepath.Join(uploadDir, filename))
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to create file"})
+		return
+	}
+	defer dst.Close()
+
+	if _, err := io.Copy(dst, file); err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to save file"})
+		return
+	}
+
+	logoPath := filepath.Join("uploads", "logos", filename)
+	if err := h.db.Model(&models.Business{}).Where("id = ?", businessID).Update("logo", logoPath).Error; err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to update business logo"})
+		return
+	}
+
+	c.JSON(http.StatusOK, gin.H{
+		"success": true,
+		"logo":    "/static/" + logoPath,
+	})
+}
+
+func (h *BusinessHandler) GetLogoUploadPage(c *gin.Context) {
+	businessID := c.GetUint("business_id")
+	var business models.Business
+	if err := h.db.First(&business, businessID).Error; err != nil {
+		c.HTML(http.StatusInternalServerError, "dashboard.html", gin.H{"error": "Business not found"})
+		return
+	}
+
+	// Get counts
+	var productCount, serviceCount, pendingOrderCount, pendingBookingCount int64
+	var totalRevenue float64
+	var totalOrders, totalBookings, activeClients int64
+
+	h.db.Model(&models.Product{}).Where("business_id = ? AND is_active = ?", businessID, true).Count(&productCount)
+	h.db.Model(&models.Service{}).Where("business_id = ? AND is_active = ?", businessID, true).Count(&serviceCount)
+	h.db.Model(&models.Order{}).Where("business_id = ? AND status = ?", businessID, "pending").Count(&pendingOrderCount)
+	h.db.Model(&models.Booking{}).Where("business_id = ? AND status = ?", businessID, "pending").Count(&pendingBookingCount)
+	h.db.Model(&models.Order{}).Where("business_id = ?", businessID).Count(&totalOrders)
+	h.db.Model(&models.Booking{}).Where("business_id = ?", businessID).Count(&totalBookings)
+	h.db.Model(&models.Client{}).Where("business_id = ?", businessID).Count(&activeClients)
+
+	var ordersRevenue, bookingsRevenue float64
+	h.db.Model(&models.Order{}).Select("COALESCE(SUM(total_amount), 0)").Where("business_id = ? AND status IN ?", businessID, []string{"confirmed", "fulfilled"}).Scan(&ordersRevenue)
+	h.db.Model(&models.Booking{}).Select("COALESCE(SUM(total_amount), 0)").Where("business_id = ? AND status IN ?", businessID, []string{"confirmed", "completed"}).Scan(&bookingsRevenue)
+	totalRevenue = ordersRevenue + bookingsRevenue
+
+	var recentOrders []models.Order
+	h.db.Preload("Client").Where("business_id = ?", businessID).Order("created_at DESC").Limit(5).Find(&recentOrders)
+
+	var recentBookings []models.Booking
+	h.db.Preload("Client").Where("business_id = ?", businessID).Order("created_at DESC").Limit(5).Find(&recentBookings)
+
+	var lowStockProducts []models.Product
+	h.db.Where("business_id = ? AND stock <= min_stock AND is_active = ?", businessID, true).Find(&lowStockProducts)
+
+	data := DashboardData{
+		Business:            business,
+		ProductCount:        productCount,
+		ServiceCount:        serviceCount,
+		PendingOrderCount:   pendingOrderCount,
+		PendingBookingCount: pendingBookingCount,
+		TotalRevenue:        totalRevenue,
+		TotalOrders:         totalOrders,
+		TotalBookings:       totalBookings,
+		ActiveClients:       activeClients,
+		RecentOrders:        recentOrders,
+		RecentBookings:      recentBookings,
+		LowStockProducts:    lowStockProducts,
+	}
+
+	c.HTML(http.StatusOK, "dashboard.html", data)
 }
 
 // Helper function to get or create client

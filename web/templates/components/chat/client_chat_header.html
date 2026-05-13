@@ -1,9 +1,13 @@
 {{define "client_chat_header"}}
 <div class="bg-white border-b border-gray-200 p-4 flex items-center justify-between flex-shrink-0">
   <div class="flex items-center space-x-3">
+    {{if .Business.Logo}}
+    <img src="/static/{{.Business.Logo}}" alt="{{.Business.Name}}" class="w-10 h-10 rounded-full object-cover">
+    {{else}}
     <div class="w-10 h-10 bg-teal-100 rounded-full flex items-center justify-center">
       <i class="fas fa-store text-teal-600"></i>
     </div>
+    {{end}}
     <div>
       <h2 class="font-semibold text-gray-900">{{.Business.Name}}</h2>
       <p class="text-sm text-gray-500">{{.Business.Type}}</p>
