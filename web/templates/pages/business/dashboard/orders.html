@@ -242,12 +242,12 @@
                   </td>
                   <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">${{.TotalAmount}}</td>
                   <td class="px-6 py-4 whitespace-nowrap">
-                    <span class="badge-status 
+                    <span
+                      class="badge-status 
                       {{if eq .Status `pending`}}bg-yellow-100 text-yellow-800
                       {{else if eq .Status `confirmed` }}bg-blue-100 text-blue-800
                       {{else if eq .Status `completed` }}bg-green-100 text-green-800
-                      {{else if eq .Status `cancelled` }}bg-red-100 text-red-800{{else}}bg-gray-100
-                      text-gray-800{{end}}">
+                      {{else if eq .Status `cancelled` }}bg-red-100 text-red-800{{else}}bg-gray-100 text-gray-800{{end}}">
                       {{.Status}}
                     </span>
                   </td>
