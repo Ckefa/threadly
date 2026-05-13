@@ -150,6 +150,7 @@ func (h *BusinessHandler) GetOrders(c *gin.Context) {
 		"CanceledCount":  canceledCount,
 		"TotalOrders":    len(orders),
 		"TotalRevenue":   totalRevenue,
+		"ActivePage":     "orders",
 	})
 }
 

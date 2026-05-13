@@ -39,6 +39,7 @@ type DashboardData struct {
 	RecentOrders        []models.Order
 	RecentBookings      []models.Booking
 	LowStockProducts    []models.Product
+	ActivePage          string
 }
 
 func (h *BusinessHandler) GetSharePage(c *gin.Context) {
@@ -73,6 +74,7 @@ func (h *BusinessHandler) GetSharePage(c *gin.Context) {
 		"QRData":         fullURL,
 		"TotalClients":   int(totalClients),
 		"TotalProducts":  int(totalProducts),
+		"ActivePage":     "share",
 	})
 }
 
@@ -213,6 +215,7 @@ func (h *BusinessHandler) GetDashboard(c *gin.Context) {
 		LowStockProducts:    lowStockProducts,
 	}
 
+	data.ActivePage = "dashboard"
 	if c.GetHeader("HX-Request") == "true" {
 		c.HTML(http.StatusOK, "dashboard_content", data)
 	} else {

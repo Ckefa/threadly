@@ -51,23 +51,7 @@
   </header>
 
   <div class="flex h-screen pt-16">
-    <!-- Sidebar -->
-    <aside class="w-64 bg-white shadow-lg">
-      <nav class="mt-8">
-        <div class="px-4 space-y-2">
-          <a href="/business/dashboard"
-            class="sidebar-item flex items-center px-4 py-2 text-sm font-medium rounded-md text-gray-700 hover:bg-gray-100">
-            <i class="fas fa-chart-line mr-3"></i>
-            Dashboard
-          </a>
-          <a href="/business/share"
-            class="sidebar-item flex items-center px-4 py-2 text-sm font-medium rounded-md bg-teal-50 text-teal-700">
-            <i class="fas fa-share-alt mr-3"></i>
-            Share
-          </a>
-        </div>
-      </nav>
-    </aside>
+{{template "dashboard_sidebar" .}}
 
     <!-- Main Content -->
     <main class="flex-1 overflow-y-auto">

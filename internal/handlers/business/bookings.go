@@ -152,6 +152,7 @@ func (h *BusinessHandler) GetBookings(c *gin.Context) {
 		"CancelledCount":  cancelledCount,
 		"TotalBookings":   len(bookings),
 		"TotalRevenue":    totalRevenue,
+		"ActivePage":      "bookings",
 	})
 }
 

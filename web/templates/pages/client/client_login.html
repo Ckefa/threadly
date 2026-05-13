@@ -15,7 +15,7 @@
     .tab-btn:not(.active-tab):hover { color: #374151; }
     .slide-in { animation: slideUp 0.35s ease-out; }
     @keyframes slideUp { from { opacity: 0; transform: translateY(16px); } to { opacity: 1; transform: translateY(0); } }
-    .input-error { border-color: #ef4444 !important; }
+    .input-error { border-bottom-color: #ef4444 !important; }
     .shake { animation: shake 0.4s ease-in-out; }
     @keyframes shake { 0%,100% { transform: translateX(0); } 25% { transform: translateX(-4px); } 75% { transform: translateX(4px); } }
   </style>
@@ -60,7 +60,7 @@
             <i class="fas fa-envelope text-gray-400"></i>
           </div>
           <input type="email" id="email" name="email" required
-            class="pl-10 w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-teal-500 focus:border-transparent transition-colors"
+            class="input pl-10"
             placeholder="your@email.com" oninput="validateEmail()">
         </div>
         <p class="text-xs text-red-500 mt-1 hidden" id="emailError">Please enter a valid email address</p>

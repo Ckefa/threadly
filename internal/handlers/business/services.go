@@ -42,8 +42,9 @@ func (h *BusinessHandler) GetServices(c *gin.Context) {
 	h.db.Where("business_id = ?", businessID).Order("created_at DESC").Find(&services)
 
 	c.HTML(http.StatusOK, "services.html", gin.H{
-		"Business": currentBusiness,
-		"Services": services,
+		"Business":   currentBusiness,
+		"Services":   services,
+		"ActivePage": "services",
 	})
 }
 

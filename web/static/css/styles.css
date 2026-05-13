@@ -385,17 +385,11 @@
     box-shadow: 0 0 0 2px var(--color-surface);
   }
 
-    /* --- Glass Navbar --- */
+    /* --- Solid Gradient Navbar --- */
   .navbar-glass {
-    background: rgba(255, 255, 255, 0.75);
-    backdrop-filter: blur(16px);
-    -webkit-backdrop-filter: blur(16px);
-    border-bottom: none;
+    background: linear-gradient(135deg, var(--color-surface), var(--color-primary-light));
+    border-bottom: 1px solid var(--color-border-light);
     box-shadow: 0 1px 3px rgba(0,0,0,0.04);
-  }
-  .dark .navbar-glass {
-    background: rgba(28, 25, 23, 0.8);
-    box-shadow: 0 1px 3px rgba(0,0,0,0.15);
   }
 
 /* --- Dividers --- */

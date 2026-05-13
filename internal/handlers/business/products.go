@@ -25,8 +25,9 @@ func (h *BusinessHandler) GetProducts(c *gin.Context) {
 	h.db.Where("business_id = ?", businessID).Order("created_at DESC").Find(&products)
 
 	c.HTML(http.StatusOK, "products.html", gin.H{
-		"Business": currentBusiness,
-		"Products": products,
+		"Business":   currentBusiness,
+		"Products":   products,
+		"ActivePage": "products",
 	})
 }
 
