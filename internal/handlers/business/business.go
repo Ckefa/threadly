@@ -58,12 +58,21 @@ func (h *BusinessHandler) GetSharePage(c *gin.Context) {
 	fullURL := fmt.Sprintf("%s://%s", scheme, profileURL)
 	connectURL := fmt.Sprintf("%s://%s/api/connect/%s", scheme, c.Request.Host, business.Slug)
 
+	// Count total clients and products/services for share analytics
+	var totalClients int64
+	h.db.Model(&models.Client{}).Where("business_id = ?", businessID).Count(&totalClients)
+
+	var totalProducts int64
+	h.db.Model(&models.Product{}).Where("business_id = ?", businessID).Count(&totalProducts)
+
 	c.HTML(http.StatusOK, "business_share.html", gin.H{
-		"Title":       "Share - " + business.Name,
-		"Business":    business,
-		"ProfileURL":  fullURL,
-		"ConnectURL":  connectURL,
-		"QRData":      fullURL,
+		"Title":          "Share - " + business.Name,
+		"Business":       business,
+		"ProfileURL":     fullURL,
+		"ConnectURL":     connectURL,
+		"QRData":         fullURL,
+		"TotalClients":   int(totalClients),
+		"TotalProducts":  int(totalProducts),
 	})
 }
 
@@ -76,6 +85,7 @@ func (h *BusinessHandler) GetBizHome(c *gin.Context) {
 		ConversationID uint       `json:"conversation_id"`
 		UnreadCount    int        `json:"unread_count"`
 		LastMessageAt  *time.Time `json:"last_message_at"`
+		LastMessage    string     `json:"last_message"`
 		OnlineStatus   string     `json:"online_status"`
 	}
 
@@ -87,7 +97,8 @@ func (h *BusinessHandler) GetBizHome(c *gin.Context) {
 			clients.*, 
 			conversations.id as conversation_id,
 			COUNT(CASE WHEN messages.sender = 'client' AND messages.created_at > COALESCE(conversations.last_read_by_business_at, '1970-01-01') THEN 1 END) as unread_count,
-			MAX(messages.created_at) as last_message_at
+			MAX(messages.created_at) as last_message_at,
+			(SELECT content FROM messages WHERE conversation_id = conversations.id ORDER BY created_at DESC LIMIT 1) as last_message
 		FROM clients 
 		JOIN conversations ON conversations.client_id = clients.id AND conversations.business_id = ?
 		LEFT JOIN messages ON messages.conversation_id = conversations.id
@@ -121,6 +132,13 @@ func (h *BusinessHandler) GetBizHome(c *gin.Context) {
 
 	totalPending := int(pendingOrderCount + pendingBookingCount)
 
+	onlineCount := 0
+	for _, c := range clientsWithUnread {
+		if c.IsOnline {
+			onlineCount++
+		}
+	}
+
 	var business models.Business
 	h.db.First(&business, businessID)
 
@@ -131,6 +149,7 @@ func (h *BusinessHandler) GetBizHome(c *gin.Context) {
 		"PendingOrderCount":   int(pendingOrderCount),
 		"PendingBookingCount": int(pendingBookingCount),
 		"TotalPending":        totalPending,
+		"OnlineCount":         onlineCount,
 	})
 }
 

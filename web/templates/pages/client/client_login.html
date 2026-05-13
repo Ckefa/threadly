@@ -4,13 +4,25 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="color-scheme" content="light dark">
   <title>{{.Title}}</title>
   <script src="https://cdn.tailwindcss.com"></script>
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  <link rel="stylesheet" href="/static/css/dist/styles.css?v=1">
+  <style>
+    .active-tab { background-color: white; box-shadow: 0 1px 3px rgba(0,0,0,0.1); color: #0d9488; }
+    .tab-btn:not(.active-tab) { color: #6b7280; }
+    .tab-btn:not(.active-tab):hover { color: #374151; }
+    .slide-in { animation: slideUp 0.35s ease-out; }
+    @keyframes slideUp { from { opacity: 0; transform: translateY(16px); } to { opacity: 1; transform: translateY(0); } }
+    .input-error { border-color: #ef4444 !important; }
+    .shake { animation: shake 0.4s ease-in-out; }
+    @keyframes shake { 0%,100% { transform: translateX(0); } 25% { transform: translateX(-4px); } 75% { transform: translateX(4px); } }
+  </style>
 </head>
 
 <body class="bg-gray-100 min-h-screen flex items-center justify-center">
-  <div class="bg-white rounded-lg shadow-lg p-8 w-full max-w-md">
+  <div class="slide-in bg-white rounded-xl shadow-lg p-8 w-full max-w-md">
     <div class="text-center mb-6">
       <div class="inline-flex items-center justify-center w-16 h-16 bg-teal-100 rounded-full mb-4">
         <i class="fas fa-user text-2xl text-teal-600"></i>
@@ -40,7 +52,7 @@
     </div>
     {{end}}
 
-    <form method="POST" action="/client/send-otp" class="space-y-4">
+    <form method="POST" action="/client/send-otp" class="space-y-4" id="loginForm">
       <div>
         <label for="email" class="block text-sm font-medium text-gray-700 mb-2">Email</label>
         <div class="relative">
@@ -48,14 +60,15 @@
             <i class="fas fa-envelope text-gray-400"></i>
           </div>
           <input type="email" id="email" name="email" required
-            class="pl-10 w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-teal-500 focus:border-transparent"
-            placeholder="your@email.com">
+            class="pl-10 w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-teal-500 focus:border-transparent transition-colors"
+            placeholder="your@email.com" oninput="validateEmail()">
         </div>
+        <p class="text-xs text-red-500 mt-1 hidden" id="emailError">Please enter a valid email address</p>
       </div>
 
-      <button id="submitBtn" type="submit"
-        class="w-full bg-teal-600 text-white py-2 px-4 rounded-lg hover:bg-teal-700 transition duration-200 font-medium">
-        Send OTPP
+      <button id="submitBtn" type="submit" disabled
+        class="w-full bg-teal-400 text-white py-2 px-4 rounded-lg font-medium cursor-not-allowed transition-all">
+        Send OTP
       </button>
 
       <p id="helpText" class="text-xs text-gray-500 text-center mt-2">We'll send a 6-digit code to your email.</p>
@@ -73,22 +86,6 @@
     </div>
   </div>
 
-  <style>
-    .active-tab {
-      background-color: white;
-      box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
-      color: #0d9488;
-    }
-
-    .tab-btn:not(.active-tab) {
-      color: #6b7280;
-    }
-
-    .tab-btn:not(.active-tab):hover {
-      color: #374151;
-    }
-  </style>
-
   <script>
     function switchTab(tab) {
       document.querySelectorAll('.tab-btn').forEach(t => t.classList.remove('active-tab'));
@@ -103,7 +100,39 @@
         document.getElementById('submitBtn').innerHTML = 'Create Account';
         document.getElementById('helpText').textContent = 'No password needed. We\'ll send a 6-digit code to verify your email.';
       }
+      validateEmail();
     }
+
+    function validateEmail() {
+      var email = document.getElementById('email');
+      var btn = document.getElementById('submitBtn');
+      var err = document.getElementById('emailError');
+      var val = email.value.trim();
+      var valid = val.match(/^[^\s@]+@[^\s@]+\.[^\s@]+$/);
+      if (!val) {
+        err.classList.add('hidden');
+        email.classList.remove('input-error');
+      } else if (!valid) {
+        err.classList.remove('hidden');
+        email.classList.add('input-error');
+      } else {
+        err.classList.add('hidden');
+        email.classList.remove('input-error');
+      }
+      if (valid) {
+        btn.disabled = false;
+        btn.className = 'w-full bg-teal-600 text-white py-2 px-4 rounded-lg hover:bg-teal-700 transition-all duration-200 font-medium';
+      } else {
+        btn.disabled = true;
+        btn.className = 'w-full bg-teal-400 text-white py-2 px-4 rounded-lg font-medium cursor-not-allowed transition-all';
+      }
+    }
+
+    document.getElementById('loginForm').addEventListener('submit', function(e) {
+      var btn = document.getElementById('submitBtn');
+      btn.disabled = true;
+      btn.innerHTML = '<i class="fas fa-spinner fa-spin mr-1.5"></i> Sending...';
+    });
   </script>
 </body>
 

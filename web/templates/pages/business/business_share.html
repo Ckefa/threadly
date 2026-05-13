@@ -4,16 +4,18 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="color-scheme" content="light dark">
   <title>{{.Title}}</title>
   <script src="https://cdn.tailwindcss.com"></script>
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  <link rel="stylesheet" href="/static/css/dist/styles.css?v=1">
   <style>
-    .sidebar-item {
-      transition: all 0.3s ease;
-    }
-    .sidebar-item:hover {
-      transform: translateX(4px);
-    }
+    .sidebar-item { transition: all 0.3s ease; }
+    .sidebar-item:hover { transform: translateX(4px); }
+    .toast-enter { animation: toastIn 0.3s ease-out; }
+    @keyframes toastIn { from { opacity: 0; transform: translateY(-8px); } to { opacity: 1; transform: translateY(0); } }
+    .fade-in { animation: fadeIn 0.3s ease-out; }
+    @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
   </style>
 </head>
 
@@ -72,6 +74,21 @@
       <div class="py-8">
         <div class="max-w-3xl mx-auto px-4 sm:px-6 lg:px-8 space-y-8">
 
+          <!-- Analytics Preview -->
+          <div class="bg-white rounded-2xl shadow-sm border border-gray-200 p-8">
+            <h3 class="text-lg font-semibold text-gray-900 mb-4">Share Analytics</h3>
+            <div class="grid grid-cols-2 gap-4">
+              <div class="p-4 rounded-xl bg-teal-50 border border-teal-100">
+                <p class="text-2xl font-bold text-teal-700">{{.TotalClients}}</p>
+                <p class="text-xs text-teal-600 font-medium mt-1">Connected Clients</p>
+              </div>
+              <div class="p-4 rounded-xl bg-blue-50 border border-blue-100">
+                <p class="text-2xl font-bold text-blue-700">{{.TotalProducts}}</p>
+                <p class="text-xs text-blue-600 font-medium mt-1">Products & Services</p>
+              </div>
+            </div>
+          </div>
+
           <!-- Profile Card -->
           <div class="bg-white rounded-2xl shadow-sm border border-gray-200 p-8">
             <div class="flex items-center gap-5">
@@ -96,10 +113,30 @@
             <div class="flex items-center gap-2">
               <input type="text" id="profileLink" value="{{.ProfileURL}}" readonly
                 class="flex-1 px-4 py-3 border border-gray-300 rounded-xl bg-gray-50 text-gray-700 text-sm font-mono focus:outline-none">
-              <button onclick="copyLink()"
+              <button onclick="copyLink('profileLink')"
                 class="px-4 py-3 bg-teal-600 hover:bg-teal-700 text-white rounded-xl transition-colors">
                 <i class="fas fa-copy"></i>
               </button>
+            </div>
+            <!-- Social Share Buttons -->
+            <div class="mt-4 flex items-center gap-2">
+              <span class="text-xs text-gray-400 font-medium mr-1">Share via</span>
+              <a href="https://wa.me/?text={{.ProfileURL}}" target="_blank" rel="noopener"
+                class="w-9 h-9 rounded-full bg-green-500 hover:bg-green-600 text-white flex items-center justify-center transition-colors" title="Share on WhatsApp">
+                <i class="fab fa-whatsapp"></i>
+              </a>
+              <a href="https://twitter.com/intent/tweet?text=Check%20out%20{{.Business.Name}}%20on%20Threadly!&url={{.ProfileURL}}" target="_blank" rel="noopener"
+                class="w-9 h-9 rounded-full bg-black hover:bg-gray-800 text-white flex items-center justify-center transition-colors" title="Share on X (Twitter)">
+                <i class="fab fa-x-twitter"></i>
+              </a>
+              <a href="mailto:?subject=Check out {{.Business.Name}} on Threadly&body=I found this business on Threadly: {{.ProfileURL}}"
+                class="w-9 h-9 rounded-full bg-gray-500 hover:bg-gray-600 text-white flex items-center justify-center transition-colors" title="Share via Email">
+                <i class="fas fa-envelope"></i>
+              </a>
+              <a href="https://www.facebook.com/sharer/sharer.php?u={{.ProfileURL}}" target="_blank" rel="noopener"
+                class="w-9 h-9 rounded-full bg-blue-600 hover:bg-blue-700 text-white flex items-center justify-center transition-colors" title="Share on Facebook">
+                <i class="fab fa-facebook-f"></i>
+              </a>
             </div>
           </div>
 
@@ -110,7 +147,7 @@
             <div class="flex items-center gap-2">
               <input type="text" id="connectLink" value="{{.ConnectURL}}" readonly
                 class="flex-1 px-4 py-3 border border-gray-300 rounded-xl bg-gray-50 text-gray-700 text-sm font-mono focus:outline-none">
-              <button onclick="copyConnectLink()"
+              <button onclick="copyLink('connectLink')"
                 class="px-4 py-3 bg-teal-600 hover:bg-teal-700 text-white rounded-xl transition-colors">
                 <i class="fas fa-copy"></i>
               </button>
@@ -133,6 +170,7 @@
             <p class="text-sm text-gray-600 mb-6">Scan to open your business profile page.</p>
             <img id="qrImage" src="https://api.qrserver.com/v1/create-qr-code/?size=250x250&data={{.QRData}}"
                  alt="QR Code for {{.Business.Name}}"
+                 crossorigin="anonymous"
                  class="mx-auto rounded-xl shadow-sm border border-gray-200"
                  width="250" height="250">
             <div class="mt-4 flex items-center justify-center gap-3">
@@ -144,30 +182,84 @@
             </div>
           </div>
 
+          <!-- Public Profile Preview Card -->
+          <div class="bg-white rounded-2xl shadow-sm border border-gray-200 p-8">
+            <div class="flex items-center justify-between mb-4">
+              <h3 class="text-lg font-semibold text-gray-900">Profile Preview</h3>
+              <a href="{{.ProfileURL}}" target="_blank" rel="noopener"
+                class="text-xs text-teal-600 hover:text-teal-700 font-medium">
+                Open live <i class="fas fa-external-link-alt ml-1"></i>
+              </a>
+            </div>
+            <div class="border border-gray-200 rounded-xl overflow-hidden shadow-sm">
+              <div class="bg-gradient-to-r from-teal-500 to-cyan-600 px-6 py-4">
+                <div class="flex items-center gap-3">
+                  <div class="w-12 h-12 rounded-full bg-white/20 flex items-center justify-center">
+                    {{if .Business.Logo}}
+                    <img src="/static/{{.Business.Logo}}" class="w-12 h-12 rounded-full object-cover">
+                    {{else}}
+                    <i class="fas fa-store text-white text-lg"></i>
+                    {{end}}
+                  </div>
+                  <div class="text-white">
+                    <h4 class="font-semibold">{{.Business.Name}}</h4>
+                    <p class="text-xs text-white/80 capitalize">{{.Business.BusinessType}}</p>
+                  </div>
+                </div>
+              </div>
+              <div class="p-6 space-y-4 bg-white">
+                <div class="flex items-center gap-3 text-sm text-gray-500">
+                  <i class="fas fa-globe text-teal-500"></i>
+                  <span>Online — connects instantly via email</span>
+                </div>
+                <div class="flex items-center gap-3 text-sm text-gray-500">
+                  <i class="fas fa-comments text-teal-500"></i>
+                  <span>Chat, order products, and book services</span>
+                </div>
+                <div class="pt-2">
+                  <div class="inline-block px-4 py-2 bg-teal-600 text-white text-sm font-medium rounded-xl">
+                    <i class="fas fa-paper-plane mr-1.5"></i>Connect & Chat
+                  </div>
+                </div>
+                <div class="text-xs text-gray-400 text-center pt-2 border-t border-gray-100">
+                  Powered by Threadly
+                </div>
+              </div>
+            </div>
+          </div>
+
         </div>
       </div>
     </main>
   </div>
 
   <script>
-    function copyLink() {
-      const input = document.getElementById('profileLink');
+    function copyLink(inputId) {
+      const input = document.getElementById(inputId);
       input.select();
       navigator.clipboard.writeText(input.value).then(() => {
-        const btn = input.nextElementSibling;
-        btn.innerHTML = '<i class="fas fa-check"></i>';
-        setTimeout(() => { btn.innerHTML = '<i class="fas fa-copy"></i>'; }, 2000);
+        showCopyToast('Link copied to clipboard!');
+      }).catch(() => {
+        document.execCommand('copy');
+        showCopyToast('Link copied to clipboard!');
       });
     }
-    function copyConnectLink() {
-      const input = document.getElementById('connectLink');
-      input.select();
-      navigator.clipboard.writeText(input.value).then(() => {
-        const btn = input.nextElementSibling;
-        btn.innerHTML = '<i class="fas fa-check"></i>';
-        setTimeout(() => { btn.innerHTML = '<i class="fas fa-copy"></i>'; }, 2000);
-      });
+
+    function showCopyToast(msg) {
+      const existing = document.getElementById('copyToast');
+      if (existing) existing.remove();
+      const toast = document.createElement('div');
+      toast.id = 'copyToast';
+      toast.className = 'toast-enter fixed top-4 right-4 bg-gray-900 text-white px-5 py-3 rounded-xl shadow-xl z-50 flex items-center gap-2.5 text-sm font-medium';
+      toast.innerHTML = '<i class="fas fa-check-circle text-green-400"></i> ' + msg;
+      document.body.appendChild(toast);
+      setTimeout(() => {
+        toast.style.opacity = '0';
+        toast.style.transition = 'opacity 0.3s';
+        setTimeout(() => toast.remove(), 300);
+      }, 2500);
     }
+
     function regenerateSlug() {
       if (!confirm('Regenerate links? This will change your business URL. Old links will stop working.')) return;
       const btn = event.target.closest('button');
@@ -190,17 +282,29 @@
           btn.innerHTML = '<i class="fas fa-sync-alt mr-1.5"></i> Regenerate Links & QR Code';
         });
     }
+
     function downloadQR() {
       const img = document.getElementById('qrImage');
-      const canvas = document.createElement('canvas');
-      canvas.width = img.naturalWidth;
-      canvas.height = img.naturalHeight;
-      const ctx = canvas.getContext('2d');
-      ctx.drawImage(img, 0, 0);
-      const link = document.createElement('a');
-      link.download = 'qrcode.png';
-      link.href = canvas.toDataURL('image/png');
-      link.click();
+      const btn = event.target.closest('button');
+      btn.disabled = true;
+      btn.innerHTML = '<i class="fas fa-spinner fa-spin mr-1"></i> Downloading...';
+      fetch(img.src)
+        .then(function(r) { return r.blob(); })
+        .then(function(blob) {
+          const link = document.createElement('a');
+          link.download = 'qrcode.png';
+          link.href = URL.createObjectURL(blob);
+          document.body.appendChild(link);
+          link.click();
+          setTimeout(function() { URL.revokeObjectURL(link.href); link.remove(); }, 100);
+          btn.disabled = false;
+          btn.innerHTML = '<i class="fas fa-download mr-1"></i> Download PNG';
+        })
+        .catch(function() {
+          alert('Failed to download QR code. The image might be from a cross-origin source.');
+          btn.disabled = false;
+          btn.innerHTML = '<i class="fas fa-download mr-1"></i> Download PNG';
+        });
     }
   </script>
 </body>

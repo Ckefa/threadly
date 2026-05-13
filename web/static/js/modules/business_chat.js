@@ -654,4 +654,108 @@ function submitEditBooking() {
     });
 }
 
+// ========== Message Search ==========
+
+function toggleMessageSearch() {
+  var bar = document.getElementById('messageSearchBar');
+  if (bar) bar.classList.toggle('hidden');
+  if (!bar.classList.contains('hidden')) {
+    setTimeout(function() {
+      document.getElementById('messageSearchInput')?.focus();
+    }, 100);
+  } else {
+    clearMessageSearch();
+  }
+}
+
+function filterMessages(query) {
+  var q = query.toLowerCase().trim();
+  var container = document.getElementById('messages-container');
+  var messages = container.querySelectorAll(':scope > div');
+  var count = 0;
+  messages.forEach(function(el) {
+    var text = el.getAttribute('data-message-text') || el.textContent.toLowerCase();
+    if (!q || text.toLowerCase().includes(q)) {
+      el.style.display = '';
+      count++;
+    } else {
+      el.style.display = 'none';
+    }
+  });
+  var countEl = document.getElementById('searchResultCount');
+  if (countEl) countEl.textContent = count;
+}
+
+function clearMessageSearch() {
+  var input = document.getElementById('messageSearchInput');
+  if (input) input.value = '';
+  var container = document.getElementById('messages-container');
+  if (container) {
+    container.querySelectorAll(':scope > div').forEach(function(el) {
+      el.style.display = '';
+    });
+  }
+  var countEl = document.getElementById('searchResultCount');
+  if (countEl) countEl.textContent = '0';
+}
+
+// ========== Customer Info Panel ==========
+
+function toggleCustomerInfo() {
+  var panel = document.getElementById('customerInfoPanel');
+  if (panel) panel.classList.toggle('hidden');
+}
+
+// ========== Smart Suggestions ==========
+
+function hideSmartSuggestions() {
+  var bar = document.getElementById('smartSuggestions');
+  if (bar) bar.classList.add('hidden');
+}
+
+// ========== Quick Replies & Input Handling ==========
+
+function onMessageInput(input) {
+  var val = input.value;
+  var suggestions = document.getElementById('smartSuggestions');
+  if (suggestions) {
+    if (val.length > 0) {
+      suggestions.classList.remove('hidden');
+    } else {
+      suggestions.classList.add('hidden');
+    }
+  }
+
+  // Show quick replies when typing /
+  var qr = document.getElementById('quickReplies');
+  if (qr) {
+    if (val === '/') {
+      qr.classList.remove('hidden');
+    } else if (qr && !qr.classList.contains('hidden') && val.charAt(0) !== '/') {
+      qr.classList.add('hidden');
+    }
+  }
+}
+
+function onMessageKeydown(event) {
+  var qr = document.getElementById('quickReplies');
+  if (event.key === 'Escape' && qr && !qr.classList.contains('hidden')) {
+    qr.classList.add('hidden');
+    var input = document.getElementById('messageInput');
+    if (input) input.value = input.value.replace(/\/$/, '');
+  }
+}
+
+function insertQuickReply(text) {
+  var input = document.getElementById('messageInput');
+  if (input) {
+    input.value = text;
+    input.focus();
+  }
+  var qr = document.getElementById('quickReplies');
+  if (qr) qr.classList.add('hidden');
+  var suggestions = document.getElementById('smartSuggestions');
+  if (suggestions) suggestions.classList.remove('hidden');
+}
+
 

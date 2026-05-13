@@ -1,0 +1,74 @@
+{{define "landing_nav"}}
+<nav id="navbar" class="fixed top-0 left-0 right-0 z-50 glass-nav border-b border-transparent transition-all duration-300">
+  <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+    <div class="flex items-center justify-between h-16">
+      <a href="/" class="flex items-center space-x-2 group">
+        <div class="w-9 h-9 rounded-lg bg-gradient-to-br from-teal-500 to-cyan-600 flex items-center justify-center shadow-lg group-hover:shadow-teal-500/30 transition-shadow">
+          <i class="fas fa-comments text-white text-sm"></i>
+        </div>
+        <span class="text-xl font-bold bg-gradient-to-r from-teal-600 to-cyan-600 bg-clip-text text-transparent">Threadly</span>
+      </a>
+      <div class="hidden md:flex items-center space-x-8">
+        <a href="#features" class="text-sm font-medium text-slate-600 hover:text-teal-600 transition-colors">Features</a>
+        <a href="#how-it-works" class="text-sm font-medium text-slate-600 hover:text-teal-600 transition-colors">How It Works</a>
+        <a href="#pricing" class="text-sm font-medium text-slate-600 hover:text-teal-600 transition-colors">Pricing</a>
+        <a href="#for-businesses" class="text-sm font-medium text-slate-600 hover:text-teal-600 transition-colors">For Business</a>
+        <a href="#for-clients" class="text-sm font-medium text-slate-600 hover:text-teal-600 transition-colors">For Clients</a>
+      </div>
+      <div class="flex items-center space-x-3">
+        <div class="relative group hidden sm:block">
+          <button class="text-sm font-medium text-slate-600 hover:text-teal-600 transition-colors px-4 py-2 flex items-center gap-1.5">
+            Login
+            <i class="fas fa-chevron-down text-[10px] transition-transform group-hover:rotate-180"></i>
+          </button>
+          <div class="absolute right-0 mt-1 w-44 rounded-xl bg-white shadow-xl border border-slate-200 opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-200 translate-y-1 group-hover:translate-y-0 z-50">
+            <a href="/client/login" class="flex items-center gap-3 px-4 py-3 text-sm text-slate-600 hover:text-teal-600 hover:bg-teal-50 rounded-t-xl transition-colors">
+              <div class="w-7 h-7 rounded-full bg-amber-100 flex items-center justify-center"><i class="fas fa-user text-amber-600 text-xs"></i></div>
+              <div><span class="font-medium">Client Portal</span><p class="text-[10px] text-slate-400">OTP-based access</p></div>
+            </a>
+            <div class="border-t border-slate-100 mx-3"></div>
+            <a href="/business/login" class="flex items-center gap-3 px-4 py-3 text-sm text-slate-600 hover:text-teal-600 hover:bg-teal-50 rounded-b-xl transition-colors">
+              <div class="w-7 h-7 rounded-full bg-teal-100 flex items-center justify-center"><i class="fas fa-store text-teal-600 text-xs"></i></div>
+              <div><span class="font-medium">Business Login</span><p class="text-[10px] text-slate-400">Dashboard & tools</p></div>
+            </a>
+          </div>
+        </div>
+        <a href="/business/register" class="hidden sm:inline-flex items-center px-5 py-2 rounded-lg bg-gradient-to-r from-teal-500 to-cyan-600 text-white text-sm font-semibold shadow-lg shadow-teal-500/25 hover:shadow-teal-500/40 hover:from-teal-600 hover:to-cyan-700 transition-all">
+          <i class="fas fa-rocket mr-2 text-xs"></i>Get Started
+        </a>
+        <button id="hamburger" class="md:hidden w-10 h-10 rounded-lg flex items-center justify-center text-slate-600 hover:bg-slate-100 transition-colors" aria-label="Menu">
+          <i class="fas fa-bars text-lg"></i>
+        </button>
+      </div>
+    </div>
+  </div>
+</nav>
+
+<div id="mobileMenu" class="mobile-menu fixed top-0 right-0 w-72 h-full bg-white shadow-2xl z-[60] backdrop-blur-xl bg-white/95 border-l border-slate-200 overflow-y-auto">
+  <div class="flex items-center justify-between p-4 border-b border-slate-100">
+    <span class="font-semibold text-slate-900">Menu</span>
+    <button id="closeMenu" class="w-8 h-8 rounded-lg flex items-center justify-center text-slate-400 hover:bg-slate-100 hover:text-slate-600 transition-colors">
+      <i class="fas fa-times"></i>
+    </button>
+  </div>
+  <div class="p-4 space-y-1">
+    <a href="#features" class="block px-4 py-3 rounded-xl text-sm font-medium text-slate-600 hover:bg-teal-50 hover:text-teal-600 transition-colors">Features</a>
+    <a href="#how-it-works" class="block px-4 py-3 rounded-xl text-sm font-medium text-slate-600 hover:bg-teal-50 hover:text-teal-600 transition-colors">How It Works</a>
+    <a href="#pricing" class="block px-4 py-3 rounded-xl text-sm font-medium text-slate-600 hover:bg-teal-50 hover:text-teal-600 transition-colors">Pricing</a>
+    <a href="#for-businesses" class="block px-4 py-3 rounded-xl text-sm font-medium text-slate-600 hover:bg-teal-50 hover:text-teal-600 transition-colors">For Business</a>
+    <a href="#for-clients" class="block px-4 py-3 rounded-xl text-sm font-medium text-slate-600 hover:bg-teal-50 hover:text-teal-600 transition-colors">For Clients</a>
+  </div>
+  <div class="p-4 border-t border-slate-100 space-y-2">
+    <a href="/client/login" class="flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-medium text-slate-600 hover:bg-amber-50 hover:text-amber-600 transition-colors">
+      <i class="fas fa-user text-amber-500"></i> Client Portal
+    </a>
+    <a href="/business/login" class="flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-medium text-slate-600 hover:bg-teal-50 hover:text-teal-600 transition-colors">
+      <i class="fas fa-store text-teal-500"></i> Business Login
+    </a>
+    <a href="/business/register" class="flex items-center justify-center gap-2 mt-3 px-4 py-3 rounded-xl bg-gradient-to-r from-teal-500 to-cyan-600 text-white text-sm font-semibold shadow-lg transition-all">
+      <i class="fas fa-rocket text-xs"></i> Get Started Free
+    </a>
+  </div>
+</div>
+<div id="menuOverlay" class="fixed inset-0 bg-black/30 backdrop-blur-sm z-[55] hidden"></div>
+{{end}}

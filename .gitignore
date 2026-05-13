@@ -2,3 +2,5 @@
 threadly.db
 tmp
 .aider*
+node_modules
+web/static/css/dist/

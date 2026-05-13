@@ -29,11 +29,17 @@ func GetPublicProfile(c *gin.Context) {
 	var services []models.Service
 	db.DB.Where("business_id = ? AND is_active = ?", business.ID, true).Find(&services)
 
+	// Determine if business is accepting clients (has any recent activity)
+	var totalClients int64
+	db.DB.Model(&models.Client{}).Where("business_id = ?", business.ID).Count(&totalClients)
+
 	c.HTML(http.StatusOK, "public_profile.html", gin.H{
-		"Title":    business.Name + " - Threadly",
-		"Business": business,
-		"Products": products,
-		"Services": services,
+		"Title":          business.Name + " - Threadly",
+		"Business":       business,
+		"Products":       products,
+		"Services":       services,
+		"TotalClients":   int(totalClients),
+		"IsAcceptingClients": totalClients >= 0, // always true for now
 	})
 }
 
@@ -103,7 +109,7 @@ func SendConnectOTP(c *gin.Context) {
 		}
 	}
 
-	otp, err := services.SendClientOTP(email)
+	_, err = services.SendClientOTP(email)
 	if err != nil {
 		c.HTML(http.StatusBadRequest, "client_connect.html", gin.H{
 			"Title":    "Connect - Threadly",
@@ -117,7 +123,6 @@ func SendConnectOTP(c *gin.Context) {
 		"Title":    "Verify OTP - Threadly",
 		"Business": business,
 		"Email":    email,
-		"OTP":      otp,
 	})
 }
 

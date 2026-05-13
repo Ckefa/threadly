@@ -1,58 +1,94 @@
 {{define "business_list"}}
-<div class="w-80 bg-white border-r border-gray-200 flex flex-col">
-  <div class="p-4 border-b border-gray-200">
-    <h2 class="font-semibold text-gray-900">Your Businesses</h2>
-    <p class="text-sm text-gray-500">Select a business to chat</p>
+{{$typeColors := dict
+  "dental" "bg-blue-100 text-blue-700"
+  "fitness" "bg-green-100 text-green-700"
+  "salon" "bg-pink-100 text-pink-700"
+  "restaurant" "bg-orange-100 text-orange-700"
+  "consulting" "bg-purple-100 text-purple-700"
+  "medical" "bg-red-100 text-red-700"
+  "legal" "bg-indigo-100 text-indigo-700"
+  "education" "bg-yellow-100 text-yellow-700"
+  "retail" "bg-teal-100 text-teal-700"
+}}
+<aside class="sidebar" id="clientSidebar">
+  <div class="p-4 border-b border-[var(--color-border)] shrink-0">
+    <h2 class="font-semibold text-[var(--color-text)]">Your Businesses</h2>
+    <div class="relative mt-2">
+      <input type="text" id="businessSearch" placeholder="Search businesses..."
+        oninput="filterBusinesses()"
+        class="input pl-9 bg-[var(--color-surface-secondary)] focus:bg-[var(--color-surface)]">
+      <i class="fas fa-search absolute left-3 top-2.5 text-[var(--color-text-muted)] text-sm"></i>
+    </div>
   </div>
 
-  <div class="flex-1 overflow-y-auto" id="business-list">
+  <div class="flex-1 overflow-y-auto scrollbar-thin" id="business-list">
     {{range .Businesses}}
-    <div class="business-item px-4 py-3 hover:bg-gray-50 cursor-pointer border-b border-gray-100"
-      data-business-id="{{.ID}}">
-      <div class="flex items-center space-x-3">
-        {{if .Logo}}
-        <img src="/static/{{.Logo}}" alt="{{.Name}}" class="w-12 h-12 rounded-full object-cover">
-        {{else}}
-        <div class="w-12 h-12 bg-teal-100 rounded-full flex items-center justify-center">
-          <i class="fas fa-store text-teal-600"></i>
-        </div>
-        {{end}}
-        <div class="flex-1">
-          <h3 class="font-semibold text-gray-900">{{.Name}}</h3>
-          <p class="text-sm text-gray-500">{{.BusinessType}}</p>
-        </div>
-        <div class="flex flex-col items-end space-y-1">
-          {{if gt .UnreadCount 0}}
-          <span class="unread-badge" data-count="{{.UnreadCount}}">{{.UnreadCount}}</span>
+    <div class="stagger-item business-item px-4 py-3 hover:bg-[var(--color-surface-secondary)] cursor-pointer border-b border-[var(--color-border-light)] transition-colors"
+      data-business-id="{{.ID}}" data-business-name="{{.Name}}" data-business-type="{{.BusinessType}}">
+      <div class="flex items-center gap-3">
+        <div class="relative">
+          {{if .Logo}}
+          <img src="/static/{{.Logo}}" alt="{{.Name}}" class="avatar avatar-lg">
+          {{else}}
+          <div class="avatar avatar-lg avatar-placeholder">
+            <i class="fas fa-store text-white"></i>
+          </div>
           {{end}}
-          <span class="inline-block w-2 h-2 bg-green-500 rounded-full"></span>
+          <div class="absolute -bottom-0.5 -right-0.5 w-3.5 h-3.5 bg-[var(--color-surface)] rounded-full flex items-center justify-center">
+            <div class="w-2.5 h-2.5 bg-green-500 rounded-full border-2 border-[var(--color-surface)]"></div>
+          </div>
+        </div>
+        <div class="flex-1 min-w-0">
+          <div class="flex items-center gap-1.5">
+            <h3 class="font-semibold text-[var(--color-text)] text-sm truncate">{{.Name}}</h3>
+            <button onclick="event.stopPropagation(); togglePinBusiness({{.ID}})"
+              class="pin-btn text-[var(--color-text-muted)] hover:text-amber-500 transition-colors text-xs shrink-0"
+              title="Pin to top">
+              <i class="fas fa-star"></i>
+            </button>
+          </div>
+          <span class="badge badge-neutral text-[10px] mt-0.5
+            {{index $typeColors .BusinessType | default "badge-neutral"}}">{{.BusinessType}}</span>
+          <p class="text-xs text-[var(--color-text-muted)] truncate mt-1 last-message-preview">
+            {{if .LastMessage}}{{.LastMessage}}{{else}}<span class="italic opacity-60">No messages yet</span>{{end}}
+          </p>
+        </div>
+        <div class="flex flex-col items-end gap-1 shrink-0">
+          <span class="time-ago text-[10px] text-[var(--color-text-muted)]" data-time="{{.LastMessageAt}}"></span>
+          {{if gt .UnreadCount 0}}
+          <span class="badge badge-error">{{.UnreadCount}}</span>
+          {{end}}
         </div>
         <button onclick="event.stopPropagation(); disconnectBusiness({{.ID}})"
-          class="ml-2 p-1.5 text-red-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors"
+          class="btn btn-icon btn-icon-sm btn-ghost text-rose-400 hover:text-rose-500 hover:bg-rose-50"
           title="Remove business">
           <i class="fas fa-trash-alt text-xs"></i>
         </button>
       </div>
     </div>
     {{else}}
-    <div class="p-8 text-center text-gray-500">
-      <i class="fas fa-store text-4xl mb-4"></i>
-      <p>No businesses connected yet</p>
-      <p class="text-sm mt-2">Find businesses to start chatting</p>
-      <a href="/client/discover"
-        class="mt-4 inline-block px-4 py-2 bg-teal-600 text-white rounded-lg hover:bg-teal-700 transition-colors text-sm">
-        <i class="fas fa-compass mr-1"></i> Find Businesses
-      </a>
+    <div class="empty-state">
+      <div class="empty-state-icon empty-state-icon-primary">
+        <i class="fas fa-store"></i>
+      </div>
+      <h3 class="empty-state-title">No businesses connected yet</h3>
+      <p class="empty-state-text">Discover and connect with businesses to start chatting, ordering, and booking services.</p>
+      <div class="empty-state-cta">
+        <a href="/client/discover" class="btn btn-primary btn-sm">
+          <i class="fas fa-compass"></i>
+          Find Businesses
+        </a>
+      </div>
     </div>
     {{end}}
   </div>
 
-  <div class="p-3 border-t border-gray-200">
+  <div class="p-3 border-t border-[var(--color-border)] shrink-0">
     <a href="/client/discover"
-      class="flex items-center space-x-2 px-3 py-2 text-sm text-teal-600 hover:bg-teal-50 rounded-lg transition-colors">
+      class="flex items-center justify-center gap-2 btn btn-ghost w-full text-sm">
       <i class="fas fa-compass"></i>
-      <span>Find Businesses</span>
+      <span>Discover Businesses</span>
     </a>
   </div>
-</div>
+</aside>
 {{end}}

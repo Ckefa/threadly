@@ -1,71 +1,135 @@
 <!DOCTYPE html>
 <html lang="en">
-
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>{{.Title}}</title>
-  <script src="https://cdn.tailwindcss.com"></script>
+  <meta name="color-scheme" content="light dark">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  <link rel="stylesheet" href="/static/css/dist/styles.css?v=1">
+  <script src="/static/js/core/theme.js?v=1"></script>
 </head>
-
-<body class="bg-gray-100 min-h-screen flex items-center justify-center">
-  <div class="bg-white rounded-lg shadow-lg p-8 w-full max-w-md">
-    <div class="text-center mb-8">
-      <div class="inline-flex items-center justify-center w-16 h-16 bg-teal-100 rounded-full mb-4">
-        <i class="fas fa-comments text-2xl text-teal-600"></i>
-      </div>
-      <h1 class="text-2xl font-bold text-gray-900">Threadly</h1>
-      <p class="text-gray-600 mt-2">Chat-first CRM for service businesses</p>
+<body class="font-sans antialiased">
+  <div class="min-h-screen flex items-center justify-center p-4 relative overflow-hidden bg-[var(--color-bg)]">
+    <div class="absolute inset-0 overflow-hidden pointer-events-none">
+      <div class="absolute -top-40 -right-40 w-[500px] h-[500px] rounded-full blur-3xl animate-blob" style="background: color-mix(in srgb, var(--color-primary) 10%, transparent);"></div>
+      <div class="absolute -bottom-40 -left-40 w-[400px] h-[400px] rounded-full blur-3xl animate-blob" style="background: color-mix(in srgb, var(--color-secondary) 10%, transparent); animation-delay: 4s;"></div>
     </div>
 
-    <h2 class="text-xl font-semibold text-center mb-6">Sign in to your account</h2>
-
-    {{if .Error}}
-    <div class="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-lg mb-4">
-      <i class="fas fa-exclamation-circle mr-2"></i>
-      {{.Error}}
-    </div>
-    {{end}}
-
-    <form method="POST" action="/business/login" class="space-y-4">
-      <div>
-        <label for="email" class="block text-sm font-medium text-gray-700 mb-2">Email</label>
-        <div class="relative">
-          <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-            <i class="fas fa-envelope text-gray-400"></i>
-          </div>
-          <input type="email" id="email" name="email" required
-            class="pl-10 w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-teal-500 focus:border-transparent"
-            placeholder="you@example.com">
-        </div>
+    <div class="card p-8 w-full max-w-md relative z-10 shadow-lg">
+      <div class="text-center mb-8">
+        <a href="/" class="inline-flex items-center justify-center w-14 h-14 rounded-xl bg-gradient-to-br from-teal-500 to-cyan-600 shadow-lg shadow-teal-500/25 mb-4">
+          <i class="fas fa-comments text-white text-xl"></i>
+        </a>
+        <h1 class="text-2xl font-bold text-[var(--color-text)]">Threadly</h1>
+        <p class="text-[var(--color-text-secondary)] mt-1 text-sm">Sign in to your business dashboard</p>
       </div>
 
-      <div>
-        <label for="password" class="block text-sm font-medium text-gray-700 mb-2">Password</label>
-        <div class="relative">
-          <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-            <i class="fas fa-lock text-gray-400"></i>
+      {{if .Error}}
+      <div class="bg-[var(--color-error-light)] text-[var(--color-error)] px-4 py-3 rounded-xl mb-4 flex items-center gap-2 text-sm border" style="border-color: color-mix(in srgb, var(--color-error) 20%, transparent);">
+        <i class="fas fa-exclamation-circle"></i>
+        {{.Error}}
+      </div>
+      {{end}}
+
+      <form method="POST" action="/business/login" id="loginForm" class="space-y-5" novalidate>
+        <div>
+          <label for="email" class="block text-sm font-medium text-[var(--color-text-secondary)] mb-1.5">Email</label>
+          <div class="relative input-with-icon">
+            <i class="fas fa-envelope input-icon"></i>
+            <input type="email" id="email" name="email" required
+              class="input"
+              placeholder="you@example.com">
           </div>
-          <input type="password" id="password" name="password" required
-            class="pl-10 w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-teal-500 focus:border-transparent"
-            placeholder="••••••••">
+          <p class="text-xs text-[var(--color-error)] mt-1 hidden" id="emailError">Please enter a valid email address</p>
         </div>
+
+        <div>
+          <label for="password" class="block text-sm font-medium text-[var(--color-text-secondary)] mb-1.5">Password</label>
+          <div class="relative input-with-icon">
+            <i class="fas fa-lock input-icon"></i>
+            <input type="password" id="password" name="password" required minlength="6"
+              class="input"
+              placeholder="&#8226;&#8226;&#8226;&#8226;&#8226;&#8226;&#8226;&#8226;">
+            <button type="button" onclick="togglePassword()" class="absolute inset-y-0 right-0 pr-3 flex items-center text-[var(--color-text-muted)] hover:text-[var(--color-text-secondary)] transition-colors">
+              <i class="fas fa-eye" id="pwIcon"></i>
+            </button>
+          </div>
+          <p class="text-xs text-[var(--color-error)] mt-1 hidden" id="pwError">Password must be at least 6 characters</p>
+        </div>
+
+        <div class="flex items-center justify-between">
+          <label class="flex items-center gap-2 cursor-pointer select-none">
+            <input type="checkbox" name="remember" class="sr-only">
+            <div class="w-9 h-5 rounded-full transition-colors duration-200 relative" style="background: var(--color-surface-tertiary);">
+              <div class="absolute left-0.5 top-0.5 w-4 h-4 bg-white rounded-full shadow transition-transform duration-200"></div>
+            </div>
+            <span class="text-sm text-[var(--color-text-secondary)]">Remember me</span>
+          </label>
+        </div>
+
+        <button type="submit" id="loginBtn"
+          class="btn btn-primary w-full">
+          <span id="btnText">Sign In</span>
+          <i class="fas fa-arrow-right text-xs" id="btnIcon"></i>
+          <i class="fas fa-spinner fa-spin hidden" id="btnSpinner"></i>
+        </button>
+      </form>
+
+      <div class="mt-4 p-3 rounded-xl text-xs flex items-start gap-2" style="background: color-mix(in srgb, var(--color-warning) 8%, transparent); color: var(--color-warning); border: 1px solid; border-color: color-mix(in srgb, var(--color-warning) 20%, transparent);">
+        <i class="fas fa-flask mt-0.5"></i>
+        <div><span class="font-medium">Demo:</span> demo@threadly.com / password</div>
       </div>
 
-      <button type="submit"
-        class="w-full bg-teal-600 text-white py-2 px-4 rounded-lg hover:bg-teal-700 transition duration-200 font-medium">
-        Sign In
-      </button>
-    </form>
-
-    <div class="text-center mt-6">
-      <p class="text-gray-600">
-        Don't have an account?
-        <a href="/register" class="text-teal-600 hover:text-teal-700 font-medium">Sign up</a>
-      </p>
+      <div class="text-center mt-6">
+        <p class="text-sm text-[var(--color-text-secondary)]">
+          Don't have an account?
+          <a href="/business/register" class="link font-medium">Create one</a>
+        </p>
+      </div>
     </div>
   </div>
-</body>
 
+  <script>
+    function togglePassword() {
+      var pw = document.getElementById('password');
+      var icon = document.getElementById('pwIcon');
+      if (pw.type === 'password') { pw.type = 'text'; icon.className = 'fas fa-eye-slash'; }
+      else { pw.type = 'password'; icon.className = 'fas fa-eye'; }
+    }
+
+    document.getElementById('loginForm').addEventListener('submit', function(e) {
+      var email = document.getElementById('email');
+      var pw = document.getElementById('password');
+      var emailErr = document.getElementById('emailError');
+      var pwErr = document.getElementById('pwError');
+      var valid = true;
+      emailErr.classList.add('hidden'); email.classList.remove('input-error');
+      pwErr.classList.add('hidden'); pw.classList.remove('input-error');
+      if (!email.value.match(/^[^\s@]+@[^\s@]+\.[^\s@]+$/)) {
+        emailErr.classList.remove('hidden'); email.classList.add('input-error'); valid = false;
+      }
+      if (pw.value.length < 6) {
+        pwErr.classList.remove('hidden'); pw.classList.add('input-error'); valid = false;
+      }
+      if (!valid) { e.preventDefault(); return; }
+      document.getElementById('btnText').textContent = 'Signing in...';
+      document.getElementById('btnIcon').classList.add('hidden');
+      document.getElementById('btnSpinner').classList.remove('hidden');
+      document.getElementById('loginBtn').disabled = true;
+    });
+
+    document.getElementById('email').addEventListener('input', function() {
+      var err = document.getElementById('emailError');
+      if (this.value.match(/^[^\s@]+@[^\s@]+\.[^\s@]+$/)) { err.classList.add('hidden'); this.classList.remove('input-error'); }
+    });
+    document.getElementById('password').addEventListener('input', function() {
+      var err = document.getElementById('pwError');
+      if (this.value.length >= 6) { err.classList.add('hidden'); this.classList.remove('input-error'); }
+    });
+  </script>
+</body>
 </html>

@@ -1,32 +1,63 @@
 {{define "chat_header"}}
-<div class="bg-white border-b border-gray-200 px-6 py-4">
-  <div class="flex items-center justify-between">
-    <div class="flex items-center space-x-3">
-      <div class="w-10 h-10 bg-teal-100 rounded-full flex items-center justify-center">
-        <i class="fas fa-user text-teal-600"></i>
+<div class="bg-white border-b border-gray-200">
+  <div class="px-6 py-3">
+    <div class="flex items-center justify-between">
+      <div class="flex items-center space-x-3">
+        <div class="w-10 h-10 bg-teal-100 rounded-full flex items-center justify-center">
+          <i class="fas fa-user text-teal-600"></i>
+        </div>
+        <div>
+          <h2 class="font-semibold text-gray-900">{{.Customer.Name}}</h2>
+          <p class="text-sm text-gray-500">{{.Customer.Email}}</p>
+        </div>
       </div>
-      <div>
-        <h2 class="font-semibold text-gray-900">{{.Customer.Name}}</h2>
-        <p class="text-sm text-gray-500">{{.Customer.Email}}</p>
+      <div class="flex items-center space-x-2">
+        <div class="flex items-center space-x-1 mr-2">
+          {{if .Customer.IsOnline}}
+          <div class="w-2 h-2 bg-green-500 rounded-full"></div>
+          <span class="text-xs text-green-600">Online</span>
+          {{else}}
+          <div class="w-2 h-2 bg-gray-400 rounded-full"></div>
+          <span class="text-xs text-gray-500">Offline</span>
+          {{if .Customer.LastSeenAt}}
+          <span class="text-xs text-gray-400">• {{.Customer.LastSeenAt.Format "3:04 PM"}}</span>
+          {{end}}
+          {{end}}
+        </div>
+        <!-- Search Messages -->
+        <button onclick="toggleMessageSearch()"
+          class="w-8 h-8 rounded-lg flex items-center justify-center text-gray-400 hover:bg-gray-100 hover:text-gray-600 transition-colors"
+          title="Search messages">
+          <i class="fas fa-search text-sm"></i>
+        </button>
+        <!-- Customer Info (Split View) -->
+        <button onclick="toggleCustomerInfo()"
+          class="w-8 h-8 rounded-lg flex items-center justify-center text-gray-400 hover:bg-gray-100 hover:text-gray-600 transition-colors"
+          title="Customer details">
+          <i class="fas fa-info-circle text-sm"></i>
+        </button>
+        <!-- Analytics/Progress -->
+        <button data-client-id="{{.Customer.ID}}"
+          class="progress-btn w-8 h-8 rounded-lg flex items-center justify-center bg-blue-50 text-blue-600 hover:bg-blue-100 transition-colors"
+          title="Conversation progress">
+          <i class="fas fa-chart-line text-sm"></i>
+        </button>
       </div>
     </div>
-    <div class="flex items-center space-x-3">
-      <div class="flex items-center space-x-1">
-        {{if .Customer.IsOnline}}
-        <div class="w-2 h-2 bg-green-500 rounded-full"></div>
-        <span class="text-xs text-green-600">Online</span>
-        {{else}}
-        <div class="w-2 h-2 bg-gray-400 rounded-full"></div>
-        <span class="text-xs text-gray-500">Offline</span>
-        {{if .Customer.LastSeenAt}}
-        <span class="text-xs text-gray-400">• {{.Customer.LastSeenAt.Format "3:04 PM"}}</span>
-        {{end}}
-        {{end}}
-      </div>
-      <button data-client-id="{{.Customer.ID}}"
-        class="progress-btn px-3 py-1 bg-blue-100 text-blue-700 rounded-lg text-sm hover:bg-blue-200">
-        <i class="fas fa-chart-line mr-1"></i>Analytics
+  </div>
+  <!-- Message Search Bar (hidden by default) -->
+  <div id="messageSearchBar" class="hidden px-6 pb-3">
+    <div class="relative">
+      <input type="text" id="messageSearchInput" placeholder="Search messages..."
+        oninput="filterMessages(this.value)"
+        class="w-full pl-9 pr-3 py-2 bg-gray-100 rounded-xl focus:outline-none focus:ring-2 focus:ring-teal-500 focus:bg-white text-sm transition-all">
+      <i class="fas fa-search absolute left-3 top-2.5 text-gray-400 text-sm"></i>
+      <button onclick="clearMessageSearch()" class="absolute right-3 top-2.5 text-gray-400 hover:text-gray-600 text-sm">
+        <i class="fas fa-times"></i>
       </button>
+    </div>
+    <div class="text-xs text-gray-400 mt-1 px-1">
+      <span id="searchResultCount">0</span> results found
     </div>
   </div>
 </div>

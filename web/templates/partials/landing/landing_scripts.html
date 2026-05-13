@@ -1,0 +1,117 @@
+{{define "landing_scripts"}}
+<script>
+  // Scroll-triggered reveal (IntersectionObserver)
+  document.addEventListener('DOMContentLoaded', function() {
+    var reveals = document.querySelectorAll('.reveal');
+    if (reveals.length > 0 && 'IntersectionObserver' in window) {
+      var observer = new IntersectionObserver(function(entries) {
+        entries.forEach(function(entry) {
+          if (entry.isIntersecting) {
+            entry.target.classList.add('visible');
+            observer.unobserve(entry.target);
+          }
+        });
+      }, { threshold: 0.1, rootMargin: '0px 0px -50px 0px' });
+      reveals.forEach(function(r) { observer.observe(r); });
+    } else {
+      reveals.forEach(function(r) { r.classList.add('visible'); });
+    }
+  });
+
+  // Sticky nav scroll effect
+  document.addEventListener('DOMContentLoaded', function() {
+    var navbar = document.getElementById('navbar');
+    if (navbar) {
+      window.addEventListener('scroll', function() {
+        if (window.scrollY > 20) {
+          navbar.classList.add('scrolled');
+          navbar.classList.remove('border-transparent');
+        } else {
+          navbar.classList.remove('scrolled');
+          navbar.classList.add('border-transparent');
+        }
+      });
+    }
+  });
+
+  // Mobile hamburger menu
+  document.addEventListener('DOMContentLoaded', function() {
+    var hamburger = document.getElementById('hamburger');
+    var mobileMenu = document.getElementById('mobileMenu');
+    var closeMenu = document.getElementById('closeMenu');
+    var menuOverlay = document.getElementById('menuOverlay');
+    function openMobile() {
+      mobileMenu.classList.add('open');
+      menuOverlay.classList.remove('hidden');
+      document.body.style.overflow = 'hidden';
+    }
+    function closeMobile() {
+      mobileMenu.classList.remove('open');
+      menuOverlay.classList.add('hidden');
+      document.body.style.overflow = '';
+    }
+    if (hamburger) hamburger.addEventListener('click', openMobile);
+    if (closeMenu) closeMenu.addEventListener('click', closeMobile);
+    if (menuOverlay) menuOverlay.addEventListener('click', closeMobile);
+  });
+
+  // Testimonial carousel
+  var testimonialTrack = document.getElementById('testimonialTrack');
+  var testimonialDots = document.querySelectorAll('.testimonial-dot');
+  var currentTestimonial = 0;
+  var testimonialInterval;
+
+  function goToTestimonial(index) {
+    currentTestimonial = index;
+    if (testimonialTrack) testimonialTrack.style.transform = 'translateX(-' + (index * 100) + '%)';
+    testimonialDots.forEach(function(dot, i) {
+      dot.classList.toggle('bg-teal-500', i === index);
+      dot.classList.toggle('bg-slate-300', i !== index);
+    });
+  }
+
+  function startTestimonialAutoplay() {
+    testimonialInterval = setInterval(function() {
+      var next = (currentTestimonial + 1) % testimonialDots.length;
+      goToTestimonial(next);
+    }, 5000);
+  }
+
+  function stopTestimonialAutoplay() {
+    clearInterval(testimonialInterval);
+  }
+
+  document.addEventListener('DOMContentLoaded', function() {
+    goToTestimonial(0);
+    startTestimonialAutoplay();
+  });
+
+  // Pricing toggle
+  function togglePricing() {
+    var isYearly = document.getElementById('pricingToggle').checked;
+    var amounts = document.querySelectorAll('.pricing-amount');
+    var periods = document.querySelectorAll('.pricing-period');
+    amounts.forEach(function(el) {
+      el.textContent = isYearly ? el.dataset.yearly : el.dataset.monthly;
+    });
+    periods.forEach(function(el) {
+      el.textContent = isYearly ? '/year' : '/month';
+    });
+  }
+
+  // Floating CTA on mobile scroll
+  document.addEventListener('DOMContentLoaded', function() {
+    var floatingCTA = document.getElementById('floatingCTA');
+    if (floatingCTA && window.innerWidth < 768) {
+      var lastScrollY = window.scrollY;
+      window.addEventListener('scroll', function() {
+        if (window.scrollY > 600 && window.scrollY < document.body.scrollHeight - 1000) {
+          floatingCTA.classList.add('visible');
+        } else {
+          floatingCTA.classList.remove('visible');
+        }
+      });
+    }
+  });
+</script>
+{{end}}

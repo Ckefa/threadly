@@ -57,7 +57,7 @@ func SendClientOTP(c *gin.Context) {
 		}
 	}
 
-	otp, err := services.SendClientOTP(email)
+	_, err = services.SendClientOTP(email)
 	if err != nil {
 		c.HTML(400, "client_login.html", gin.H{
 			"Title": "Client Login - Threadly",
@@ -69,7 +69,6 @@ func SendClientOTP(c *gin.Context) {
 	c.HTML(200, "client_otp.html", gin.H{
 		"Title": "Enter OTP - Threadly",
 		"Email": email,
-		"OTP":   otp, // For testing only
 	})
 }
 
@@ -153,6 +152,7 @@ func ClientDashboard(c *gin.Context) {
 		ConversationID uint       `json:"conversation_id"`
 		UnreadCount    int        `json:"unread_count"`
 		LastMessageAt  *time.Time `json:"last_message_at"`
+		LastMessage    string     `json:"last_message"`
 	}
 
 	var businesses []BusinessWithUnread
@@ -161,7 +161,8 @@ func ClientDashboard(c *gin.Context) {
 			businesses.*,
 			conversations.id as conversation_id,
 			COUNT(CASE WHEN messages.sender = 'business' AND messages.created_at > COALESCE(conversations.last_read_by_client_at, '1970-01-01') THEN 1 END) as unread_count,
-			MAX(messages.created_at) as last_message_at
+			MAX(messages.created_at) as last_message_at,
+			(SELECT content FROM messages WHERE conversation_id = conversations.id ORDER BY created_at DESC LIMIT 1) as last_message
 		FROM businesses
 		JOIN conversations ON conversations.business_id = businesses.id AND conversations.client_id = ?
 		LEFT JOIN messages ON messages.conversation_id = conversations.id

@@ -1,133 +1,192 @@
 <!DOCTYPE html>
 <html lang="en">
-
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>{{.Title}}</title>
-  <script src="https://unpkg.com/htmx.org@1.9.10"></script>
-  <script src="https://cdn.tailwindcss.com"></script>
+  <meta name="color-scheme" content="light dark">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-  <style>
-    @keyframes shake {
-
-      0%,
-      30%,
-      100% {
-        transform: translateX(0);
-      }
-
-      5%,
-      15%,
-      25% {
-        transform: translateX(-2px);
-      }
-
-      10%,
-      20% {
-        transform: translateX(2px);
-      }
-    }
-
-    .shake-notification {
-      animation: shake 1s ease-in-out infinite;
-    }
-
-    .unread-badge {
-      background-color: #ef4444;
-      color: white;
-      font-size: 12px;
-      font-weight: bold;
-      min-width: 20px;
-      height: 20px;
-      border-radius: 10px;
-      display: inline-flex;
-      align-items: center;
-      justify-content: center;
-      padding: 0 6px;
-      cursor: pointer;
-      animation: pulse 2s infinite;
-    }
-
-    @keyframes pulse {
-
-      0%,
-      100% {
-        transform: scale(1);
-      }
-
-      50% {
-        transform: scale(1.1);
-      }
-    }
-
-    .unread-badge[data-count="1"] {
-      background-color: #f59e0b;
-    }
-  </style>
-  <script>
-    function showBusinessProfile() {
-      const el = document.getElementById('businessProfileModal');
-      if (el) el.classList.remove('hidden');
-    }
-    function hideBusinessProfile() {
-      const el = document.getElementById('businessProfileModal');
-      if (el) el.classList.add('hidden');
-    }
-  </script>
+  <link rel="stylesheet" href="/static/css/dist/styles.css?v=1">
+  <script src="https://unpkg.com/htmx.org@1.9.10"></script>
+  <script src="/static/js/core/theme.js?v=1"></script>
 </head>
-
-<body class="bg-gray-100 h-screen overflow-hidden">
-  <header class="bg-teal-600 text-white p-4 flex items-center justify-between">
-    <div class="flex items-center space-x-4">
-      <i class="fas fa-comments text-2xl"></i>
-      <h1 class="text-xl font-semibold">Threadly</h1>
-    </div>
-    <div class="flex items-center space-x-4">
-      <button onclick="showBusinessProfile()" class="flex items-center space-x-2 hover:opacity-80">
-        {{if .Business.Logo}}
-        <img src="/static/{{.Business.Logo}}" alt="Logo" class="w-8 h-8 rounded-full object-cover">
-        {{else}}
-        <div class="w-8 h-8 bg-teal-700 rounded-full flex items-center justify-center">
-          <i class="fas fa-store text-white text-sm"></i>
+<body class="h-screen overflow-hidden flex flex-col">
+  <!-- Top Header -->
+  <header class="card-flat border-b border-[var(--color-border)] h-16 flex items-center justify-between px-4 lg:px-6 shrink-0 z-30 relative bg-[var(--color-surface)]">
+    <div class="flex items-center gap-3">
+      <button onclick="toggleSidebar()" class="sidebar-mobile-toggle btn btn-icon btn-ghost lg:hidden" id="sidebarToggle">
+        <i class="fas fa-bars text-lg"></i>
+      </button>
+      <a href="/" class="flex items-center gap-2.5">
+        <div class="w-8 h-8 rounded-lg bg-gradient-to-br from-teal-500 to-cyan-600 flex items-center justify-center shadow-sm">
+          <i class="fas fa-comments text-white text-xs"></i>
         </div>
-        {{end}}
-        <span class="text-sm font-medium">{{.Business.Name}}</span>
+        <span class="text-lg font-bold text-[var(--color-text)]">Threadly</span>
+      </a>
+    </div>
+
+    <div class="hidden md:flex items-center">
+      <button onclick="openCommandPalette()" class="btn btn-ghost text-xs text-[var(--color-text-muted)] gap-2 px-3 py-1.5 border border-[var(--color-border)] rounded-lg bg-[var(--color-surface-secondary)]">
+        <i class="fas fa-search text-[10px]"></i>
+        <span>Quick actions...</span>
+        <kbd class="px-1.5 py-0.5 rounded bg-[var(--color-surface-tertiary)] text-[10px] font-mono text-[var(--color-text-muted)]">⌘K</kbd>
       </button>
-      <a href="/business/share"
-        class="bg-teal-700 hover:bg-teal-800 px-4 py-2 rounded-lg flex items-center space-x-2">
-        <i class="fas fa-share-alt"></i>
-        <span>Share</span>
-      </a>
-      <a href="/business/dashboard"
-        class="bg-purple-600 hover:bg-purple-700 px-4 py-2 rounded-lg flex items-center space-x-2 relative">
-        <i class="fas fa-chart-line"></i>
-        <span>Dashboard</span>
-        {{if gt .TotalPending 0}}
-        <span
-          class="shake-notification absolute -top-2 -right-2 bg-red-500 text-white text-xs font-bold rounded-full h-5 w-5 flex items-center justify-center">
-          {{.TotalPending}}
-        </span>
-        {{end}}
-      </a>
-      <button onclick="showNewClientModal()"
-        class="bg-teal-700 hover:bg-teal-800 px-4 py-2 rounded-lg flex items-center space-x-2">
-        <i class="fas fa-plus"></i>
-        <span>New Customer</span>
+    </div>
+
+    <div class="flex items-center gap-1">
+      <!-- Theme Toggle -->
+      <button class="theme-toggle" title="Toggle theme">
+        <i class="fas fa-sun theme-sun"></i>
+        <i class="fas fa-moon theme-moon hidden"></i>
       </button>
-      <a href="/business/logout" class="hover:bg-teal-700 px-3 py-2 rounded-lg">
-        <i class="fas fa-sign-out-alt"></i>
-      </a>
+
+      <!-- Notification Bell -->
+      <div class="relative" id="notifContainer">
+        <button onclick="toggleNotifications()" class="btn btn-icon btn-ghost relative">
+          <i class="fas fa-bell text-lg"></i>
+          {{if gt .TotalPending 0}}
+          <span class="absolute -top-0.5 -right-0.5 w-4 h-4 badge-error text-white text-[9px] font-bold rounded-full flex items-center justify-center p-0 min-w-0">{{.TotalPending}}</span>
+          {{end}}
+        </button>
+        <div id="notifDropdown" class="hidden absolute right-0 mt-2 w-72 card shadow-lg z-50 overflow-hidden animate-fade-in-down">
+          <div class="px-4 py-3 border-b border-[var(--color-border)] flex items-center justify-between">
+            <span class="text-sm font-semibold text-[var(--color-text)]">Notifications</span>
+            <span class="text-xs text-[var(--color-text-muted)]">{{.TotalPending}} pending</span>
+          </div>
+          <div class="max-h-72 overflow-y-auto">
+            {{if gt .PendingOrderCount 0}}
+            <div class="px-4 py-3 hover:bg-[var(--color-surface-secondary)] border-b border-[var(--color-border-light)] flex items-start gap-3">
+              <div class="w-8 h-8 rounded-full bg-amber-100 flex items-center justify-center shrink-0 dark:bg-amber-900/30"><i class="fas fa-shopping-cart text-amber-600 dark:text-amber-400 text-xs"></i></div>
+              <div><p class="text-sm text-[var(--color-text)]"><span class="font-medium">{{.PendingOrderCount}}</span> pending orders</p><p class="text-xs text-[var(--color-text-muted)]">Awaiting your action</p></div>
+            </div>
+            {{end}}
+            {{if gt .PendingBookingCount 0}}
+            <div class="px-4 py-3 hover:bg-[var(--color-surface-secondary)] border-b border-[var(--color-border-light)] flex items-start gap-3">
+              <div class="w-8 h-8 rounded-full bg-purple-100 flex items-center justify-center shrink-0 dark:bg-purple-900/30"><i class="fas fa-calendar text-purple-600 dark:text-purple-400 text-xs"></i></div>
+              <div><p class="text-sm text-[var(--color-text)]"><span class="font-medium">{{.PendingBookingCount}}</span> pending bookings</p><p class="text-xs text-[var(--color-text-muted)]">Need confirmation</p></div>
+            </div>
+            {{end}}
+            <div class="px-4 py-3 text-center text-xs text-[var(--color-text-muted)]">
+              {{if eq .TotalPending 0}}All caught up! 🎉{{else}}<a href="/business/dashboard" class="link">Manage all in Dashboard</a>{{end}}
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Profile -->
+      <button onclick="showBusinessProfile()" class="flex items-center gap-2 px-2 py-1.5 rounded-lg hover:bg-[var(--color-surface-secondary)] transition-colors">
+        {{if .Business.Logo}}
+        <img src="/static/{{.Business.Logo}}" class="avatar avatar-sm">
+        {{else}}
+        <div class="avatar avatar-sm avatar-placeholder"><i class="fas fa-store text-white text-[10px]"></i></div>
+        {{end}}
+        <span class="text-sm font-medium text-[var(--color-text)] hide-mobile hidden sm:block">{{.Business.Name}}</span>
+      </button>
+
+      <div class="flex items-center gap-1">
+        <a href="/business/share" class="btn btn-icon btn-ghost" title="Share">
+          <i class="fas fa-share-alt text-sm"></i>
+        </a>
+        <a href="/business/dashboard" class="btn btn-icon btn-ghost relative" title="Dashboard">
+          <i class="fas fa-chart-line text-sm"></i>
+          {{if gt .TotalPending 0}}
+          <span class="animate-shake absolute -top-0.5 -right-0.5 w-4 h-4 badge-error text-white text-[9px] font-bold rounded-full flex items-center justify-center p-0 min-w-0">{{.TotalPending}}</span>
+          {{end}}
+        </a>
+        <button onclick="showNewClientModal()" class="btn btn-icon btn-ghost" title="New Customer">
+          <i class="fas fa-plus text-sm"></i>
+        </button>
+        <a href="/business/logout" class="btn btn-icon btn-ghost hover:text-rose-500" title="Logout">
+          <i class="fas fa-sign-out-alt text-sm"></i>
+        </a>
+      </div>
     </div>
   </header>
 
-  <div class="flex h-[calc(100vh-72px)]">
+  <!-- Stats Widgets Bar -->
+  <div class="bg-[var(--color-surface)] border-b border-[var(--color-border)] px-4 lg:px-6 py-3 shrink-0">
+    <div class="flex items-center gap-4 overflow-x-auto scrollbar-none">
+      <div class="stat-card flex items-center gap-2.5 px-3.5 py-2 shrink-0" style="border-color: var(--color-primary); background: color-mix(in srgb, var(--color-primary) 8%, transparent);">
+        <div class="w-8 h-8 rounded-lg flex items-center justify-center" style="background: color-mix(in srgb, var(--color-primary) 15%, transparent);">
+          <i class="fas fa-comments" style="color: var(--color-primary); font-size: 0.875rem;"></i>
+        </div>
+        <div>
+          <p class="text-xs font-medium" style="color: var(--color-primary);">Conversations</p>
+          <p class="text-lg font-bold stat-counter" data-target="{{len .Clients}}" style="color: var(--color-primary-dark);">0</p>
+        </div>
+      </div>
+      <div class="stat-card flex items-center gap-2.5 px-3.5 py-2 shrink-0" style="border-color: var(--color-warning); background: color-mix(in srgb, var(--color-warning) 8%, transparent);">
+        <div class="w-8 h-8 rounded-lg flex items-center justify-center" style="background: color-mix(in srgb, var(--color-warning) 15%, transparent);">
+          <i class="fas fa-clock" style="color: var(--color-warning); font-size: 0.875rem;"></i>
+        </div>
+        <div>
+          <p class="text-xs font-medium" style="color: var(--color-warning);">Pending</p>
+          <p class="text-lg font-bold" style="color: #b45309;">{{.TotalPending}}</p>
+        </div>
+      </div>
+      <div class="stat-card flex items-center gap-2.5 px-3.5 py-2 shrink-0" style="border-color: var(--color-success); background: color-mix(in srgb, var(--color-success) 8%, transparent);">
+        <div class="w-8 h-8 rounded-lg flex items-center justify-center" style="background: color-mix(in srgb, var(--color-success) 15%, transparent);">
+          <i class="fas fa-circle" style="color: var(--color-success); font-size: 0.875rem;"></i>
+        </div>
+        <div>
+          <p class="text-xs font-medium" style="color: var(--color-success);">Online</p>
+          <p class="text-lg font-bold" style="color: #047857;">{{.OnlineCount}}</p>
+        </div>
+      </div>
+      <div class="stat-card flex items-center gap-2.5 px-3.5 py-2 shrink-0" style="border-color: var(--color-info); background: color-mix(in srgb, var(--color-info) 8%, transparent);">
+        <div class="w-8 h-8 rounded-lg flex items-center justify-center" style="background: color-mix(in srgb, var(--color-info) 15%, transparent);">
+          <i class="fas fa-users" style="color: var(--color-info); font-size: 0.875rem;"></i>
+        </div>
+        <div>
+          <p class="text-xs font-medium" style="color: var(--color-info);">Total Clients</p>
+          <p class="text-lg font-bold stat-counter" data-target="{{len .Clients}}" style="color: #0369a1;">0</p>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Main Layout -->
+  <div class="flex flex-1 min-h-0" id="mainLayout">
+    <div id="sidebarOverlay" class="fixed inset-0 bg-black/30 backdrop-blur-sm z-30 hidden lg:hidden" onclick="toggleSidebar()"></div>
     {{ template "biz-sidebar" .}}
-    <main class="flex-1 flex flex-col bg-gray-50" id="chat-area">
-      {{template "empty_state" "Select a client to start chatting"}}
+    <main class="flex-1 flex flex-col min-w-0 bg-[var(--color-bg)]" id="chat-area">
+      <div id="skeleton-area" class="hidden">
+        {{template "skeleton_chat" .}}
+      </div>
+      <div id="content-area">
+        {{template "empty_state" dict "Title" "Select a client to start chatting" "Description" "Choose a conversation from the sidebar to view messages, send orders, and manage bookings."}}
+      </div>
     </main>
   </div>
 
+  <!-- Mobile Bottom Navigation -->
+  <nav class="bottom-nav hide-desktop hide-tablet">
+    <a href="/business" class="bottom-nav-item active">
+      <i class="fas fa-comments"></i>
+      <span>Chats</span>
+    </a>
+    <a href="/business/dashboard" class="bottom-nav-item">
+      <i class="fas fa-chart-line"></i>
+      <span>Dashboard</span>
+    </a>
+    <button onclick="showNewClientModal()" class="bottom-nav-item">
+      <i class="fas fa-plus-circle"></i>
+      <span>New</span>
+    </a>
+    <a href="/business/share" class="bottom-nav-item">
+      <i class="fas fa-share-alt"></i>
+      <span>Share</span>
+    </a>
+    <button class="bottom-nav-item" onclick="ThreadlyTheme.toggle()">
+      <i class="fas fa-adjust"></i>
+      <span>Theme</span>
+    </button>
+  </nav>
+
+  <!-- Modals -->
   {{template "new-client" .}}
   {{template "quick-order" .}}
   {{template "quick-booking" .}}
@@ -135,58 +194,163 @@
   {{template "service_picker" .}}
   {{template "business_profile" .}}
 
-  <script>
-    document.addEventListener('DOMContentLoaded', function() {
-      const profileForm = document.getElementById('businessProfileForm');
-      if (profileForm) {
-        profileForm.addEventListener('submit', function(e) {
-          e.preventDefault();
-          const formData = new FormData();
-          formData.append('name', document.getElementById('profileName').value);
-          formData.append('username', document.getElementById('profileUsername').value);
-          formData.append('email', document.getElementById('profileEmail').value);
-          const password = document.getElementById('profilePassword').value;
-          if (password) formData.append('password', password);
-          const logoInput = document.getElementById('profileLogoInput');
-          if (logoInput && logoInput.files.length > 0) {
-            formData.append('logo', logoInput.files[0]);
-          }
-          fetch('/business/profile', {
-            method: 'PUT',
-            body: formData
-          })
-          .then(response => response.json())
-          .then(data => {
-            if (data.success) {
-              hideBusinessProfile();
-              location.reload();
-            } else {
-              alert(data.error || 'Failed to update profile');
-            }
-          })
-          .catch(error => {
-            console.error('Profile update error:', error);
-            alert('Failed to update profile');
-          });
-        });
+  <!-- Command Palette Overlay -->
+  <div id="cmdOverlay" class="hidden fixed inset-0 bg-black/40 backdrop-blur-sm z-50 flex items-start justify-center pt-[15vh] animate-fade-in" onclick="closeCommandPalette(event)">
+    <div class="w-full max-w-lg mx-4 card shadow-xl overflow-hidden animate-scale-in" onclick="event.stopPropagation()">
+      <div class="flex items-center gap-3 px-4 py-3 border-b border-[var(--color-border)]">
+        <i class="fas fa-search text-[var(--color-text-muted)] text-sm"></i>
+        <input type="text" id="cmdInput" placeholder="Search clients, pages, or actions..."
+          class="flex-1 text-sm text-[var(--color-text)] placeholder-[var(--color-text-muted)] outline-none bg-transparent">
+        <kbd class="px-1.5 py-0.5 rounded bg-[var(--color-surface-secondary)] text-[10px] font-mono text-[var(--color-text-muted)]">ESC</kbd>
+      </div>
+      <div id="cmdResults" class="max-h-80 overflow-y-auto p-2 space-y-0.5">
+        <div class="px-3 py-1.5 text-[11px] font-semibold text-[var(--color-text-muted)] uppercase tracking-wider">Pages</div>
+        <a href="/business/dashboard" class="flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm text-[var(--color-text)] hover:bg-[var(--color-surface-secondary)] transition-colors">
+          <div class="w-7 h-7 rounded-lg bg-purple-100 flex items-center justify-center dark:bg-purple-900/30"><i class="fas fa-chart-line text-purple-600 dark:text-purple-400 text-xs"></i></div>
+          Dashboard
+          <span class="ml-auto text-[10px] text-[var(--color-text-muted)]">Analytics & metrics</span>
+        </a>
+        <a href="/business/share" class="flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm text-[var(--color-text)] hover:bg-[var(--color-surface-secondary)] transition-colors">
+          <div class="w-7 h-7 rounded-lg bg-teal-100 flex items-center justify-center dark:bg-teal-900/30"><i class="fas fa-share-alt text-teal-600 dark:text-teal-400 text-xs"></i></div>
+          Share Business
+          <span class="ml-auto text-[10px] text-[var(--color-text-muted)]">Links & QR code</span>
+        </a>
+        <div class="px-3 py-1.5 text-[11px] font-semibold text-[var(--color-text-muted)] uppercase tracking-wider mt-1">Clients</div>
+        <div id="cmdClientResults">
+          {{range .Clients}}
+          <div class="flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm text-[var(--color-text)] hover:bg-[var(--color-surface-secondary)] transition-colors cursor-pointer" onclick="loadClient('{{.ID}}'); closeCommandPalette()" data-client-id="{{.ID}}">
+            <div class="w-7 h-7 rounded-full bg-teal-100 flex items-center justify-center dark:bg-teal-900/30"><i class="fas fa-user text-teal-600 dark:text-teal-400 text-xs"></i></div>
+            <div><span class="font-medium">{{.Name}}</span><span class="text-[var(--color-text-muted)] ml-2 text-xs">{{.Email}}</span></div>
+            {{if .IsOnline}}<span class="ml-auto flex items-center gap-1 text-[10px] text-green-600"><span class="w-1.5 h-1.5 rounded-full bg-green-500"></span>Online</span>{{end}}
+          </div>
+          {{end}}
+        </div>
+        <div class="px-3 py-1.5 text-[11px] font-semibold text-[var(--color-text-muted)] uppercase tracking-wider mt-1">Actions</div>
+        <div class="flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm text-[var(--color-text)] hover:bg-[var(--color-surface-secondary)] transition-colors cursor-pointer" onclick="showNewClientModal(); closeCommandPalette()">
+          <div class="w-7 h-7 rounded-lg bg-teal-100 flex items-center justify-center dark:bg-teal-900/30"><i class="fas fa-plus text-teal-600 dark:text-teal-400 text-xs"></i></div>
+          Add New Customer
+        </div>
+      </div>
+    </div>
+  </div>
 
-        document.getElementById('profileLogoInput').addEventListener('change', function(e) {
+  <script src="/static/js/modules/shared.js?v=1"></script>
+  <script src="/static/js/modules/business.js?v=1"></script>
+  <script src="/static/js/modules/product_picker.js?v=1"></script>
+  <script src="/static/js/modules/service_picker.js?v=1"></script>
+  <script src="/static/js/core/app.js?v=1"></script>
+
+  <script>
+    function showBusinessProfile() { var el = document.getElementById('businessProfileModal'); if (el) el.classList.remove('hidden'); }
+    function hideBusinessProfile() { var el = document.getElementById('businessProfileModal'); if (el) el.classList.add('hidden'); }
+
+    function toggleSidebar() {
+      var layout = document.getElementById('mainLayout');
+      var overlay = document.getElementById('sidebarOverlay');
+      layout.classList.toggle('sidebar-open');
+      if (layout.classList.contains('sidebar-open')) {
+        overlay.classList.remove('hidden');
+      } else {
+        overlay.classList.add('hidden');
+      }
+    }
+
+    function openCommandPalette() {
+      document.getElementById('cmdOverlay').classList.remove('hidden');
+      setTimeout(function() { var el = document.getElementById('cmdInput'); if (el) el.focus(); }, 100);
+    }
+    function closeCommandPalette(e) {
+      if (e && e.target !== e.currentTarget) return;
+      document.getElementById('cmdOverlay').classList.add('hidden');
+    }
+    document.addEventListener('keydown', function(e) {
+      if ((e.metaKey || e.ctrlKey) && e.key === 'k') { e.preventDefault(); openCommandPalette(); }
+      if (e.key === 'Escape') { var o = document.getElementById('cmdOverlay'); if (o && !o.classList.contains('hidden')) o.classList.add('hidden'); }
+    });
+
+    document.getElementById('cmdInput')?.addEventListener('input', function() {
+      var q = this.value.toLowerCase().trim();
+      var results = document.getElementById('cmdClientResults');
+      if (!results) return;
+      results.querySelectorAll('[data-client-id]').forEach(function(el) {
+        var name = el.querySelector('.font-medium')?.textContent?.toLowerCase() || '';
+        var email = el.querySelector('.text-xs')?.textContent?.toLowerCase() || '';
+        el.style.display = (!q || name.includes(q) || email.includes(q)) ? '' : 'none';
+      });
+    });
+
+    function toggleNotifications() {
+      var dd = document.getElementById('notifDropdown');
+      if (dd) dd.classList.toggle('hidden');
+    }
+    document.addEventListener('click', function(e) {
+      var c = document.getElementById('notifContainer');
+      if (c && !c.contains(e.target)) { var dd = document.getElementById('notifDropdown'); if (dd) dd.classList.add('hidden'); }
+    });
+
+    document.addEventListener('DOMContentLoaded', function() {
+      document.querySelectorAll('.stat-counter').forEach(function(el) {
+        var target = parseInt(el.dataset.target) || 0;
+        if (target === 0) { el.textContent = '0'; return; }
+        var current = 0;
+        var step = Math.max(1, Math.floor(target / 30));
+        var interval = setInterval(function() {
+          current += step;
+          if (current >= target) { current = target; clearInterval(interval); }
+          el.textContent = current;
+        }, 40);
+      });
+      updateTimeAgo();
+      setInterval(updateTimeAgo, 30000);
+    });
+
+    function updateTimeAgo() {
+      document.querySelectorAll('.time-ago').forEach(function(el) {
+        var t = el.getAttribute('data-time');
+        if (!t || t === '0001-01-01T00:00:00Z' || t === '<nil>') { el.textContent = ''; return; }
+        var d = new Date(t);
+        if (isNaN(d.getTime())) { el.textContent = ''; return; }
+        var diff = Math.floor((Date.now() - d.getTime()) / 1000);
+        if (diff < 60) { el.textContent = 'now'; }
+        else if (diff < 3600) { el.textContent = Math.floor(diff / 60) + 'm ago'; }
+        else if (diff < 86400) { el.textContent = Math.floor(diff / 3600) + 'h ago'; }
+        else { el.textContent = Math.floor(diff / 86400) + 'd ago'; }
+      });
+    }
+
+    document.addEventListener('keydown', function(e) {
+      if (e.key === 'Escape') {
+        var dd = document.getElementById('notifDropdown');
+        if (dd) dd.classList.add('hidden');
+      }
+    });
+
+    document.addEventListener('DOMContentLoaded', function() {
+      var pf = document.getElementById('businessProfileForm');
+      if (pf) {
+        pf.addEventListener('submit', function(e) {
+          e.preventDefault();
+          var fd = new FormData();
+          fd.append('name', document.getElementById('profileName')?.value || '');
+          fd.append('username', document.getElementById('profileUsername')?.value || '');
+          fd.append('email', document.getElementById('profileEmail')?.value || '');
+          var pw = document.getElementById('profilePassword')?.value;
+          if (pw) fd.append('password', pw);
+          var li = document.getElementById('profileLogoInput');
+          if (li && li.files.length > 0) fd.append('logo', li.files[0]);
+          fetch('/business/profile', { method: 'PUT', body: fd })
+            .then(function(r) { return r.json(); })
+            .then(function(d) { if (d.success) { hideBusinessProfile(); location.reload(); } else if (typeof showNotification === 'function') { showNotification(d.error || 'Failed to update profile', 'error'); } else { alert(d.error || 'Failed'); } })
+            .catch(function() { if (typeof showNotification === 'function') { showNotification('Failed to update profile', 'error'); } else { alert('Failed'); } });
+        });
+        document.getElementById('profileLogoInput')?.addEventListener('change', function(e) {
           if (e.target.files.length === 0) return;
-          const reader = new FileReader();
-          reader.onload = function(ev) {
-            const preview = document.querySelector('#profileLogoPreview');
-            preview.innerHTML = '<img src="' + ev.target.result + '" class="w-full h-full object-cover">';
-          };
-          reader.readAsDataURL(e.target.files[0]);
+          var r = new FileReader();
+          r.onload = function(ev) { var p = document.querySelector('#profileLogoPreview'); if (p) p.innerHTML = '<img src="' + ev.target.result + '" class="w-full h-full object-cover">'; };
+          r.readAsDataURL(e.target.files[0]);
         });
       }
     });
   </script>
-
-  <script src="/static/js/modules/shared.js?v=2"></script>
-  <script src="/static/js/modules/product_picker.js?v=2"></script>
-  <script src="/static/js/modules/service_picker.js?v=2"></script>
-  <script src="/static/js/modules/business.js?v=2"></script>
 </body>
-
 </html>
