@@ -20,6 +20,9 @@ func SetupClientRoutes(r *gin.Engine) {
 	clientProtected.Use(client.ClientMiddleware())
 	{
 		clientProtected.GET("/", client.ClientDashboard)
+		clientProtected.GET("/discover", client.ShowDiscover)
+		clientProtected.GET("/discover/search", client.SearchBusinesses)
+		clientProtected.POST("/connect/:business_id", client.ConnectToBusiness)
 		clientProtected.GET("/businesses/:business_id/messages", client.GetClientMessages)
 		clientProtected.POST("/businesses/:business_id/messages", client.CreateClientMessage)
 		clientProtected.GET("/businesses/:business_id/products", businessHandler.GetBusinessProducts)
@@ -33,6 +36,7 @@ func SetupClientRoutes(r *gin.Engine) {
 		clientProtected.POST("/bookings/:id/update", client.ClientUpdateBooking)
 		clientProtected.POST("/bookings/:id/cancel", client.ClientCancelBooking)
 		clientProtected.PUT("/businesses/:business_id/read", handlers.MarkClientConversationAsRead)
+		clientProtected.POST("/disconnect/:business_id", client.DisconnectFromBusiness)
 		clientProtected.POST("/heartbeat", client.ClientHeartbeat)
 	}
 

@@ -31,11 +31,30 @@ func SendClientOTP(c *gin.Context) {
 		return
 	}
 
+	// Try to find existing client by email (any business)
+	var client models.Client
+	err := db.DB.Where("email = ?", email).First(&client).Error
+	if err != nil {
+		// Client not found — create standalone (no business association)
+		client = models.Client{
+			Email:  email,
+			Name:   email,
+			Status: models.StatusNew,
+		}
+		if err := db.DB.Create(&client).Error; err != nil {
+			c.HTML(500, "client_login.html", gin.H{
+				"Title": "Client Login - Threadly",
+				"Error": "Failed to create account",
+			})
+			return
+		}
+	}
+
 	otp, err := services.SendClientOTP(email)
 	if err != nil {
 		c.HTML(400, "client_login.html", gin.H{
 			"Title": "Client Login - Threadly",
-			"Error": "Client not found",
+			"Error": "Failed to send OTP",
 		})
 		return
 	}
@@ -388,10 +407,10 @@ func GetClientMessages(c *gin.Context) {
 
 	// Get business info
 	var business struct {
-		ID   uint   `json:"id"`
-		Name string `json:"name"`
-		Type string `json:"business_type"`
-		Logo string `json:"logo"`
+		ID           uint   `json:"id"`
+		Name         string `json:"name"`
+		BusinessType string `json:"business_type"`
+		Logo         string `json:"logo"`
 	}
 	db.DB.Raw("SELECT id, name, business_type, logo FROM businesses WHERE id = ?", businessID).First(&business)
 

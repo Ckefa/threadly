@@ -47,6 +47,20 @@ function sendMessage() {
   if (form) form.submit();
 }
 
+function disconnectBusiness(businessId) {
+  if (!confirm('Remove this business from your list? You can reconnect later.')) return;
+  fetch('/client/disconnect/' + businessId, { method: 'POST' })
+    .then(r => r.json())
+    .then(data => {
+      if (data.success) {
+        location.reload();
+      } else {
+        showNotification('Failed to remove business', 'error');
+      }
+    })
+    .catch(() => showNotification('Failed to remove business', 'error'));
+}
+
 function hideClientOrderModal() {
   document.getElementById('clientOrderModal')?.classList.add('hidden');
   document.getElementById('clientOrderForm')?.reset();

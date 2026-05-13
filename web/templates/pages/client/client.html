@@ -51,6 +51,16 @@
   <script src="/static/js/modules/product_picker.js"></script>
   <script src="/static/js/modules/service_picker.js"></script>
   <script src="/static/js/modules/client.js"></script>
+  <script>
+    document.addEventListener('DOMContentLoaded', function() {
+      const params = new URLSearchParams(window.location.search);
+      const bizId = params.get('business_id');
+      if (bizId) {
+        loadBusiness(bizId);
+        history.replaceState({}, '', '/client');
+      }
+    });
+  </script>
 </body>
 
 </html>

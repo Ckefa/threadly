@@ -1,7 +1,6 @@
 package handlers
 
 import (
-	"fmt"
 	"log"
 	"strconv"
 	"time"
@@ -30,21 +29,18 @@ func GetMessages(c *gin.Context) {
 		return
 	}
 
-	log.Println("Getting messages bizID, clientID", businessID, clientID)
-
-	// Verify client belongs to business
-	var client models.Client
-	if err := db.DB.Where("id = ? AND business_id = ?", clientID, businessID).First(&client).Error; err != nil {
-		log.Println("GetMessages: =>> Customer not found by id", clientID)
-		c.String(404, "Customer not found")
+	// Get conversation (implicitly verifies client+business relationship)
+	var conversation models.Conversation
+	if err := db.DB.Where("client_id = ? AND business_id = ?", clientID, businessID).First(&conversation).Error; err != nil {
+		log.Println("GetMessages: =>> Conversation not found", clientID, businessID)
+		c.String(404, "Conversation not found")
 		return
 	}
 
-	// Get conversation
-	var conversation models.Conversation
-	if err := db.DB.Where("client_id = ?", clientID).First(&conversation).Error; err != nil {
-		log.Println("GetMessages: =>> Conversation not found", clientID, businessID)
-		c.String(404, "Conversation not found")
+	// Load client
+	var client models.Client
+	if err := db.DB.First(&client, clientID).Error; err != nil {
+		c.String(404, "Customer not found")
 		return
 	}
 
@@ -229,10 +225,6 @@ func GetMessages(c *gin.Context) {
 		}
 	}
 
-	// Debug logging
-	fmt.Printf("Loading chat for client %d, conversation ID: %d\n", clientID, conversation.ID)
-	fmt.Printf("Progress data: %+v\n", progress)
-
 	c.HTML(200, "business_chat.html", gin.H{
 		"Customer": client,
 		"Messages": messageObjs,
@@ -248,17 +240,17 @@ func CreateMessage(c *gin.Context) {
 		return
 	}
 
-	// Verify client belongs to business
-	var client models.Client
-	if err := db.DB.Where("id = ? AND business_id = ?", clientID, businessID).First(&client).Error; err != nil {
-		c.String(404, "Customer not found")
+	// Get conversation (implicitly verifies client+business relationship)
+	var conversation models.Conversation
+	if err := db.DB.Where("client_id = ? AND business_id = ?", clientID, businessID).First(&conversation).Error; err != nil {
+		c.String(404, "Conversation not found")
 		return
 	}
 
-	// Get conversation
-	var conversation models.Conversation
-	if err := db.DB.Where("client_id = ?", clientID).First(&conversation).Error; err != nil {
-		c.String(404, "Conversation not found")
+	// Load client
+	var client models.Client
+	if err := db.DB.First(&client, clientID).Error; err != nil {
+		c.String(404, "Customer not found")
 		return
 	}
 

@@ -1,8 +1,10 @@
 package business
 
 import (
+	"crypto/rand"
 	"fmt"
 	"io"
+	"math/big"
 	"net/http"
 	"os"
 	"path/filepath"
@@ -39,6 +41,32 @@ type DashboardData struct {
 	LowStockProducts    []models.Product
 }
 
+func (h *BusinessHandler) GetSharePage(c *gin.Context) {
+	businessID := c.GetUint("business_id")
+
+	var business models.Business
+	if err := h.db.First(&business, businessID).Error; err != nil {
+		c.HTML(http.StatusNotFound, "dashboard.html", gin.H{"error": "Business not found"})
+		return
+	}
+
+	profileURL := fmt.Sprintf("%s/b/%s", c.Request.Host, business.Slug)
+	scheme := "https"
+	if c.Request.TLS == nil {
+		scheme = "http"
+	}
+	fullURL := fmt.Sprintf("%s://%s", scheme, profileURL)
+	connectURL := fmt.Sprintf("%s://%s/api/connect/%s", scheme, c.Request.Host, business.Slug)
+
+	c.HTML(http.StatusOK, "business_share.html", gin.H{
+		"Title":       "Share - " + business.Name,
+		"Business":    business,
+		"ProfileURL":  fullURL,
+		"ConnectURL":  connectURL,
+		"QRData":      fullURL,
+	})
+}
+
 func (h *BusinessHandler) GetBizHome(c *gin.Context) {
 	businessID := c.GetUint("business_id")
 
@@ -63,12 +91,11 @@ func (h *BusinessHandler) GetBizHome(c *gin.Context) {
 		FROM clients 
 		JOIN conversations ON conversations.client_id = clients.id AND conversations.business_id = ?
 		LEFT JOIN messages ON messages.conversation_id = conversations.id
-		WHERE clients.business_id = ?
 		GROUP BY clients.id, conversations.id
 		ORDER BY unread_count DESC, last_message_at DESC
 	`
 
-	if err := h.db.Raw(query, businessID, businessID).Scan(&clientsWithUnread).Error; err != nil {
+	if err := h.db.Raw(query, businessID).Scan(&clientsWithUnread).Error; err != nil {
 		c.HTML(500, "business.html", gin.H{
 			"Title": "Threadly",
 			"Error": "Failed to load clients",
@@ -132,7 +159,7 @@ func (h *BusinessHandler) GetDashboard(c *gin.Context) {
 	h.db.Model(&models.Booking{}).Where("business_id = ? AND status = ?", businessID, "pending").Count(&pendingBookingCount)
 	h.db.Model(&models.Order{}).Where("business_id = ?", businessID).Count(&totalOrders)
 	h.db.Model(&models.Booking{}).Where("business_id = ?", businessID).Count(&totalBookings)
-	h.db.Model(&models.Client{}).Where("business_id = ?", businessID).Count(&activeClients)
+	h.db.Model(&models.Conversation{}).Where("business_id = ?", businessID).Count(&activeClients)
 
 	// Calculate total revenue from completed orders and bookings
 	var ordersRevenue, bookingsRevenue float64
@@ -186,8 +213,6 @@ func (h *BusinessHandler) getOrCreateConversation(clientID uint, businessID uint
 		if err := h.db.Create(&conversation).Error; err != nil {
 			return nil, fmt.Errorf("failed to create conversation: %v", err)
 		}
-		fmt.Printf("DEBUG BusinessHandler: Created new conversation ID=%d for client_id=%d, business_id=%d\n",
-			conversation.ID, clientID, businessID)
 	}
 	return &conversation, nil
 }
@@ -323,7 +348,7 @@ func (h *BusinessHandler) GetLogoUploadPage(c *gin.Context) {
 	h.db.Model(&models.Booking{}).Where("business_id = ? AND status = ?", businessID, "pending").Count(&pendingBookingCount)
 	h.db.Model(&models.Order{}).Where("business_id = ?", businessID).Count(&totalOrders)
 	h.db.Model(&models.Booking{}).Where("business_id = ?", businessID).Count(&totalBookings)
-	h.db.Model(&models.Client{}).Where("business_id = ?", businessID).Count(&activeClients)
+	h.db.Model(&models.Conversation{}).Where("business_id = ?", businessID).Count(&activeClients)
 
 	var ordersRevenue, bookingsRevenue float64
 	h.db.Model(&models.Order{}).Select("COALESCE(SUM(total_amount), 0)").Where("business_id = ? AND status IN ?", businessID, []string{"confirmed", "fulfilled"}).Scan(&ordersRevenue)
@@ -357,20 +382,63 @@ func (h *BusinessHandler) GetLogoUploadPage(c *gin.Context) {
 	c.HTML(http.StatusOK, "dashboard.html", data)
 }
 
-// Helper function to get or create client
-func (h *BusinessHandler) getOrCreateClient(email string, businessID uint) (*models.Client, error) {
-	var client models.Client
-	err := h.db.Where("email = ? OR client_id = ?", email, businessID).First(&client).Error
-	if err != nil {
-		client = models.Client{
-			ID:    businessID,
-			Email: email,
-			Name:  "Test client",
-		}
-		if err := h.db.Create(&client).Error; err != nil {
-			return nil, fmt.Errorf("failed to create client: %v", err)
-		}
-		fmt.Printf("Created new client ID=%d for email=%s", client.ID, email)
+func (h *BusinessHandler) RegenerateSlug(c *gin.Context) {
+	businessID := c.GetUint("business_id")
+
+	var business models.Business
+	if err := h.db.First(&business, businessID).Error; err != nil {
+		c.JSON(http.StatusNotFound, gin.H{"error": "Business not found"})
+		return
 	}
-	return &client, nil
+
+	// Generate new unique slug with random suffix
+	base := strings.ToLower(business.Name)
+	base = strings.TrimSpace(base)
+	base = strings.ReplaceAll(base, " ", "-")
+	base = strings.ReplaceAll(base, "&", "and")
+	var result []rune
+	for _, r := range base {
+		if (r >= 'a' && r <= 'z') || (r >= '0' && r <= '9') || r == '-' {
+			result = append(result, r)
+		}
+	}
+	base = string(result)
+	base = strings.Trim(base, "-")
+	if base == "" {
+		base = "business"
+	}
+
+	// Find unique slug
+	slug := base
+	counter := 1
+	for {
+		var existing models.Business
+		if h.db.Where("slug = ? AND id != ?", slug, businessID).First(&existing).Error != nil {
+			break
+		}
+		n, _ := rand.Int(rand.Reader, big.NewInt(9000))
+		slug = fmt.Sprintf("%s-%d", base, 1000+int(n.Int64()))
+		counter++
+		if counter > 100 {
+			c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to generate unique slug"})
+			return
+		}
+	}
+
+	h.db.Model(&business).Update("slug", slug)
+
+	scheme := "https"
+	if c.Request.TLS == nil {
+		scheme = "http"
+	}
+	fullURL := fmt.Sprintf("%s://%s/b/%s", scheme, c.Request.Host, slug)
+	connectURL := fmt.Sprintf("%s://%s/api/connect/%s", scheme, c.Request.Host, slug)
+
+	c.JSON(http.StatusOK, gin.H{
+		"success":     true,
+		"slug":        slug,
+		"profileURL":  fullURL,
+		"connectURL":  connectURL,
+	})
 }
+

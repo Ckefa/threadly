@@ -1,0 +1,208 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>{{.Title}}</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  <style>
+    .sidebar-item {
+      transition: all 0.3s ease;
+    }
+    .sidebar-item:hover {
+      transform: translateX(4px);
+    }
+  </style>
+</head>
+
+<body class="bg-gray-50">
+  <!-- Header -->
+  <header class="bg-white shadow-sm border-b border-gray-200">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+      <div class="flex justify-between items-center h-16">
+        <div class="flex items-center">
+          <h1 class="text-xl font-semibold text-gray-900">Share Your Business</h1>
+        </div>
+        <div class="flex items-center space-x-3">
+          <a href="/business"
+            class="inline-flex items-center px-4 py-2 bg-teal-600 hover:bg-teal-700 text-white text-sm font-medium rounded-lg transition-colors">
+            <i class="fas fa-comments mr-1.5"></i>
+            Chat
+          </a>
+          <button id="profileTrigger" onclick="showBusinessProfile()"
+            class="flex items-center space-x-2 hover:opacity-80">
+            {{if .Business.Logo}}
+            <img src="/static/{{.Business.Logo}}" alt="Logo" class="w-8 h-8 rounded-full object-cover">
+            {{else}}
+            <div class="w-8 h-8 bg-teal-100 rounded-full flex items-center justify-center">
+              <i class="fas fa-store text-teal-600 text-sm"></i>
+            </div>
+            {{end}}
+            <span class="text-sm font-medium text-gray-700">{{.Business.Name}}</span>
+          </button>
+          <a href="/business/logout" class="text-sm text-red-600 hover:text-red-800">Logout</a>
+        </div>
+      </div>
+    </div>
+  </header>
+
+  <div class="flex h-screen pt-16">
+    <!-- Sidebar -->
+    <aside class="w-64 bg-white shadow-lg">
+      <nav class="mt-8">
+        <div class="px-4 space-y-2">
+          <a href="/business/dashboard"
+            class="sidebar-item flex items-center px-4 py-2 text-sm font-medium rounded-md text-gray-700 hover:bg-gray-100">
+            <i class="fas fa-chart-line mr-3"></i>
+            Dashboard
+          </a>
+          <a href="/business/share"
+            class="sidebar-item flex items-center px-4 py-2 text-sm font-medium rounded-md bg-teal-50 text-teal-700">
+            <i class="fas fa-share-alt mr-3"></i>
+            Share
+          </a>
+        </div>
+      </nav>
+    </aside>
+
+    <!-- Main Content -->
+    <main class="flex-1 overflow-y-auto">
+      <div class="py-8">
+        <div class="max-w-3xl mx-auto px-4 sm:px-6 lg:px-8 space-y-8">
+
+          <!-- Profile Card -->
+          <div class="bg-white rounded-2xl shadow-sm border border-gray-200 p-8">
+            <div class="flex items-center gap-5">
+              <div class="w-16 h-16 rounded-xl bg-gradient-to-br from-teal-100 to-cyan-100 flex items-center justify-center overflow-hidden">
+                {{if .Business.Logo}}
+                <img src="/static/{{.Business.Logo}}" alt="Logo" class="w-full h-full object-cover">
+                {{else}}
+                <i class="fas fa-store text-teal-500 text-2xl"></i>
+                {{end}}
+              </div>
+              <div>
+                <h2 class="text-xl font-bold text-gray-900">{{.Business.Name}}</h2>
+                <p class="text-gray-600 capitalize">{{.Business.BusinessType}}</p>
+              </div>
+            </div>
+          </div>
+
+          <!-- Shareable Link -->
+          <div class="bg-white rounded-2xl shadow-sm border border-gray-200 p-8">
+            <h3 class="text-lg font-semibold text-gray-900 mb-2">Your Public Profile Link</h3>
+            <p class="text-sm text-gray-600 mb-4">Share this link so clients can discover your business and connect instantly.</p>
+            <div class="flex items-center gap-2">
+              <input type="text" id="profileLink" value="{{.ProfileURL}}" readonly
+                class="flex-1 px-4 py-3 border border-gray-300 rounded-xl bg-gray-50 text-gray-700 text-sm font-mono focus:outline-none">
+              <button onclick="copyLink()"
+                class="px-4 py-3 bg-teal-600 hover:bg-teal-700 text-white rounded-xl transition-colors">
+                <i class="fas fa-copy"></i>
+              </button>
+            </div>
+          </div>
+
+          <!-- Direct Connect Link -->
+          <div class="bg-white rounded-2xl shadow-sm border border-gray-200 p-8">
+            <h3 class="text-lg font-semibold text-gray-900 mb-2">Direct Connect Link</h3>
+            <p class="text-sm text-gray-600 mb-4">Clients using this link can enter their email and instantly connect to start chatting.</p>
+            <div class="flex items-center gap-2">
+              <input type="text" id="connectLink" value="{{.ConnectURL}}" readonly
+                class="flex-1 px-4 py-3 border border-gray-300 rounded-xl bg-gray-50 text-gray-700 text-sm font-mono focus:outline-none">
+              <button onclick="copyConnectLink()"
+                class="px-4 py-3 bg-teal-600 hover:bg-teal-700 text-white rounded-xl transition-colors">
+                <i class="fas fa-copy"></i>
+              </button>
+            </div>
+          </div>
+
+          <!-- Regenerate Links -->
+          <div class="bg-white rounded-2xl shadow-sm border border-gray-200 p-8">
+            <h3 class="text-lg font-semibold text-gray-900 mb-2">Regenerate Links</h3>
+            <p class="text-sm text-gray-600 mb-4">Generate a new unique URL for your business. Old links will stop working.</p>
+            <button onclick="regenerateSlug()"
+              class="px-5 py-2.5 bg-amber-500 hover:bg-amber-600 text-white rounded-xl transition-colors text-sm font-medium">
+              <i class="fas fa-sync-alt mr-1.5"></i> Regenerate Links & QR Code
+            </button>
+          </div>
+
+          <!-- QR Code -->
+          <div class="bg-white rounded-2xl shadow-sm border border-gray-200 p-8 text-center">
+            <h3 class="text-lg font-semibold text-gray-900 mb-2">QR Code</h3>
+            <p class="text-sm text-gray-600 mb-6">Scan to open your business profile page.</p>
+            <img id="qrImage" src="https://api.qrserver.com/v1/create-qr-code/?size=250x250&data={{.QRData}}"
+                 alt="QR Code for {{.Business.Name}}"
+                 class="mx-auto rounded-xl shadow-sm border border-gray-200"
+                 width="250" height="250">
+            <div class="mt-4 flex items-center justify-center gap-3">
+              <p class="text-xs text-gray-400">Point your camera at the QR code to open your business profile</p>
+              <button onclick="downloadQR()"
+                class="px-4 py-2 bg-gray-600 hover:bg-gray-700 text-white rounded-xl transition-colors text-sm">
+                <i class="fas fa-download mr-1"></i> Download PNG
+              </button>
+            </div>
+          </div>
+
+        </div>
+      </div>
+    </main>
+  </div>
+
+  <script>
+    function copyLink() {
+      const input = document.getElementById('profileLink');
+      input.select();
+      navigator.clipboard.writeText(input.value).then(() => {
+        const btn = input.nextElementSibling;
+        btn.innerHTML = '<i class="fas fa-check"></i>';
+        setTimeout(() => { btn.innerHTML = '<i class="fas fa-copy"></i>'; }, 2000);
+      });
+    }
+    function copyConnectLink() {
+      const input = document.getElementById('connectLink');
+      input.select();
+      navigator.clipboard.writeText(input.value).then(() => {
+        const btn = input.nextElementSibling;
+        btn.innerHTML = '<i class="fas fa-check"></i>';
+        setTimeout(() => { btn.innerHTML = '<i class="fas fa-copy"></i>'; }, 2000);
+      });
+    }
+    function regenerateSlug() {
+      if (!confirm('Regenerate links? This will change your business URL. Old links will stop working.')) return;
+      const btn = event.target.closest('button');
+      btn.disabled = true;
+      btn.innerHTML = '<i class="fas fa-spinner fa-spin mr-1.5"></i> Regenerating...';
+      fetch('/business/regenerate-slug', { method: 'POST' })
+        .then(r => r.json())
+        .then(data => {
+          if (data.success) {
+            location.reload();
+          } else {
+            alert(data.error || 'Failed to regenerate');
+            btn.disabled = false;
+            btn.innerHTML = '<i class="fas fa-sync-alt mr-1.5"></i> Regenerate Links & QR Code';
+          }
+        })
+        .catch(() => {
+          alert('Failed to regenerate');
+          btn.disabled = false;
+          btn.innerHTML = '<i class="fas fa-sync-alt mr-1.5"></i> Regenerate Links & QR Code';
+        });
+    }
+    function downloadQR() {
+      const img = document.getElementById('qrImage');
+      const canvas = document.createElement('canvas');
+      canvas.width = img.naturalWidth;
+      canvas.height = img.naturalHeight;
+      const ctx = canvas.getContext('2d');
+      ctx.drawImage(img, 0, 0);
+      const link = document.createElement('a');
+      link.download = 'qrcode.png';
+      link.href = canvas.toDataURL('image/png');
+      link.click();
+    }
+  </script>
+</body>
+
+</html>

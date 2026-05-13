@@ -2,6 +2,7 @@ package routes
 
 import (
 	"threadly/internal/handlers"
+	"threadly/internal/handlers/business"
 
 	"github.com/gin-gonic/gin"
 )
@@ -40,5 +41,13 @@ func Setup(r *gin.Engine) {
 			dev.DELETE("/items/:id", handlers.DeleteItem)
 		}
 	}
+
+	// Public business profile
+	r.GET("/b/:slug", business.GetPublicProfile)
+
+	// Public connect flow (self-registration via slug)
+	r.GET("/api/connect/:slug", business.ShowConnect)
+	r.POST("/api/connect/:slug/send-otp", business.SendConnectOTP)
+	r.POST("/api/connect/:slug/verify-otp", business.VerifyConnectOTP)
 
 }

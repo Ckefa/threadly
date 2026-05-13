@@ -328,5 +328,24 @@ Threadly is an open-source project designed to help businesses manage customer r
 - **Suggest enhancements for user experience
 
 ---
+## Plans
+
+### 8. Prioritized Implementation Order
+**Phase 1 — Foundation (must-haves)**
+1. Add `Slug` and `IsPublic` fields to Business model + slug generation on registration
+2. Create `/b/{slug}` business profile page (public, no auth needed)
+3. Create `/api/connect/{slug}` + OTP flow for self-registration
+4. Update client auth to allow creating client records on-the-fly (not just pre-created by business)
+5. Business share dashboard page with link + QR code
+**Phase 2 — Discovery (nice-to-haves)**
+6. Public business directory at `/businesses` with search
+7. Categories/tags for filtering
+8. Client sidebar search + "Discover" CTA
+9. Location-based proximity search
+**Phase 3 — Growth (growth-hacking)**
+10. Email invites from business dashboard
+11. Embeddable website widget
+12. Social sharing buttons
+13. Referral tracking
 
 *Threadly: Transforming customer relationships through intelligent communication and management tools.*

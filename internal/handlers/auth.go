@@ -1,7 +1,9 @@
 package handlers
 
 import (
+	"fmt"
 	"net/http"
+	"strings"
 
 	"threadly/internal/db"
 	"threadly/internal/models"
@@ -9,6 +11,40 @@ import (
 
 	"github.com/gin-gonic/gin"
 )
+
+func generateSlug(name string) string {
+	slug := strings.ToLower(name)
+	slug = strings.TrimSpace(slug)
+	slug = strings.ReplaceAll(slug, " ", "-")
+	slug = strings.ReplaceAll(slug, "&", "and")
+	// Remove non-alphanumeric except hyphens
+	var result []rune
+	for _, r := range slug {
+		if (r >= 'a' && r <= 'z') || (r >= '0' && r <= '9') || r == '-' {
+			result = append(result, r)
+		}
+	}
+	slug = string(result)
+	slug = strings.Trim(slug, "-")
+	if slug == "" {
+		return ""
+	}
+	return slug
+}
+
+func uniqueSlug(base string) string {
+	slug := base
+	counter := 1
+	for {
+		var existing models.Business
+		if db.DB.Where("slug = ?", slug).First(&existing).Error != nil {
+			break
+		}
+		slug = fmt.Sprintf("%s-%d", base, counter)
+		counter++
+	}
+	return slug
+}
 
 func ShowLogin(c *gin.Context) {
 	c.HTML(200, "business_login.html", gin.H{
@@ -31,12 +67,19 @@ func Register(c *gin.Context) {
 
 	hashedPassword := services.Hash(password)
 
+	slug := uniqueSlug(generateSlug(name))
+	if slug == "" {
+		slug = uniqueSlug(generateSlug(username))
+	}
+
 	user := models.Business{
 		Email:        email,
 		Password:     hashedPassword,
 		Name:         name,
 		Username:     username,
 		BusinessType: businessType,
+		Slug:         slug,
+		IsPublic:     true,
 	}
 
 	if err := db.DB.Create(&user).Error; err != nil {
@@ -47,7 +90,7 @@ func Register(c *gin.Context) {
 		return
 	}
 
-	c.Redirect(http.StatusFound, "/login")
+	c.Redirect(http.StatusFound, "/business/login")
 }
 
 func Login(c *gin.Context) {
@@ -85,6 +128,6 @@ func Login(c *gin.Context) {
 }
 
 func Logout(c *gin.Context) {
-	c.SetCookie("token", "", -1, "/", "", false, true)
-	c.Redirect(http.StatusFound, "/login")
+	c.SetCookie("token", "", -1, "/business", "", false, true)
+	c.Redirect(http.StatusFound, "/business/login")
 }

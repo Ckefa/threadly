@@ -1,11 +1,103 @@
 package client
 
 import (
-	"github.com/gin-gonic/gin"
+	"net/http"
 	"strconv"
+	"strings"
 	"threadly/internal/db"
 	"threadly/internal/models"
+
+	"github.com/gin-gonic/gin"
 )
+
+func ShowDiscover(c *gin.Context) {
+	clientID := c.GetUint("client_id")
+
+	var client models.Client
+	db.DB.First(&client, clientID)
+
+	// Get client's existing business IDs (via conversations)
+	var existingIDs []uint
+	db.DB.Model(&models.Conversation{}).Where("client_id = ?", clientID).Pluck("business_id", &existingIDs)
+
+	var businesses []models.Business
+	query := db.DB.Where("is_public = ?", true)
+	if len(existingIDs) > 0 {
+		query = query.Where("id NOT IN ?", existingIDs)
+	}
+	query.Order("name ASC").Limit(20).Find(&businesses)
+
+	c.HTML(http.StatusOK, "client_discover.html", gin.H{
+		"Title":      "Discover Businesses - Threadly",
+		"Businesses": businesses,
+		"Email":      c.GetString("client_email"),
+		"Client":     client,
+	})
+}
+
+func SearchBusinesses(c *gin.Context) {
+	clientID := c.GetUint("client_id")
+	q := strings.TrimSpace(c.Query("q"))
+
+	// Get client's existing business IDs
+	var existingIDs []uint
+	db.DB.Model(&models.Conversation{}).Where("client_id = ?", clientID).Pluck("business_id", &existingIDs)
+
+	var businesses []models.Business
+	query := db.DB.Where("is_public = ?", true)
+	if len(existingIDs) > 0 {
+		query = query.Where("id NOT IN ?", existingIDs)
+	}
+	if q != "" {
+		like := "%" + q + "%"
+		query = query.Where("name ILIKE ? OR business_type ILIKE ? OR slug ILIKE ?", like, like, like)
+	}
+	query.Order("name ASC").Limit(50).Find(&businesses)
+
+	c.JSON(http.StatusOK, businesses)
+}
+
+func ConnectToBusiness(c *gin.Context) {
+	clientID := c.GetUint("client_id")
+	businessIDStr := c.Param("business_id")
+
+	businessID, err := strconv.ParseUint(businessIDStr, 10, 32)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid business ID"})
+		return
+	}
+
+	// Verify business exists
+	var business models.Business
+	if err := db.DB.First(&business, businessID).Error; err != nil {
+		c.JSON(http.StatusNotFound, gin.H{"error": "Business not found"})
+		return
+	}
+
+	// Check if conversation already exists
+	var conversation models.Conversation
+	err = db.DB.Where("client_id = ? AND business_id = ?", clientID, businessID).First(&conversation).Error
+	if err == nil {
+		c.JSON(http.StatusOK, gin.H{"success": true, "conversation_id": conversation.ID, "already_connected": true})
+		return
+	}
+
+	// Create new conversation
+	conversation = models.Conversation{
+		ClientID:   clientID,
+		BusinessID: uint(businessID),
+	}
+	if err := db.DB.Create(&conversation).Error; err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to create conversation"})
+		return
+	}
+
+	c.JSON(http.StatusOK, gin.H{
+		"success":           true,
+		"conversation_id":   conversation.ID,
+		"already_connected": false,
+	})
+}
 
 func CreateClient(c *gin.Context) {
 	businessID := c.GetUint("business_id")
@@ -15,7 +107,7 @@ func CreateClient(c *gin.Context) {
 	phone := c.PostForm("phone")
 
 	client := models.Client{
-		BusinessID: businessID,
+		BusinessID: &businessID,
 		Name:       name,
 		Email:      email,
 		Phone:      phone,
@@ -41,6 +133,23 @@ func CreateClient(c *gin.Context) {
 	})
 }
 
+func deleteConversationWithDeps(clientID, businessID uint) error {
+	var conv models.Conversation
+	if err := db.DB.Where("client_id = ? AND business_id = ?", clientID, businessID).First(&conv).Error; err != nil {
+		return nil
+	}
+	var msgIDs []uint
+	db.DB.Model(&models.Message{}).Where("conversation_id = ?", conv.ID).Pluck("id", &msgIDs)
+	tx := db.DB.Begin()
+	if len(msgIDs) > 0 {
+		tx.Where("message_id IN ?", msgIDs).Delete(&models.Action{})
+	}
+	tx.Where("conversation_id = ?", conv.ID).Delete(&models.Message{})
+	tx.Where("conversation_id = ?", conv.ID).Delete(&models.ConversationProgress{})
+	tx.Delete(&conv)
+	return tx.Commit().Error
+}
+
 func DeleteClient(c *gin.Context) {
 	businessID := c.GetUint("business_id")
 	clientID, err := strconv.ParseUint(c.Param("id"), 10, 32)
@@ -49,35 +158,14 @@ func DeleteClient(c *gin.Context) {
 		return
 	}
 
-	// Check if customer belongs to this user
-	var client models.Client
-	if err := db.DB.Where("id = ? AND business_id = ?", clientID, businessID).First(&client).Error; err != nil {
-		c.JSON(404, gin.H{"error": "Customer not found"})
+	if err := deleteConversationWithDeps(uint(clientID), businessID); err != nil {
+		c.JSON(500, gin.H{"error": "Failed to disconnect customer"})
 		return
 	}
-
-	// Start transaction
-	tx := db.DB.Begin()
-
-	// Delete conversation
-	if err := tx.Where("client_id = ?", client.ID).Delete(&models.Conversation{}).Error; err != nil {
-		tx.Rollback()
-		c.JSON(500, gin.H{"error": "Failed to delete conversation"})
-		return
-	}
-
-	// Delete customer
-	if err := tx.Delete(&client).Error; err != nil {
-		tx.Rollback()
-		c.JSON(500, gin.H{"error": "Failed to delete customer"})
-		return
-	}
-
-	tx.Commit()
 
 	c.JSON(200, gin.H{
 		"success": true,
-		"message": "Customer deleted successfully",
+		"message": "Customer disconnected successfully",
 	})
 }
 
@@ -89,8 +177,15 @@ func UpdateClientStatus(c *gin.Context) {
 		return
 	}
 
+	// Verify client has a conversation with this business
+	var conversation models.Conversation
+	if err := db.DB.Where("client_id = ? AND business_id = ?", clientID, businessID).First(&conversation).Error; err != nil {
+		c.JSON(404, gin.H{"error": "Customer not found"})
+		return
+	}
+
 	var client models.Client
-	if err := db.DB.Where("id = ? AND business_id = ?", clientID, businessID).First(&client).Error; err != nil {
+	if err := db.DB.First(&client, clientID).Error; err != nil {
 		c.JSON(404, gin.H{"error": "Customer not found"})
 		return
 	}
@@ -114,19 +209,28 @@ func GetClientConversationID(c *gin.Context) {
 		return
 	}
 
-	// Verify client belongs to business
-	var client models.Client
-	if err := db.DB.Where("id = ? AND business_id = ?", clientID, businessID).First(&client).Error; err != nil {
+	// Verify client has a conversation with this business
+	var conversation models.Conversation
+	if err := db.DB.Where("client_id = ? AND business_id = ?", clientID, businessID).First(&conversation).Error; err != nil {
 		c.JSON(404, gin.H{"error": "Customer not found"})
 		return
 	}
 
-	// Get conversation for this customer
-	var conversation models.Conversation
-	if err := db.DB.Where("client_id = ?", clientID).First(&conversation).Error; err != nil {
-		c.JSON(404, gin.H{"error": "Conversation not found"})
+	c.JSON(200, gin.H{"conversation_id": conversation.ID})
+}
+
+func DisconnectFromBusiness(c *gin.Context) {
+	clientID := c.GetUint("client_id")
+	businessID, err := strconv.ParseUint(c.Param("business_id"), 10, 32)
+	if err != nil {
+		c.JSON(400, gin.H{"error": "Invalid business ID"})
 		return
 	}
 
-	c.JSON(200, gin.H{"conversation_id": conversation.ID})
+	if err := deleteConversationWithDeps(clientID, uint(businessID)); err != nil {
+		c.JSON(500, gin.H{"error": "Failed to disconnect"})
+		return
+	}
+
+	c.JSON(200, gin.H{"success": true})
 }

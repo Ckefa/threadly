@@ -91,6 +91,10 @@ func SetupBusinessRoutes(r *gin.Engine) {
 		protected.POST("/orders/:id/confirm", businessHandler.ConfirmOrderBusiness)
 		protected.POST("/orders/:id/reject", businessHandler.RejectOrder)
 
+		// Share page
+		protected.GET("/share", businessHandler.GetSharePage)
+		protected.POST("/regenerate-slug", businessHandler.RegenerateSlug)
+
 		// Profile & Logo upload
 		protected.POST("/logo", businessHandler.UploadBusinessLogo)
 		protected.PUT("/profile", businessHandler.UpdateBusinessProfile)

@@ -13,7 +13,7 @@ const (
 
 type Client struct {
 	ID             uint         `gorm:"primaryKey" json:"id"`
-	BusinessID     uint         `gorm:"column:business_id;not null;index" json:"business_id"`
+	BusinessID     *uint        `gorm:"column:business_id;index" json:"business_id"`
 	Name           string       `gorm:"not null" json:"name"`
 	Email          string       `json:"email"`
 	Phone          string       `json:"phone"`

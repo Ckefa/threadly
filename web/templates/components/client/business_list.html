@@ -27,15 +27,32 @@
           {{end}}
           <span class="inline-block w-2 h-2 bg-green-500 rounded-full"></span>
         </div>
+        <button onclick="event.stopPropagation(); disconnectBusiness({{.ID}})"
+          class="ml-2 p-1.5 text-red-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors"
+          title="Remove business">
+          <i class="fas fa-trash-alt text-xs"></i>
+        </button>
       </div>
     </div>
     {{else}}
     <div class="p-8 text-center text-gray-500">
       <i class="fas fa-store text-4xl mb-4"></i>
-      <p>No businesses found</p>
-      <p class="text-sm mt-2">You haven't connected with any businesses yet</p>
+      <p>No businesses connected yet</p>
+      <p class="text-sm mt-2">Find businesses to start chatting</p>
+      <a href="/client/discover"
+        class="mt-4 inline-block px-4 py-2 bg-teal-600 text-white rounded-lg hover:bg-teal-700 transition-colors text-sm">
+        <i class="fas fa-compass mr-1"></i> Find Businesses
+      </a>
     </div>
     {{end}}
+  </div>
+
+  <div class="p-3 border-t border-gray-200">
+    <a href="/client/discover"
+      class="flex items-center space-x-2 px-3 py-2 text-sm text-teal-600 hover:bg-teal-50 rounded-lg transition-colors">
+      <i class="fas fa-compass"></i>
+      <span>Find Businesses</span>
+    </a>
   </div>
 </div>
 {{end}}
