@@ -15,7 +15,7 @@
 </head>
 <body class="h-screen overflow-hidden flex flex-col">
   <!-- Top Header -->
-  <header class="card-flat border-b border-[var(--color-border)] h-16 flex items-center justify-between px-4 lg:px-6 shrink-0 z-30 relative bg-[var(--color-surface)]">
+  <header class="navbar-glass h-16 flex items-center justify-between px-4 lg:px-6 shrink-0 z-30 relative">
     <div class="flex items-center gap-3">
       <button onclick="toggleSidebar()" class="sidebar-mobile-toggle btn btn-icon btn-ghost lg:hidden" id="sidebarToggle">
         <i class="fas fa-bars text-lg"></i>
@@ -107,7 +107,7 @@
   </header>
 
   <!-- Stats Widgets Bar -->
-  <div class="bg-[var(--color-surface)] border-b border-[var(--color-border)] px-4 lg:px-6 py-3 shrink-0">
+  <div class="bg-[var(--color-surface)] border-b border-[var(--color-border)] px-4 lg:px-6 py-3 shrink-0" style="margin-top: 1px;">
     <div class="flex items-center gap-4 overflow-x-auto scrollbar-none">
       <div class="stat-card flex items-center gap-2.5 px-3.5 py-2 shrink-0" style="border-color: var(--color-primary); background: color-mix(in srgb, var(--color-primary) 8%, transparent);">
         <div class="w-8 h-8 rounded-lg flex items-center justify-center" style="background: color-mix(in srgb, var(--color-primary) 15%, transparent);">

@@ -1,10 +1,9 @@
 {{ define "biz-sidebar" }}
 <aside class="sidebar" id="bizSidebar">
   <div class="p-3 border-b border-[var(--color-border)] shrink-0">
-    <div class="relative">
-      <input type="text" id="clientSearch" placeholder="Search clients..." oninput="filterClients()"
-        class="input pl-9 bg-[var(--color-surface-secondary)] focus:bg-[var(--color-surface)]">
-      <i class="fas fa-search absolute left-3 top-2.5 text-[var(--color-text-muted)] text-sm"></i>
+    <div class="input-with-icon">
+      <i class="fas fa-search input-icon"></i>
+      <input type="text" id="clientSearch" placeholder="Search clients..." oninput="filterClients()" class="input">
       {{if and .Clients .OnlineCount}}
       <div class="absolute right-2 top-1/2 -translate-y-1/2 flex items-center gap-1 text-[10px] text-[var(--color-text-muted)]">
         <span class="flex items-center gap-1"><span class="w-1.5 h-1.5 rounded-full bg-green-500"></span>{{.OnlineCount}} online</span>
