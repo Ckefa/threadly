@@ -133,15 +133,15 @@
             </div>
           </div>
 
-          <!-- Fulfilled Orders -->
+          <!-- Completed Orders -->
           <div class="bg-white rounded-lg shadow p-6">
             <div class="flex items-center">
               <div class="p-3 bg-green-100 rounded-full">
                 <i class="fas fa-check text-green-600"></i>
               </div>
               <div class="ml-4">
-                <p class="text-sm text-gray-600">Fulfilled</p>
-                <p class="text-2xl font-bold text-gray-900">{{.FulfilledCount}}</p>
+                <p class="text-sm text-gray-600">Completed</p>
+                <p class="text-2xl font-bold text-gray-900">{{.CompletedCount}}</p>
               </div>
             </div>
           </div>
@@ -213,11 +213,11 @@
                   <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">{{.OrderNumber}}</td>
                   <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
                     <div class="flex items-center">
-                      <img src="https://picsum.photos/seed/customer{{.CustomerID}}/32/32.jpg" alt="{{.Customer.Name}}"
+                      <img src="https://picsum.photos/seed/customer{{.Client.ID}}/32/32.jpg" alt="{{.Client.Name}}"
                         class="w-8 h-8 rounded-full mr-3">
                       <div>
-                        <div class="font-medium">{{.Customer.Name}}</div>
-                        <div class="text-gray-500">{{.Customer.Email}}</div>
+                        <div class="font-medium">{{.Client.Name}}</div>
+                        <div class="text-gray-500">{{.Client.Email}}</div>
                       </div>
                     </div>
                   </td>
@@ -228,7 +228,7 @@
                   <td class="px-6 py-4 whitespace-nowrap">
                     <span class="badge-status 
                                             {{if eq .Status " pending"}}bg-yellow-100 text-yellow-800{{else if eq
-                      .Status "confirmed" }}bg-blue-100 text-blue-800{{else if eq .Status "fulfilled" }}bg-green-100
+                      .Status "confirmed" }}bg-blue-100 text-blue-800{{else if eq .Status "completed" }}bg-green-100
                       text-green-800{{else if eq .Status "cancelled" }}bg-red-100 text-red-800{{else}}bg-gray-100
                       text-gray-800{{end}}">
                       {{.Status}}
@@ -242,7 +242,7 @@
                         class="text-sm border border-gray-300 rounded px-2 py-1">
                         <option value="pending" {{if eq .Status "pending" }}selected{{end}}>Pending</option>
                         <option value="confirmed" {{if eq .Status "confirmed" }}selected{{end}}>Confirmed</option>
-                        <option value="fulfilled" {{if eq .Status "fulfilled" }}selected{{end}}>Fulfilled</option>
+                        <option value="completed" {{if eq .Status "completed" }}selected{{end}}>Completed</option>
                         <option value="cancelled" {{if eq .Status "cancelled" }}selected{{end}}>Cancelled</option>
                       </select>
                     </div>
@@ -449,7 +449,7 @@
       const orderId = selectElement.dataset.orderId;
       const status = selectElement.value;
 
-      fetch(`business/orders/${orderId}/status`, {
+      fetch(`orders/${orderId}/status`, {
         method: 'PUT',
         headers: {
           'Content-Type': 'application/json',

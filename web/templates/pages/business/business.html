@@ -65,6 +65,16 @@
       background-color: #f59e0b;
     }
   </style>
+  <script>
+    function showBusinessProfile() {
+      const el = document.getElementById('businessProfileModal');
+      if (el) el.classList.remove('hidden');
+    }
+    function hideBusinessProfile() {
+      const el = document.getElementById('businessProfileModal');
+      if (el) el.classList.add('hidden');
+    }
+  </script>
 </head>
 
 <body class="bg-gray-100 h-screen overflow-hidden">
@@ -121,15 +131,6 @@
   {{template "business_profile" .}}
 
   <script>
-    window.showBusinessProfile = function() {
-      const el = document.getElementById('businessProfileModal');
-      if (el) el.classList.remove('hidden');
-    };
-    window.hideBusinessProfile = function() {
-      const el = document.getElementById('businessProfileModal');
-      if (el) el.classList.add('hidden');
-    };
-
     document.addEventListener('DOMContentLoaded', function() {
       const profileForm = document.getElementById('businessProfileForm');
       if (profileForm) {
