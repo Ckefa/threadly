@@ -349,7 +349,7 @@
 
     // Auto-refresh dashboard every 30 seconds
     setInterval(() => {
-      htmx.ajax('GET', '/dashboard', {
+      htmx.ajax('GET', '/business/dashboard', {
         target: 'main',
         swap: 'innerHTML'
       });
