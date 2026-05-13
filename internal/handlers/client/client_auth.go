@@ -16,6 +16,13 @@ import (
 )
 
 func ShowClientLogin(c *gin.Context) {
+	if token, err := c.Cookie("client_token"); err == nil && token != "" {
+		token = strings.TrimPrefix(token, "Bearer ")
+		if claims, err := services.ValidateToken(token); err == nil && claims.Subject == "client" {
+			c.Redirect(http.StatusFound, "/client")
+			return
+		}
+	}
 	c.HTML(200, "client_login.html", gin.H{
 		"Title": "Client Login - Threadly",
 	})

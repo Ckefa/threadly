@@ -47,12 +47,24 @@ func uniqueSlug(base string) string {
 }
 
 func ShowLogin(c *gin.Context) {
+	if token, err := c.Cookie("token"); err == nil && token != "" {
+		if _, err := services.ValidateToken(token); err == nil {
+			c.Redirect(http.StatusFound, "/business")
+			return
+		}
+	}
 	c.HTML(200, "business_login.html", gin.H{
 		"Title": "Login - Threadly",
 	})
 }
 
 func ShowRegister(c *gin.Context) {
+	if token, err := c.Cookie("token"); err == nil && token != "" {
+		if _, err := services.ValidateToken(token); err == nil {
+			c.Redirect(http.StatusFound, "/business")
+			return
+		}
+	}
 	c.HTML(200, "register.html", gin.H{
 		"Title": "Register - Threadly",
 	})
