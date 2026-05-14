@@ -87,7 +87,7 @@ func (h *BusinessHandler) GetBizHome(c *gin.Context) {
 		ConversationID uint       `json:"conversation_id"`
 		UnreadCount    int        `json:"unread_count"`
 		LastMessageAt  *time.Time `json:"last_message_at"`
-		LastMessage    string     `json:"last_message"`
+		LastMessage    *string    `json:"last_message"`
 		OnlineStatus   string     `json:"online_status"`
 	}
 

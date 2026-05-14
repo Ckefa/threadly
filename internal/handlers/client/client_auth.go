@@ -124,35 +124,32 @@ func VerifyClientOTP(c *gin.Context) {
 }
 
 func ClientDashboard(c *gin.Context) {
-	token := c.GetHeader("Authorization")
-	if token == "" {
-		token, _ = c.Cookie("client_token")
-	}
+	clientID := c.GetUint("client_id")
+	email := c.GetString("client_email")
+	log.Printf("[ClientDashboard] clientID=%d, email=%s", clientID, email)
 
-	if token == "" {
-		c.Redirect(http.StatusFound, "/client/login")
-		return
+	// If business_id is provided, ensure a conversation exists
+	if businessIDStr := c.Query("business_id"); businessIDStr != "" {
+		log.Printf("[ClientDashboard] business_id query param: %s", businessIDStr)
+		if businessID, err := strconv.ParseUint(businessIDStr, 10, 32); err == nil {
+			log.Printf("[ClientDashboard] parsed businessID=%d, calling getOrCreateConversation", businessID)
+			conv, client, err := getOrCreateConversation(clientID, uint(businessID))
+			if err != nil {
+				log.Printf("[ClientDashboard] getOrCreateConversation error: %v", err)
+			} else {
+				log.Printf("[ClientDashboard] getOrCreateConversation result: conversationID=%d, clientID=%d", conv.ID, client.ID)
+			}
+		} else {
+			log.Printf("[ClientDashboard] ERROR parsing business_id=%s: %v", businessIDStr, err)
+		}
 	}
-
-	if strings.HasPrefix(token, "Bearer ") {
-		token = strings.TrimPrefix(token, "Bearer ")
-	}
-
-	claims, err := services.ValidateToken(token)
-	if err != nil || claims.Subject != "client" {
-		c.Redirect(http.StatusFound, "/client/login")
-		return
-	}
-
-	var client models.Client
-	db.DB.Where("email = ?", claims.Email).First(&client)
 
 	type BusinessWithUnread struct {
 		models.Business
 		ConversationID uint       `json:"conversation_id"`
 		UnreadCount    int        `json:"unread_count"`
 		LastMessageAt  *time.Time `json:"last_message_at"`
-		LastMessage    string     `json:"last_message"`
+		LastMessage    *string    `json:"last_message"`
 	}
 
 	var businesses []BusinessWithUnread
@@ -169,17 +166,32 @@ func ClientDashboard(c *gin.Context) {
 		GROUP BY businesses.id, conversations.id
 		ORDER BY unread_count DESC, last_message_at DESC
 	`
-	if err := db.DB.Raw(query, client.ID).Scan(&businesses).Error; err != nil {
+	if err := db.DB.Raw(query, clientID).Scan(&businesses).Error; err != nil {
+		log.Printf("[ClientDashboard] ERROR running businesses query: %v", err)
 		c.HTML(500, "client.html", gin.H{
 			"Title": "Client Dashboard - Threadly",
 			"Error": "Failed to load businesses",
 		})
 		return
 	}
+	log.Printf("[ClientDashboard] query returned %d businesses for clientID=%d", len(businesses), clientID)
+	for i, b := range businesses {
+		log.Printf("[ClientDashboard] business[%d]: ID=%d, Name=%s, ConversationID=%d", i, b.ID, b.Name, b.ConversationID)
+	}
+
+	// Debug: check conversations table directly
+	var convCount int64
+	db.DB.Model(&models.Conversation{}).Where("client_id = ?", clientID).Count(&convCount)
+	log.Printf("[ClientDashboard] total conversations for clientID=%d: %d", clientID, convCount)
+	var allConvs []models.Conversation
+	db.DB.Where("client_id = ?", clientID).Find(&allConvs)
+	for _, c := range allConvs {
+		log.Printf("[ClientDashboard] conversation DB row: ID=%d, ClientID=%d, BusinessID=%d", c.ID, c.ClientID, c.BusinessID)
+	}
 
 	c.HTML(200, "client.html", gin.H{
 		"Title":      "Client Dashboard - Threadly",
-		"Email":      claims.Email,
+		"Email":      email,
 		"Businesses": businesses,
 	})
 }

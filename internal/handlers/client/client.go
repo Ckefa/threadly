@@ -1,6 +1,7 @@
 package client
 
 import (
+	"log"
 	"net/http"
 	"strconv"
 	"strings"
@@ -12,6 +13,7 @@ import (
 
 func ShowDiscover(c *gin.Context) {
 	clientID := c.GetUint("client_id")
+	log.Printf("[ShowDiscover] clientID=%d", clientID)
 
 	var client models.Client
 	db.DB.First(&client, clientID)
@@ -19,6 +21,7 @@ func ShowDiscover(c *gin.Context) {
 	// Get client's existing business IDs (via conversations)
 	var existingIDs []uint
 	db.DB.Model(&models.Conversation{}).Where("client_id = ?", clientID).Pluck("business_id", &existingIDs)
+	log.Printf("[ShowDiscover] clientID=%d, existingConversationBusinessIDs=%v", clientID, existingIDs)
 
 	var businesses []models.Business
 	query := db.DB.Where("is_public = ?", true)
@@ -26,6 +29,7 @@ func ShowDiscover(c *gin.Context) {
 		query = query.Where("id NOT IN ?", existingIDs)
 	}
 	query.Order("name ASC").Limit(20).Find(&businesses)
+	log.Printf("[ShowDiscover] clientID=%d, foundPublicBusinesses=%d", clientID, len(businesses))
 
 	c.HTML(http.StatusOK, "client_discover.html", gin.H{
 		"Title":      "Discover Businesses - Threadly",
@@ -38,6 +42,7 @@ func ShowDiscover(c *gin.Context) {
 func SearchBusinesses(c *gin.Context) {
 	clientID := c.GetUint("client_id")
 	q := strings.TrimSpace(c.Query("q"))
+	log.Printf("[SearchBusinesses] clientID=%d, query=%q", clientID, q)
 
 	// Get client's existing business IDs
 	var existingIDs []uint
@@ -53,6 +58,7 @@ func SearchBusinesses(c *gin.Context) {
 		query = query.Where("name ILIKE ? OR business_type ILIKE ? OR slug ILIKE ?", like, like, like)
 	}
 	query.Order("name ASC").Limit(50).Find(&businesses)
+	log.Printf("[SearchBusinesses] clientID=%d, foundBusinesses=%d", clientID, len(businesses))
 
 	c.JSON(http.StatusOK, businesses)
 }
@@ -60,9 +66,11 @@ func SearchBusinesses(c *gin.Context) {
 func ConnectToBusiness(c *gin.Context) {
 	clientID := c.GetUint("client_id")
 	businessIDStr := c.Param("business_id")
+	log.Printf("[ConnectToBusiness] clientID=%d, businessIDStr=%s", clientID, businessIDStr)
 
 	businessID, err := strconv.ParseUint(businessIDStr, 10, 32)
 	if err != nil {
+		log.Printf("[ConnectToBusiness] ERROR: invalid business ID string=%s", businessIDStr)
 		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid business ID"})
 		return
 	}
@@ -70,17 +78,21 @@ func ConnectToBusiness(c *gin.Context) {
 	// Verify business exists
 	var business models.Business
 	if err := db.DB.First(&business, businessID).Error; err != nil {
+		log.Printf("[ConnectToBusiness] ERROR: business not found for businessID=%d: %v", businessID, err)
 		c.JSON(http.StatusNotFound, gin.H{"error": "Business not found"})
 		return
 	}
+	log.Printf("[ConnectToBusiness] found business: ID=%d, Name=%s", business.ID, business.Name)
 
 	// Check if conversation already exists
 	var conversation models.Conversation
 	err = db.DB.Where("client_id = ? AND business_id = ?", clientID, businessID).First(&conversation).Error
 	if err == nil {
+		log.Printf("[ConnectToBusiness] existing conversation found: ID=%d, clientID=%d, businessID=%d", conversation.ID, conversation.ClientID, conversation.BusinessID)
 		c.JSON(http.StatusOK, gin.H{"success": true, "conversation_id": conversation.ID, "already_connected": true})
 		return
 	}
+	log.Printf("[ConnectToBusiness] no existing conversation found, creating new one")
 
 	// Create new conversation
 	conversation = models.Conversation{
@@ -88,9 +100,11 @@ func ConnectToBusiness(c *gin.Context) {
 		BusinessID: uint(businessID),
 	}
 	if err := db.DB.Create(&conversation).Error; err != nil {
+		log.Printf("[ConnectToBusiness] ERROR: failed to create conversation: %v", err)
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to create conversation"})
 		return
 	}
+	log.Printf("[ConnectToBusiness] created conversation ID=%d for clientID=%d, businessID=%d", conversation.ID, clientID, businessID)
 
 	c.JSON(http.StatusOK, gin.H{
 		"success":           true,
