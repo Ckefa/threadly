@@ -79,8 +79,7 @@ func GetEnhancedActions(c *gin.Context) {
 	var actions []models.Action
 	err := db.DB.Joins("JOIN messages ON actions.message_id = messages.id").
 		Joins("JOIN conversations ON messages.conversation_id = conversations.id").
-		Joins("JOIN clients ON conversations.client_id = clients.id").
-		Where("clients.business_id = ?", userID).
+		Where("conversations.business_id = ?", userID).
 		Preload("Message").
 		Order("actions.created_at DESC").
 		Find(&actions).Error

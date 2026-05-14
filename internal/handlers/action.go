@@ -21,8 +21,7 @@ func CreateAction(c *gin.Context) {
 	// Verify message belongs to user's conversation
 	var message models.Message
 	if err := db.DB.Joins("JOIN conversations ON messages.conversation_id = conversations.id").
-		Joins("JOIN clients ON conversations.client_id = clients.id").
-		Where("messages.id = ? AND clients.business_id = ?", messageID, userID).
+		Where("messages.id = ? AND conversations.business_id = ?", messageID, userID).
 		First(&message).Error; err != nil {
 		c.JSON(404, gin.H{"error": "Message not found"})
 		return
@@ -87,8 +86,7 @@ func UpdateConversationStatus(c *gin.Context) {
 
 	// Verify conversation belongs to user
 	var conversation models.Conversation
-	if err := db.DB.Joins("JOIN clients ON conversations.client_id = clients.id").
-		Where("conversations.id = ? AND clients.business_id = ?", conversationID, userID).
+	if err := db.DB.Where("id = ? AND business_id = ?", conversationID, userID).
 		First(&conversation).Error; err != nil {
 		c.JSON(404, gin.H{"error": "Conversation not found"})
 		return
@@ -157,8 +155,7 @@ func GetActions(c *gin.Context) {
 	var actions []models.Action
 	if err := db.DB.Joins("JOIN messages ON actions.message_id = messages.id").
 		Joins("JOIN conversations ON messages.conversation_id = conversations.id").
-		Joins("JOIN clients ON conversations.client_id = clients.id").
-		Where("clients.business_id = ?", userID).
+		Where("conversations.business_id = ?", userID).
 		Order("actions.created_at DESC").
 		Find(&actions).Error; err != nil {
 		c.JSON(500, gin.H{"error": "Failed to load actions"})
@@ -180,8 +177,7 @@ func UpdateActionStatus(c *gin.Context) {
 	var action models.Action
 	if err := db.DB.Joins("JOIN messages ON actions.message_id = messages.id").
 		Joins("JOIN conversations ON messages.conversation_id = conversations.id").
-		Joins("JOIN clients ON conversations.client_id = clients.id").
-		Where("actions.id = ? AND clients.business_id = ?", actionID, userID).
+		Where("actions.id = ? AND conversations.business_id = ?", actionID, userID).
 		First(&action).Error; err != nil {
 		c.JSON(404, gin.H{"error": "Action not found"})
 		return
