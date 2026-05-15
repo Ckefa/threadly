@@ -58,56 +58,232 @@ func ShowLogin(c *gin.Context) {
 	})
 }
 
-func ShowRegister(c *gin.Context) {
+func ShowRegisterStep1(c *gin.Context) {
 	if token, err := c.Cookie("token"); err == nil && token != "" {
 		if _, err := services.ValidateToken(token); err == nil {
 			c.Redirect(http.StatusFound, "/business")
 			return
 		}
 	}
-	c.HTML(200, "register.html", gin.H{
+	c.HTML(200, "register_step1.html", gin.H{
 		"Title": "Register - Threadly",
 	})
 }
 
-func Register(c *gin.Context) {
-	email := c.PostForm("email")
-	password := c.PostForm("password")
+var validBusinessTypes = map[string]bool{
+	"automotive":    true,
+	"beauty":        true,
+	"childcare":     true,
+	"cleaning":      true,
+	"consulting":    true,
+	"dental":        true,
+	"education":     true,
+	"farming":       true,
+	"fitness":       true,
+	"home_services": true,
+	"legal":         true,
+	"medical":       true,
+	"photography":   true,
+	"real_estate":   true,
+	"restaurant":    true,
+	"retail":        true,
+	"salon":         true,
+	"spa":          true,
+	"technology":    true,
+	"veterinary":   true,
+	"other":        true,
+}
+
+func RegisterStep1(c *gin.Context) {
+	if token, err := c.Cookie("token"); err == nil && token != "" {
+		if _, err := services.ValidateToken(token); err == nil {
+			c.Redirect(http.StatusFound, "/business")
+			return
+		}
+	}
+
 	name := c.PostForm("name")
 	username := c.PostForm("username")
-	businessType := c.PostForm("business_type")
+	email := c.PostForm("email")
 
-	hashedPassword := services.Hash(password)
-
-	slug := uniqueSlug(generateSlug(name))
-	if slug == "" {
-		slug = uniqueSlug(generateSlug(username))
+	if name == "" || username == "" || email == "" {
+		c.HTML(200, "register_step1.html", gin.H{
+			"Title": "Register - Threadly",
+			"Error": "All fields are required",
+		})
+		return
 	}
 
-	user := models.Business{
-		Email:        email,
-		Password:     hashedPassword,
-		Name:         name,
-		Username:     username,
-		BusinessType: businessType,
-		Slug:         slug,
-		IsPublic:     true,
-	}
-
-	if err := db.DB.Create(&user).Error; err != nil {
-		c.HTML(400, "register.html", gin.H{
+	var existing models.Business
+	if db.DB.Where("email = ?", email).First(&existing).Error == nil {
+		c.HTML(200, "register_step1.html", gin.H{
 			"Title": "Register - Threadly",
 			"Error": "Email already exists",
 		})
 		return
 	}
 
+	tok := RegStore.Save(&RegistrationData{
+		Name:     name,
+		Username: username,
+		Email:    email,
+	})
+
+	c.Redirect(http.StatusFound, "/business/register/step2?token="+tok)
+}
+
+func ShowRegisterStep2(c *gin.Context) {
+	if token, err := c.Cookie("token"); err == nil && token != "" {
+		if _, err := services.ValidateToken(token); err == nil {
+			c.Redirect(http.StatusFound, "/business")
+			return
+		}
+	}
+
+	tok := c.Query("token")
+	data, ok := RegStore.Get(tok)
+	if !ok {
+		c.Redirect(http.StatusFound, "/business/register")
+		return
+	}
+
+	c.HTML(200, "register_step2.html", gin.H{
+		"Title":        "Register - Threadly",
+		"Token":        tok,
+		"Name":         data.Name,
+		"Username":     data.Username,
+		"Email":        data.Email,
+		"BusinessType": data.BusinessType,
+	})
+}
+
+func RegisterStep2(c *gin.Context) {
+	if token, err := c.Cookie("token"); err == nil && token != "" {
+		if _, err := services.ValidateToken(token); err == nil {
+			c.Redirect(http.StatusFound, "/business")
+			return
+		}
+	}
+
+	tok := c.Query("token")
+	data, ok := RegStore.Get(tok)
+	if !ok {
+		c.Redirect(http.StatusFound, "/business/register")
+		return
+	}
+
+	businessType := c.PostForm("business_type")
+	if businessType == "" || !validBusinessTypes[businessType] {
+		c.HTML(200, "register_step2.html", gin.H{
+			"Title":        "Register - Threadly",
+			"Token":        tok,
+			"Name":         data.Name,
+			"Username":     data.Username,
+			"Email":        data.Email,
+			"BusinessType": data.BusinessType,
+			"Error":        "Please select a valid business type",
+		})
+		return
+	}
+
+	data.BusinessType = businessType
+	RegStore.Delete(tok)
+	newTok := RegStore.Save(data)
+
+	c.Redirect(http.StatusFound, "/business/register/step3?token="+newTok)
+}
+
+func ShowRegisterStep3(c *gin.Context) {
+	if token, err := c.Cookie("token"); err == nil && token != "" {
+		if _, err := services.ValidateToken(token); err == nil {
+			c.Redirect(http.StatusFound, "/business")
+			return
+		}
+	}
+
+	tok := c.Query("token")
+	data, ok := RegStore.Get(tok)
+	if !ok {
+		c.Redirect(http.StatusFound, "/business/register")
+		return
+	}
+
+	c.HTML(200, "register_step3.html", gin.H{
+		"Title":        "Register - Threadly",
+		"Token":        tok,
+		"Name":         data.Name,
+		"Username":     data.Username,
+		"Email":        data.Email,
+		"BusinessType": data.BusinessType,
+	})
+}
+
+func RegisterStep3(c *gin.Context) {
+	if token, err := c.Cookie("token"); err == nil && token != "" {
+		if _, err := services.ValidateToken(token); err == nil {
+			c.Redirect(http.StatusFound, "/business")
+			return
+		}
+	}
+
+	tok := c.Query("token")
+	data, ok := RegStore.Get(tok)
+	if !ok {
+		c.Redirect(http.StatusFound, "/business/register")
+		return
+	}
+
+	password := c.PostForm("password")
+
+	if password == "" || len(password) < 6 {
+		c.HTML(200, "register_step3.html", gin.H{
+			"Title":        "Register - Threadly",
+			"Token":        tok,
+			"Name":         data.Name,
+			"Username":     data.Username,
+			"Email":        data.Email,
+			"BusinessType": data.BusinessType,
+			"Error":        "Password must be at least 6 characters",
+		})
+		return
+	}
+
+	hashedPassword := services.Hash(password)
+
+	slug := uniqueSlug(generateSlug(data.Name))
+	if slug == "" {
+		slug = uniqueSlug(generateSlug(data.Username))
+	}
+
+	user := models.Business{
+		Email:        data.Email,
+		Password:     hashedPassword,
+		Name:         data.Name,
+		Username:     data.Username,
+		BusinessType: data.BusinessType,
+		Slug:         slug,
+		IsPublic:     true,
+	}
+
+	if err := db.DB.Create(&user).Error; err != nil {
+		RegStore.Delete(tok)
+		c.HTML(200, "register_step3.html", gin.H{
+			"Title":        "Register - Threadly",
+			"Token":        tok,
+			"Name":         data.Name,
+			"Username":     data.Username,
+			"Email":        data.Email,
+			"BusinessType": data.BusinessType,
+			"Error":        "Email already exists",
+		})
+		return
+	}
+
+	RegStore.Delete(tok)
+
 	token, err := services.GenerateToken(user.ID, user.Email)
 	if err != nil {
-		c.HTML(500, "register.html", gin.H{
-			"Title": "Register - Threadly",
-			"Error": "Account created but login failed. Please sign in manually.",
-		})
+		c.Redirect(http.StatusFound, "/business/login")
 		return
 	}
 

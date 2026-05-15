@@ -1,0 +1,112 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>{{.Title}}</title>
+  <meta name="color-scheme" content="light dark">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  <link rel="stylesheet" href="/static/css/dist/styles.css?v=1">
+  <script src="/static/js/core/theme.js?v=1"></script>
+</head>
+<body class="font-sans antialiased">
+  <div class="min-h-screen flex items-center justify-center p-4 relative overflow-hidden" style="background: var(--color-bg);">
+    <div class="absolute inset-0 overflow-hidden pointer-events-none">
+      <div class="absolute -top-40 -right-40 w-[500px] h-[500px] rounded-full blur-3xl animate-blob" style="background: color-mix(in srgb, var(--color-primary) 10%, transparent);"></div>
+      <div class="absolute -bottom-40 -left-40 w-[400px] h-[400px] rounded-full blur-3xl animate-blob" style="background: color-mix(in srgb, var(--color-secondary) 10%, transparent); animation-delay: 4s;"></div>
+    </div>
+
+    <div class="card p-8 w-full max-w-lg relative z-10 shadow-lg">
+      <div class="text-center mb-6">
+        <a href="/" class="inline-flex items-center justify-center w-12 h-12 rounded-xl bg-gradient-to-br from-teal-500 to-cyan-600 shadow-lg shadow-teal-500/25 mb-3">
+          <i class="fas fa-comments text-white text-lg"></i>
+        </a>
+        <h1 class="text-2xl font-bold text-[var(--color-text)]">Create your account</h1>
+        <p class="text-[var(--color-text-secondary)] mt-1 text-sm">Join thousands of businesses on Threadly</p>
+      </div>
+
+      <!-- Progress Bar -->
+      <div class="mb-6">
+        <div class="flex items-center justify-between mb-2">
+          <span class="text-xs font-medium text-[var(--color-text-muted)]" id="stepLabel">Step 1 of 3</span>
+          <span class="text-xs text-[var(--color-text-muted)]" id="stepName">Business Info</span>
+        </div>
+        <div class="flex gap-1">
+          <div class="h-1.5 flex-1 rounded-full bg-teal-500" id="progress1"></div>
+          <div class="h-1.5 flex-1 rounded-full" style="background: var(--color-surface-tertiary);" id="progress2"></div>
+          <div class="h-1.5 flex-1 rounded-full" style="background: var(--color-surface-tertiary);" id="progress3"></div>
+        </div>
+      </div>
+
+      {{if .Error}}
+      <div class="bg-[var(--color-error-light)] text-[var(--color-error)] px-4 py-3 rounded-xl mb-4 flex items-center gap-2 text-sm border" style="border-color: color-mix(in srgb, var(--color-error) 20%, transparent);">
+        <i class="fas fa-exclamation-circle"></i>
+        {{.Error}}
+      </div>
+      {{end}}
+
+      <form method="POST" action="/business/register" id="registerForm" novalidate>
+        <div class="space-y-4">
+          <div>
+            <label for="name" class="block text-sm font-medium text-[var(--color-text-secondary)] mb-1.5">Business Name</label>
+            <div class="relative input-with-icon">
+              <i class="fas fa-store input-icon"></i>
+              <input type="text" id="name" name="name" required class="input" placeholder="Acme Corp" value="{{.Name}}">
+            </div>
+          </div>
+          <div>
+            <label for="username" class="block text-sm font-medium text-[var(--color-text-secondary)] mb-1.5">Owner Username</label>
+            <div class="relative input-with-icon">
+              <i class="fas fa-at input-icon"></i>
+              <input type="text" id="username" name="username" required class="input" placeholder="johndoe" value="{{.Username}}">
+            </div>
+          </div>
+          <div>
+            <label for="email" class="block text-sm font-medium text-[var(--color-text-secondary)] mb-1.5">Email</label>
+            <div class="relative input-with-icon">
+              <i class="fas fa-envelope input-icon"></i>
+              <input type="email" id="email" name="email" required class="input" placeholder="you@example.com" value="{{.Email}}">
+            </div>
+            <p class="text-xs text-[var(--color-error)] mt-1 hidden" id="regEmailError">Please enter a valid email</p>
+          </div>
+        </div>
+        <div class="mt-6 flex justify-end">
+          <button type="submit" class="btn btn-primary">
+            Next Step <i class="fas fa-arrow-right text-xs"></i>
+          </button>
+        </div>
+      </form>
+
+      <div class="text-center mt-6">
+        <p class="text-sm text-[var(--color-text-secondary)]">
+          Already have an account?
+          <a href="/business/login" class="link font-medium">Sign in</a>
+        </p>
+      </div>
+    </div>
+  </div>
+
+  <script src="/static/js/modules/shared.js?v=1"></script>
+  <script>
+    document.getElementById('registerForm').addEventListener('submit', function(e) {
+      var name = document.getElementById('name').value.trim();
+      var email = document.getElementById('email').value.trim();
+      var ok = true;
+      if (!name) { e.preventDefault(); showNotification('Please enter your business name', 'error'); ok = false; }
+      if (!email.match(/^[^\s@]+@[^\s@]+\.[^\s@]+$/)) {
+        e.preventDefault();
+        document.getElementById('regEmailError').classList.remove('hidden');
+        ok = false;
+      } else {
+        document.getElementById('regEmailError').classList.add('hidden');
+      }
+      if (ok) {
+        document.querySelector('#registerForm button[type=submit]').disabled = true;
+      }
+    });
+  </script>
+</body>
+</html>
