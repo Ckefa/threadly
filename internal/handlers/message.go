@@ -20,6 +20,8 @@ type MessageObj struct {
 	CreatedAt time.Time   `json:"created_at"`
 }
 
+
+
 func GetMessages(c *gin.Context) {
 	businessID := c.GetUint("business_id")
 	clientID, err := strconv.ParseUint(c.Param("id"), 10, 32)

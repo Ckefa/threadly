@@ -96,6 +96,10 @@ func main() {
 		"formatTime": func(t time.Time) string {
 			return t.Format("3:04 PM")
 		},
+		"sub": func(a, b float64) float64 { return a - b },
+		"mul": func(a, b float64) float64 { return a * b },
+		"div": func(a, b float64) float64 { return a / b },
+		"float": func(i int) float64 { return float64(i) },
 	}).ParseFiles(files...))
 	r.SetHTMLTemplate(tmpl)
 

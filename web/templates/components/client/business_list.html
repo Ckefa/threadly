@@ -22,7 +22,7 @@
 
   <div class="flex-1 overflow-y-auto scrollbar-thin" id="business-list">
     {{range .Businesses}}
-    <div class="stagger-item business-item px-4 py-3 hover:bg-[var(--color-surface-secondary)] cursor-pointer border-b border-[var(--color-border-light)] transition-colors"
+    <div class="stagger-item business-item group px-4 py-3 hover:bg-[var(--color-surface-secondary)] cursor-pointer border-b border-[var(--color-border-light)] transition-colors"
       data-business-id="{{.ID}}" data-business-name="{{.Name}}" data-business-type="{{.BusinessType}}">
       <div class="flex items-center gap-3">
         <div class="relative">
@@ -55,7 +55,10 @@
         <div class="flex flex-col items-end gap-1 shrink-0">
           <span class="time-ago text-[10px] text-[var(--color-text-muted)]" data-time="{{.LastMessageAt}}"></span>
           {{if gt .UnreadCount 0}}
-          <span class="badge badge-error">{{.UnreadCount}}</span>
+          <span class="unread-badge" title="{{.UnreadCount}} unread message{{if gt .UnreadCount 1}}s{{end}}"
+            onclick="event.stopPropagation()">
+            {{if gt .UnreadCount 99}}99+{{else}}{{.UnreadCount}}{{end}}
+          </span>
           {{end}}
         </div>
         <button onclick="event.stopPropagation(); disconnectBusiness({{.ID}})"

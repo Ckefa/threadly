@@ -1,4 +1,6 @@
 {{define "progress_controls"}}
+{{$circ := 301.59}}
+{{$offset := sub $circ (mul $circ (div (float .Progress.ProgressScore) 100))}}
 <div class="bg-[var(--color-surface-secondary)] border-b border-[var(--color-border)] px-6 py-3">
   <div class="flex items-center justify-between">
     <div class="flex items-center space-x-3">
@@ -21,34 +23,20 @@
         <i class="fas fa-save mr-1"></i>Save Progress
       </button>
     </div>
-    <div class="relative w-20 h-20 flex-shrink-0"
-         x-data="{ circ: 2 * Math.PI * 48 }">
-      <svg class="w-full h-full -rotate-90" viewBox="0 0 120 120">
-        <defs>
-          <radialGradient id="tubeGrad" cx="35%" cy="30%" r="65%">
-            <stop offset="0%" stop-color="var(--color-primary-light)" />
-            <stop offset="30%" stop-color="var(--color-primary)" />
-            <stop offset="70%" stop-color="var(--color-primary)" />
-            <stop offset="100%" stop-color="var(--color-primary-dark)" />
-          </radialGradient>
-          <filter id="ringShadow" x="-30%" y="-30%" width="160%" height="160%">
-            <feDropShadow dx="2" dy="4" stdDeviation="5" flood-color="var(--color-primary-dark)" flood-opacity="0.45"/>
-          </filter>
-        </defs>
+    <div class="relative w-16 h-16 flex-shrink-0">
+      <svg class="w-full h-full rotate-90" viewBox="0 0 120 120">
         <circle cx="60" cy="60" r="48" fill="none" stroke="var(--color-border)" stroke-width="14"/>
-        <circle cx="60" cy="60" r="48" fill="none" stroke="url(#tubeGrad)" stroke-width="12"
+        <circle cx="60" cy="60" r="48" fill="none" stroke="var(--color-info)" stroke-width="12"
                 stroke-linecap="round"
-                stroke-dasharray="301.59"
-                stroke-dashoffset="301.59"
-                :stroke-dashoffset="circ * (1 - {{.Progress.ProgressScore}} / 100)"
-                filter="url(#ringShadow)"
-                style="transition: stroke-dashoffset 1.2s cubic-bezier(0.22, 1, 0.36, 1)"/>
+                stroke-dasharray="{{$circ}}"
+                stroke-dashoffset="{{$offset}}"
+                style="transition: stroke-dashoffset 0.8s cubic-bezier(0.22, 1, 0.36, 1)"/>
         <circle cx="60" cy="60" r="38" fill="var(--color-surface)" stroke="var(--color-border)" stroke-width="1.5"/>
         <circle cx="60" cy="60" r="38" fill="none" stroke="var(--color-text-inverse)" stroke-width="3" opacity="0.5"/>
       </svg>
       <div class="absolute inset-0 flex items-center justify-center flex-col">
-        <span class="text-base font-black text-[var(--color-text)] leading-none">{{.Progress.ProgressScore}}%</span>
-        <span class="text-[10px] font-semibold text-[var(--color-primary)] mt-0.5 tracking-wide">COMPLETE</span>
+        <span class="text-sm font-black text-[var(--color-text)] leading-none">{{.Progress.ProgressScore}}%</span>
+        <span class="text-[9px] font-semibold text-[var(--color-primary)] mt-0.5 tracking-wide">COMPLETE</span>
       </div>
     </div>
   </div>

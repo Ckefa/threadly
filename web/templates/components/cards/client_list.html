@@ -1,7 +1,7 @@
 {{ define "client-list" }}
 <div class="flex-1 overflow-y-auto scrollbar-thin" id="client-list">
   {{range .Clients}}
-  <div class="stagger-item client-item px-3 py-2.5 hover:bg-[var(--color-surface-secondary)] cursor-pointer border-b border-[var(--color-border-light)] transition-colors"
+  <div class="stagger-item client-item group px-3 py-2.5 hover:bg-[var(--color-surface-secondary)] cursor-pointer border-b border-[var(--color-border-light)] transition-colors"
     onclick="loadClient('{{.ID}}')" data-client-id="{{.ID}}" data-last-message-at="{{.LastMessageAt}}">
     <div class="flex items-center gap-3">
       <div class="relative">
@@ -31,6 +31,11 @@
           {{.Status}}
         </span>
       </div>
+      <button onclick="event.stopPropagation(); deleteClient('{{.ID}}', '{{.Name}}')"
+        class="btn btn-icon btn-icon-sm btn-ghost opacity-0 group-hover:opacity-100 text-rose-400 hover:text-rose-500 hover:bg-rose-50 dark:hover:bg-rose-950/30 transition-all shrink-0"
+        title="Delete conversation">
+        <i class="fas fa-trash-alt text-xs"></i>
+      </button>
     </div>
   </div>
   {{else}}
