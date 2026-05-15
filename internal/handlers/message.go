@@ -186,17 +186,22 @@ func GetMessages(c *gin.Context) {
 		var bookingItems []models.BookingItem
 		db.DB.Where("booking_id = ?", booking.ID).Find(&bookingItems)
 
+		var firstServiceID uint
 		for _, item := range bookingItems {
 			var service models.Service
 			if err := db.DB.First(&service, item.ServiceID).Error; err == nil {
 				serviceName = service.Name
 				serviceNames = append(serviceNames, service.Name)
+				if firstServiceID == 0 {
+					firstServiceID = item.ServiceID
+				}
 			}
 		}
 
 		bookingData := map[string]interface{}{
 			"id":             booking.ID,
 			"booking_number": booking.BookingNumber,
+			"service_id":     firstServiceID,
 			"service_name":   serviceName,
 			"service_names":  serviceNames,
 			"scheduled_date": booking.ScheduledDate,

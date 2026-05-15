@@ -384,22 +384,29 @@ func GetClientMessages(c *gin.Context) {
 		db.DB.Where("booking_id = ?", booking.ID).Find(&bookingItems)
 
 		var serviceNames []string
+		var firstServiceID uint
 		for _, item := range bookingItems {
 			var service models.Service
 			db.DB.First(&service, item.ServiceID)
 			serviceNames = append(serviceNames, service.Name)
+			if firstServiceID == 0 {
+				firstServiceID = item.ServiceID
+			}
 		}
 
 		bookingData := map[string]interface{}{
-			"id":             booking.ID,
-			"booking_number": booking.BookingNumber,
-			"status":         booking.Status,
-			"scheduled_date": booking.ScheduledDate.Format("Jan 2, 2006 3:04 PM"),
-			"duration":       booking.Duration,
-			"total_amount":   booking.TotalAmount,
-			"notes":          booking.Notes,
-			"created_at":     booking.CreatedAt,
-			"service_names":  serviceNames,
+			"id":                booking.ID,
+			"booking_number":    booking.BookingNumber,
+			"service_id":        firstServiceID,
+			"status":            booking.Status,
+			"scheduled_date":    booking.ScheduledDate.Format("Jan 2, 2006 3:04 PM"),
+			"scheduled_date_iso": booking.ScheduledDate.Format("2006-01-02"),
+			"scheduled_time_iso": booking.ScheduledDate.Format("15:04"),
+			"duration":          booking.Duration,
+			"total_amount":      booking.TotalAmount,
+			"notes":             booking.Notes,
+			"created_at":        booking.CreatedAt,
+			"service_names":     serviceNames,
 		}
 
 		messageObjs = append(messageObjs, MessageObj{
@@ -575,7 +582,8 @@ func ClientLogout(c *gin.Context) {
 	c.Redirect(http.StatusFound, "/client/login")
 }
 
-// ClientUpdateOrder allows clients to update their order notes and quantity
+// ClientUpdateOrder allows clients to update their order items, notes, and address
+// Supports both JSON (new multi-item format) and form-encoded (legacy) payloads
 func ClientUpdateOrder(c *gin.Context) {
 	clientID := c.GetUint("client_id")
 	orderID := c.Param("id")
@@ -586,26 +594,85 @@ func ClientUpdateOrder(c *gin.Context) {
 		return
 	}
 
-	// Update notes if provided
+	// Try JSON first (new multi-item format)
+	var jsonRequest struct {
+		Items           []struct {
+			ProductID uint `json:"product_id"`
+			Quantity  int  `json:"quantity"`
+		} `json:"items"`
+		Notes           string `json:"notes"`
+		DeliveryAddress string `json:"delivery_address"`
+	}
+
+	if c.GetHeader("Content-Type") == "application/json" {
+		if err := c.ShouldBindJSON(&jsonRequest); err == nil && len(jsonRequest.Items) > 0 {
+			// Multi-item JSON update: replace all items
+			var oldItems []models.OrderItem
+			db.DB.Where("order_id = ?", order.ID).Find(&oldItems)
+
+			// Restore stock for old items
+			for _, oldItem := range oldItems {
+				var product models.Product
+				db.DB.First(&product, oldItem.ProductID)
+				product.Stock += oldItem.Quantity
+				db.DB.Save(&product)
+			}
+
+			// Delete old items
+			db.DB.Where("order_id = ?", order.ID).Delete(&models.OrderItem{})
+
+			// Create new items
+			var totalAmount float64
+			for _, item := range jsonRequest.Items {
+				var product models.Product
+				if err := db.DB.First(&product, item.ProductID).Error; err != nil {
+					continue
+				}
+				if product.Stock < item.Quantity {
+					continue
+				}
+				itemTotal := float64(item.Quantity) * product.Price
+				totalAmount += itemTotal
+				db.DB.Create(&models.OrderItem{
+					OrderID:    order.ID,
+					ProductID:  product.ID,
+					Quantity:   item.Quantity,
+					UnitPrice:  product.Price,
+					TotalPrice: itemTotal,
+				})
+				product.Stock -= item.Quantity
+				db.DB.Save(&product)
+			}
+
+			fullNotes := jsonRequest.Notes
+			if jsonRequest.DeliveryAddress != "" {
+				fullNotes = "📍 Delivery Address: " + jsonRequest.DeliveryAddress + "\n" + fullNotes
+			}
+			order.TotalAmount = totalAmount
+			order.Quantity = len(jsonRequest.Items)
+			order.Notes = fullNotes
+			db.DB.Save(&order)
+			c.JSON(http.StatusOK, gin.H{"success": true, "order": order})
+			return
+		}
+	}
+
+	// Fallback: form-encoded legacy update (notes + quantity)
 	notes := c.PostForm("notes")
 	if notes != "" {
 		order.Notes = notes
 	}
 
-	// Update quantity if provided
 	quantityStr := c.PostForm("quantity")
 	if quantityStr != "" {
 		if quantity, err := strconv.Atoi(quantityStr); err == nil && quantity > 0 {
-			// Get the order item to find product price
 			var orderItem models.OrderItem
 			if err := db.DB.Where("order_id = ?", order.ID).First(&orderItem).Error; err == nil {
-				// Recalculate total amount
 				order.TotalAmount = float64(quantity) * orderItem.UnitPrice
 				orderItem.Quantity = quantity
 				orderItem.TotalPrice = order.TotalAmount
 				db.DB.Save(&orderItem)
 			}
-			// Update the main order quantity field
 			order.Quantity = quantity
 		}
 	}
@@ -743,7 +810,7 @@ func ClientCancelOrder(c *gin.Context) {
 	})
 }
 
-// ClientUpdateBooking allows clients to update their booking notes and date
+// ClientUpdateBooking allows clients to update their booking date, notes, and service
 func ClientUpdateBooking(c *gin.Context) {
 	clientID := c.GetUint("client_id")
 	bookingID := c.Param("id")
@@ -754,6 +821,42 @@ func ClientUpdateBooking(c *gin.Context) {
 		return
 	}
 
+	if c.GetHeader("Content-Type") == "application/json" {
+		var req struct {
+			ServiceID       uint   `json:"service_id"`
+			ScheduledDate   string `json:"scheduled_date"`
+			Notes           string `json:"notes"`
+		}
+		if err := c.ShouldBindJSON(&req); err == nil {
+			if req.Notes != "" {
+				booking.Notes = req.Notes
+			}
+			if req.ScheduledDate != "" {
+				if newDate, err := time.Parse(time.RFC3339, req.ScheduledDate); err == nil {
+					booking.ScheduledDate = newDate
+				}
+			}
+			if req.ServiceID > 0 {
+				var bookingItems []models.BookingItem
+				db.DB.Where("booking_id = ?", booking.ID).Find(&bookingItems)
+				if len(bookingItems) > 0 {
+					var service models.Service
+					if err := db.DB.First(&service, req.ServiceID).Error; err == nil {
+						bookingItems[0].ServiceID = req.ServiceID
+						bookingItems[0].UnitPrice = service.MaxPrice
+						bookingItems[0].TotalPrice = service.MaxPrice
+						db.DB.Save(&bookingItems[0])
+						booking.TotalAmount = service.MaxPrice
+					}
+				}
+			}
+			db.DB.Save(&booking)
+			c.JSON(http.StatusOK, gin.H{"success": true, "booking": booking})
+			return
+		}
+	}
+
+	// Fallback: form-encoded legacy update
 	notes := c.PostForm("notes")
 	scheduledDate := c.PostForm("scheduled_date")
 

@@ -7,6 +7,14 @@ let servicePickerServices = [];
 let servicePickerSelectedService = null;
 let servicePickerCategories = [];
 
+// Edit mode state
+let servicePickerEditMode = false;
+let servicePickerEditBookingId = null;
+let servicePickerEditServiceId = null;
+let servicePickerEditDate = '';
+let servicePickerEditTime = '';
+let servicePickerEditNotes = '';
+
 // ========== ENTRY POINTS ==========
 
 function openServicePicker(clientId) {
@@ -38,12 +46,20 @@ function openClientServicePicker() {
 
 // ========== MODAL CONTROLS ==========
 
-function showServicePicker() {
+function showServicePicker(editBookingId, editServiceId, editDate, editTime, editNotes) {
   const modal = document.getElementById('servicePickerModal');
   if (!modal) { showNotification('Service picker not loaded yet', 'error'); return; }
   modal.classList.remove('hidden');
   document.body.style.overflow = 'hidden';
   servicePickerSelectedService = null;
+
+  // Edit mode setup
+  servicePickerEditMode = !!editBookingId;
+  servicePickerEditBookingId = editBookingId || null;
+  servicePickerEditServiceId = editServiceId || null;
+  servicePickerEditDate = editDate || '';
+  servicePickerEditTime = editTime || '';
+  servicePickerEditNotes = editNotes || '';
 
   document.getElementById('servicePickerStep1').classList.remove('hidden');
   document.getElementById('servicePickerStep2').classList.add('hidden');
@@ -54,9 +70,16 @@ function showServicePicker() {
 
   const submitBtn = document.getElementById('servicePickerSubmitBtn');
   if (submitBtn) {
-    submitBtn.innerHTML = servicePickerMode === 'client'
-      ? '<i class="fas fa-paper-plane mr-1"></i> Send Request'
-      : '<i class="fas fa-calendar-check mr-1"></i> Create Booking';
+    submitBtn.innerHTML = servicePickerEditMode
+      ? '<i class="fas fa-calendar-check mr-1"></i> Update Booking'
+      : (servicePickerMode === 'client'
+        ? '<i class="fas fa-paper-plane mr-1"></i> Send Request'
+        : '<i class="fas fa-calendar-check mr-1"></i> Create Booking');
+  }
+
+  const hintEl = document.getElementById('servicePickerSubmitHint');
+  if (hintEl && servicePickerEditMode) {
+    hintEl.textContent = 'Update your booking details below';
   }
 
   updateServiceStepIndicators(1);
@@ -70,6 +93,12 @@ function hideServicePicker() {
   servicePickerSelectedService = null;
   servicePickerServices = [];
   servicePickerCategories = [];
+  servicePickerEditMode = false;
+  servicePickerEditBookingId = null;
+  servicePickerEditServiceId = null;
+  servicePickerEditDate = '';
+  servicePickerEditTime = '';
+  servicePickerEditNotes = '';
 }
 
 function servicePickerGoToStep(step) {
@@ -147,6 +176,14 @@ async function loadPickerServices() {
 
     if (countEl) countEl.textContent = `${services.length} service${services.length !== 1 ? 's' : ''} available`;
     renderServicePicker();
+
+    // Auto-select service in edit mode
+    if (servicePickerEditMode && servicePickerEditServiceId) {
+      const svc = services.find(s => (s.id || s.ID) === servicePickerEditServiceId);
+      if (svc) {
+        setTimeout(() => selectService(svc.id || svc.ID), 300);
+      }
+    }
   } catch (e) {
     console.error('Failed to load services:', e);
     grid.innerHTML = '<div class="text-center py-12 text-red-400"><i class="fas fa-exclamation-triangle text-3xl mb-3"></i><p>Failed to load services</p></div>';
@@ -283,14 +320,21 @@ function selectService(svcId) {
     }
   }
 
-  const today = new Date();
   const dateInput = document.getElementById('servicePickerDate');
   const timeInput = document.getElementById('servicePickerTime');
-  if (dateInput && !dateInput.value) dateInput.value = today.toISOString().split('T')[0];
-  if (timeInput && !timeInput.value) {
-    timeInput.value = `${String(today.getHours()).padStart(2, '0')}:${String(today.getMinutes()).padStart(2, '0')}`;
+  // Pre-fill from edit data, or default to today/now
+  if (servicePickerEditMode) {
+    if (dateInput) dateInput.value = servicePickerEditDate;
+    if (timeInput) timeInput.value = servicePickerEditTime;
+    document.getElementById('servicePickerNotes').value = servicePickerEditNotes || '';
+  } else {
+    const today = new Date();
+    if (dateInput && !dateInput.value) dateInput.value = today.toISOString().split('T')[0];
+    if (timeInput && !timeInput.value) {
+      timeInput.value = `${String(today.getHours()).padStart(2, '0')}:${String(today.getMinutes()).padStart(2, '0')}`;
+    }
+    document.getElementById('servicePickerNotes').value = '';
   }
-  document.getElementById('servicePickerNotes').value = '';
 
   servicePickerGoToStep(2);
 }
@@ -352,6 +396,67 @@ function renderServiceConfirmation() {
     </div>`;
 }
 
+// ========== EDIT MODE ENTRY POINTS ==========
+
+function openBusinessEditBookingPicker(bookingId) {
+  const card = document.querySelector(`[data-booking-id="${bookingId}"]`);
+  if (!card) { showNotification('Booking not found', 'error'); return; }
+
+  if (!conversationId) { showNotification('No conversation found', 'error'); return; }
+  if (!clientId) { showNotification('No client selected', 'error'); return; }
+
+  // Extract booking data from DOM
+  const serviceIdEl = card.querySelector('.booking-service-id-data');
+  const serviceId = serviceIdEl ? parseInt(serviceIdEl.textContent.trim()) : null;
+
+  const notesEl = card.querySelector('.booking-notes-data');
+  const notes = notesEl ? notesEl.textContent.trim() : '';
+
+  const dateEl = card.querySelector('.booking-date-data');
+  const timeEl = card.querySelector('.booking-time-data');
+  const date = dateEl ? dateEl.textContent.trim() : '';
+  const time = timeEl ? timeEl.textContent.trim() : '';
+
+  servicePickerMode = 'business';
+  servicePickerConversationId = conversationId;
+  servicePickerClientId = clientId;
+
+  showServicePicker(bookingId, serviceId, date, time, notes);
+}
+
+function openClientEditBookingPicker(bookingId) {
+  const card = document.querySelector(`[data-booking-id="${bookingId}"]`) ||
+               document.querySelector(`[data-message-id="${bookingId}"]`);
+  if (!card) { showNotification('Booking not found', 'error'); return; }
+
+  if (!businessId) { showNotification('No business selected', 'error'); return; }
+
+  const serviceIdEl = card.querySelector('.booking-service-id-data');
+  const serviceId = serviceIdEl ? parseInt(serviceIdEl.textContent.trim()) : null;
+
+  const notesEl = card.querySelector('.booking-notes-data');
+  const notes = notesEl ? notesEl.textContent.trim() : '';
+
+  // Client-side bookings use scheduled_date as formatted string
+  const dateTextEl = card.querySelector('.booking-date-data');
+  let date = '';
+  let time = '';
+  if (dateTextEl) {
+    try {
+      const d = new Date(dateTextEl.textContent.trim());
+      date = d.toISOString().split('T')[0];
+      time = d.toISOString().split('T')[1].substring(0, 5);
+    } catch (e) {
+      // Fallback: use the text directly
+    }
+  }
+
+  servicePickerMode = 'client';
+  servicePickerBusinessId = businessId;
+
+  showServicePicker(bookingId, serviceId, date, time, notes);
+}
+
 // ========== SUBMIT ==========
 
 async function submitServiceBooking() {
@@ -378,7 +483,51 @@ async function submitServiceBooking() {
   try {
     let resp, data;
 
-    if (servicePickerMode === 'client') {
+    if (servicePickerEditMode) {
+      // ---------- EDIT MODE ----------
+      const body = {
+        service_id: servicePickerSelectedService.id,
+        notes: notes
+      };
+      if (servicePickerMode === 'client') {
+        body.scheduled_date = bookingDateTime;
+        resp = await fetch(`/client/bookings/${servicePickerEditBookingId}/update`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(body)
+        });
+      } else {
+        body.booking_date = bookingDateTime;
+        resp = await fetch(`/business/bookings/${servicePickerEditBookingId}`, {
+          method: 'PUT',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(body)
+        });
+      }
+      data = await resp.json();
+      if (data.success) {
+        hideServicePicker();
+        showNotification('Booking updated successfully!', 'success');
+        if (typeof fetchMessages === 'function') {
+          setTimeout(() => fetchMessages(), 500);
+        } else if (typeof startMessagePolling === 'function') {
+          setTimeout(() => {
+            const bizId = servicePickerBusinessId || businessId;
+            fetch(`/client/businesses/${bizId}/messages`)
+              .then(r => r.text())
+              .then(html => {
+                const parser = new DOMParser();
+                const doc = parser.parseFromString(html, 'text/html');
+                const newMsgs = doc.getElementById('messages-container');
+                const curMsgs = document.getElementById('messages-container');
+                if (newMsgs && curMsgs) curMsgs.innerHTML = newMsgs.innerHTML;
+              }).catch(console.error);
+          }, 500);
+        }
+      } else {
+        showNotification(data.error || 'Failed to update booking', 'error');
+      }
+    } else if (servicePickerMode === 'client') {
       resp = await fetch('/client/bookings', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -451,8 +600,10 @@ async function submitServiceBooking() {
 
   if (submitBtn) {
     submitBtn.disabled = false;
-    submitBtn.innerHTML = servicePickerMode === 'client'
-      ? '<i class="fas fa-paper-plane mr-1"></i> Send Request'
-      : '<i class="fas fa-calendar-check mr-1"></i> Create Booking';
+    submitBtn.innerHTML = servicePickerEditMode
+      ? '<i class="fas fa-calendar-check mr-1"></i> Update Booking'
+      : (servicePickerMode === 'client'
+        ? '<i class="fas fa-paper-plane mr-1"></i> Send Request'
+        : '<i class="fas fa-calendar-check mr-1"></i> Create Booking');
   }
 }

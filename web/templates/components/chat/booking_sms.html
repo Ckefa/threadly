@@ -9,7 +9,7 @@
           <span class="font-semibold text-yellow-800 text-sm">#${booking.booking_number || booking.id}</span>
           <span class="text-gray-700 text-sm truncate">${booking.service_name || ''}</span>
         </div>
-        <button onclick="openEditBookingModal(${booking.id})" class="text-yellow-600 hover:text-yellow-800 text-xs flex-shrink-0 ml-2" title="Edit Booking">
+        <button onclick="openBusinessEditBookingPicker(${booking.id})" class="text-yellow-600 hover:text-yellow-800 text-xs flex-shrink-0 ml-2" title="Edit Booking">
           <i class="fas fa-edit"></i>
         </button>
       </div>

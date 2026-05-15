@@ -43,6 +43,7 @@ func SetupBusinessRoutes(r *gin.Engine) {
 		protected.DELETE("/services/:id", businessHandler.DeleteService)
 		protected.GET("/orders", businessHandler.GetOrders)
 		protected.POST("/orders", businessHandler.CreateOrder)
+		protected.PUT("/orders/:id", businessHandler.UpdateOrder)
 		protected.PUT("/orders/:id/status", businessHandler.UpdateOrderStatus)
 		protected.GET("/bookings", businessHandler.GetBookings)
 		protected.GET("/bookings/:id", businessHandler.GetBooking)

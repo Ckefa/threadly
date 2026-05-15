@@ -22,17 +22,17 @@
 <div class="flex {{if eq .Sender "business"}}justify-end{{else}}justify-start{{end}}">
   <div class="max-w-xs lg:max-w-md w-full">
     <div class="{{$statusBg}} border rounded-lg px-4 py-3"
-      data-message-id="{{.ID}}" data-booking-id="{{.Data.id}}">
+      data-message-id="{{.ID}}" data-booking-id="{{.Data.id}}" data-service-id="{{.Data.service_id}}">
       <div class="flex items-center justify-between mb-2">
         <div class="flex items-center space-x-2 min-w-0">
           <i class="fas fa-calendar-check {{$iconColor}}"></i>
           <span class="font-semibold text-sm {{$iconColor}}">#{{.Data.booking_number}}</span>
           <span class="text-gray-700 text-sm truncate">{{.Data.service_name}}</span>
         </div>
-        <button onclick="openEditBookingModal({{.Data.id}})" class="{{$iconColor}} hover:opacity-80 text-xs ml-2 flex-shrink-0"
-          title="Edit Booking">
-          <i class="fas fa-edit"></i>
-        </button>
+          <button onclick="openBusinessEditBookingPicker({{.Data.id}})" class="{{$iconColor}} hover:opacity-80 text-xs ml-2 flex-shrink-0"
+            title="Edit Booking">
+            <i class="fas fa-edit"></i>
+          </button>
       </div>
       <div class="booking-details text-sm text-gray-700 space-y-1">
         {{if .Data}}
@@ -59,6 +59,7 @@
         <p class="hidden booking-date-data">{{.Data.scheduled_date.Format "2006-01-02"}}</p>
         <p class="hidden booking-time-data">{{.Data.scheduled_date.Format "15:04"}}</p>
         <p class="hidden booking-number-data">{{.Data.booking_number}}</p>
+        <p class="hidden booking-service-id-data">{{.Data.service_id}}</p>
         {{end}}
       </div>
       <div class="flex items-center justify-between mt-3 pt-2 border-t border-gray-200 border-opacity-50">

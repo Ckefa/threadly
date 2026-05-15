@@ -195,7 +195,7 @@ function addOrderMessageToChat(order) {
           <span class="font-semibold text-blue-800 text-sm">[${order.id}]</span>
           <span class="text-gray-700 text-sm">${order.product_name || 'Product'}</span>
         </div>
-        <button onclick="openEditOrderModal(${order.id})" class="text-blue-600 hover:text-blue-800 text-xs" title="Edit Order">
+        <button onclick="openClientEditOrderPicker(${order.id})" class="text-blue-600 hover:text-blue-800 text-xs" title="Edit Order">
           <i class="fas fa-edit"></i>
         </button>
       </div>
@@ -261,7 +261,7 @@ function addBookingMessageToChat(booking) {
             </div>
             <div class="flex items-center space-x-1 flex-shrink-0 ml-2">
               ${status === 'pending' ? '<button onclick="cancelBooking(' + booking.id + ')" class="text-red-500 hover:text-red-700 text-xs" title="Cancel Booking"><i class="fas fa-times"></i></button>' : ''}
-              <button onclick="openEditBookingModal(${booking.id})" class="${iconClass} hover:opacity-80 text-xs" title="Edit Booking">
+              <button onclick="openClientEditBookingPicker(${booking.id})" class="${iconClass} hover:opacity-80 text-xs" title="Edit Booking">
                 <i class="fas fa-edit"></i>
               </button>
             </div>
@@ -285,136 +285,6 @@ function addBookingMessageToChat(booking) {
       </div>
     </div>`);
   container.scrollTop = container.scrollHeight;
-}
-
-function openEditOrderModal(orderId) {
-  const el = document.querySelector(`[data-order-id="${orderId}"]`) || document.querySelector(`[data-message-id="${orderId}"]`);
-  if (!el) return showNotification('Order not found', 'error');
-  const orderIdFromEl = el.getAttribute('data-order-id');
-  if (!orderIdFromEl) return showNotification('Order ID not found', 'error');
-  const notes = el.querySelector('.order-notes-data')?.textContent.trim() || '';
-  const qtyEl = el.querySelector('.order-quantity-data');
-  const statusEl = el.querySelector('.order-status-badge');
-  const quantity = qtyEl ? parseInt(qtyEl.textContent.trim()) || 1 : 1;
-  const orderNumber = el.querySelector('h4')?.textContent?.trim() || `#${orderIdFromEl}`;
-  const orderStatus = statusEl ? statusEl.textContent.trim() : 'pending';
-
-  document.getElementById('editOrderId').value = orderIdFromEl;
-  document.getElementById('editOrderNotes').value = notes;
-  document.getElementById('editOrderQuantity').value = quantity;
-
-  const numberEl = document.getElementById('editOrderNumber');
-  if (numberEl) numberEl.textContent = orderNumber;
-
-  const statusBadge = document.getElementById('editOrderStatusBadge');
-  if (statusBadge) {
-    statusBadge.textContent = orderStatus;
-    const statusColors = {
-      draft: 'bg-gray-200 text-gray-600',
-      pending: 'bg-blue-100 text-blue-700',
-      client_confirmed: 'bg-yellow-100 text-yellow-700',
-      confirmed: 'bg-green-100 text-green-700',
-      fulfilled: 'bg-teal-100 text-teal-700',
-      cancelled: 'bg-red-100 text-red-700'
-    };
-    statusBadge.className = 'text-xs font-medium px-2 py-0.5 rounded-full ' + (statusColors[orderStatus] || 'bg-gray-100 text-gray-600');
-  }
-
-  document.getElementById('editOrderModal').classList.remove('hidden');
-}
-
-function hideEditOrderModal() {
-  document.getElementById('editOrderModal').classList.add('hidden');
-}
-
-function submitEditOrder() {
-  const orderId = document.getElementById('editOrderId').value;
-  const fd = new URLSearchParams();
-  fd.append('notes', document.getElementById('editOrderNotes').value);
-  fd.append('quantity', document.getElementById('editOrderQuantity').value);
-  fetch(`/client/orders/${orderId}/update`, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-    body: fd
-  })
-    .then(r => r.json())
-    .then(data => {
-      if (data.success) {
-        showNotification('Order updated successfully!', 'success');
-        hideEditOrderModal();
-      } else {
-        showNotification(data.error || 'Failed to update order', 'error');
-      }
-    })
-    .catch(e => { console.error(e); showNotification('Failed to update order', 'error'); });
-}
-
-function openEditBookingModal(messageId) {
-  const el = document.querySelector(`[data-message-id="${messageId}"]`);
-  if (!el) return;
-  const bookingId = el.getAttribute('data-booking-id');
-  if (!bookingId) return showNotification('Booking ID not found', 'error');
-  const notes = el.querySelector('.booking-notes-data')?.textContent.trim() || '';
-  const scheduledDate = el.querySelector('.booking-date-data')?.textContent.trim() || '';
-  const numberEl = el.querySelector('.booking-number-data');
-  const statusEl = el.querySelector('.booking-status');
-  const bookingNumber = numberEl ? numberEl.textContent.trim() : `#${bookingId}`;
-  const bookingStatus = statusEl ? statusEl.textContent.trim() : 'pending';
-
-  document.getElementById('editBookingId').value = bookingId;
-  document.getElementById('editBookingNotes').value = notes;
-  if (scheduledDate) {
-    try {
-      const d = new Date(scheduledDate);
-      document.getElementById('editBookingDate').value = d.toISOString().split('T')[0];
-      document.getElementById('editBookingTime').value = d.toISOString().split('T')[1].substring(0, 5);
-    } catch (e) { console.error('Error parsing date:', e); }
-  }
-
-  const numberElModal = document.getElementById('editBookingNumber');
-  if (numberElModal) numberElModal.textContent = bookingNumber;
-
-  const statusBadge = document.getElementById('editBookingStatusBadge');
-  if (statusBadge) {
-    statusBadge.textContent = bookingStatus;
-    const statusColors = {
-      pending: 'bg-yellow-100 text-yellow-800',
-      confirmed: 'bg-green-100 text-green-800',
-      completed: 'bg-blue-100 text-blue-800',
-      cancelled: 'bg-red-100 text-red-800'
-    };
-    statusBadge.className = 'text-xs font-medium px-2 py-0.5 rounded-full ' + (statusColors[bookingStatus] || 'bg-gray-100 text-gray-800');
-  }
-
-  document.getElementById('editBookingModal').classList.remove('hidden');
-}
-
-function hideEditBookingModal() {
-  document.getElementById('editBookingModal').classList.add('hidden');
-}
-
-function submitEditBooking() {
-  const bookingId = document.getElementById('editBookingId').value;
-  const fd = new URLSearchParams();
-  fd.append('notes', document.getElementById('editBookingNotes').value);
-  const dateVal = document.getElementById('editBookingDate').value;
-  const timeVal = document.getElementById('editBookingTime').value;
-  if (dateVal && timeVal) fd.append('scheduled_date', `${dateVal}T${timeVal}:00Z`);
-  fetch(`/client/bookings/${bookingId}/update`, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-    body: fd
-  })
-    .then(r => r.json())
-    .then(data => {
-      if (data.success) {
-        showNotification('Booking updated successfully!', 'success');
-        hideEditBookingModal();
-      } else {
-        showNotification(data.error || 'Failed to update booking', 'error');
-      }
-    })
-    .catch(e => { console.error(e); showNotification('Failed to update booking', 'error'); });
 }
 
 function clientConfirmOrder(orderId) {
