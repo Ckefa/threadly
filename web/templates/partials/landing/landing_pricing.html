@@ -1,0 +1,83 @@
+{{define "landing_pricing"}}
+<section id="pricing" class="py-20 lg:py-28 section-gradient">
+  <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+    <div class="text-center max-w-3xl mx-auto">
+      <div class="inline-flex items-center px-4 py-1.5 rounded-full bg-teal-100 text-teal-700 text-sm font-medium mb-4 reveal">
+        <i class="fas fa-tag mr-2 text-xs"></i>
+        Simple Pricing
+      </div>
+      <h2 class="text-3xl sm:text-4xl font-bold text-slate-900 reveal">Plans that <span class="gradient-text">scale</span> with you</h2>
+      <p class="mt-4 text-lg text-slate-600 reveal">Start free, upgrade when you need more. No hidden fees, no surprises.</p>
+      
+      <div class="flex items-center justify-center gap-3 mt-8 reveal">
+        <span class="text-sm font-medium text-slate-700" id="monthlyLabel">Monthly</span>
+        <label class="relative inline-flex items-center cursor-pointer">
+          <input type="checkbox" id="pricingToggle" class="toggle-checkbox sr-only" onchange="togglePricing()">
+          <div class="toggle-label w-12 h-6 bg-slate-300 rounded-full transition-colors duration-300"></div>
+          <div class="toggle-dot absolute left-0.5 top-0.5 w-5 h-5 bg-white rounded-full shadow transition-transform duration-300"></div>
+        </label>
+        <span class="text-sm font-medium text-slate-700" id="yearlyLabel">Yearly <span class="text-teal-600 font-semibold">Save 20%</span></span>
+      </div>
+    </div>
+
+    <div class="mt-12 grid md:grid-cols-3 gap-8 max-w-5xl mx-auto">
+      <!-- Free Plan -->
+      <div class="p-8 rounded-2xl bg-white border border-slate-200 pricing-card reveal">
+        <div class="w-12 h-12 rounded-xl bg-slate-100 flex items-center justify-center mb-4"><i class="fas fa-gem text-slate-600 text-lg"></i></div>
+        <h3 class="text-xl font-semibold text-slate-900">Free</h3>
+        <p class="text-sm text-slate-500 mt-1">For small businesses getting started</p>
+        <div class="mt-6 flex items-baseline gap-1">
+          <span class="text-4xl font-extrabold text-slate-900 pricing-amount" data-monthly="$0" data-yearly="$0">$0</span>
+          <span class="text-slate-400 text-sm">/forever</span>
+        </div>
+        <ul class="mt-6 space-y-3">
+          <li class="flex items-center gap-2.5 text-sm text-slate-600"><i class="fas fa-check text-teal-500 text-sm"></i>Up to 50 conversations</li>
+          <li class="flex items-center gap-2.5 text-sm text-slate-600"><i class="fas fa-check text-teal-500 text-sm"></i>Basic chat & messaging</li>
+          <li class="flex items-center gap-2.5 text-sm text-slate-600"><i class="fas fa-check text-teal-500 text-sm"></i>5 products or services</li>
+          <li class="flex items-center gap-2.5 text-sm text-slate-600"><i class="fas fa-check text-teal-500 text-sm"></i>Email support</li>
+        </ul>
+        <a href="/business/register" class="mt-8 w-full inline-flex items-center justify-center px-5 py-3 rounded-xl border border-slate-300 text-slate-700 font-medium hover:bg-slate-50 transition-all text-sm">Get Started Free</a>
+      </div>
+
+      <!-- Pro Plan -->
+      <div class="p-8 rounded-2xl bg-white border-2 border-teal-500 pricing-card popular relative reveal">
+        <div class="absolute -top-3 left-1/2 -translate-x-1/2 px-3 py-1 rounded-full bg-gradient-to-r from-teal-500 to-cyan-600 text-white text-xs font-semibold shadow-lg">Most Popular</div>
+        <div class="w-12 h-12 rounded-xl bg-gradient-to-br from-teal-500 to-cyan-600 flex items-center justify-center mb-4"><i class="fas fa-rocket text-white text-lg"></i></div>
+        <h3 class="text-xl font-semibold text-slate-900">Pro</h3>
+        <p class="text-sm text-slate-500 mt-1">For growing businesses</p>
+        <div class="mt-6 flex items-baseline gap-1">
+          <span class="text-4xl font-extrabold text-slate-900 pricing-amount" data-monthly="$29" data-yearly="$23">$29</span>
+          <span class="text-slate-400 text-sm pricing-period">/month</span>
+        </div>
+        <ul class="mt-6 space-y-3">
+          <li class="flex items-center gap-2.5 text-sm text-slate-600"><i class="fas fa-check text-teal-500 text-sm"></i>Unlimited conversations</li>
+          <li class="flex items-center gap-2.5 text-sm text-slate-600"><i class="fas fa-check text-teal-500 text-sm"></i>Orders & bookings</li>
+          <li class="flex items-center gap-2.5 text-sm text-slate-600"><i class="fas fa-check text-teal-500 text-sm"></i>Unlimited products & services</li>
+          <li class="flex items-center gap-2.5 text-sm text-slate-600"><i class="fas fa-check text-teal-500 text-sm"></i>Analytics dashboard</li>
+          <li class="flex items-center gap-2.5 text-sm text-slate-600"><i class="fas fa-check text-teal-500 text-sm"></i>Priority support</li>
+        </ul>
+        <a href="/business/register" class="mt-8 w-full inline-flex items-center justify-center px-5 py-3 rounded-xl bg-gradient-to-r from-teal-500 to-cyan-600 text-white font-semibold shadow-lg shadow-teal-500/25 hover:shadow-teal-500/40 transition-all text-sm">Start Free Trial</a>
+      </div>
+
+      <!-- Enterprise Plan -->
+      <div class="p-8 rounded-2xl bg-white border border-slate-200 pricing-card reveal">
+        <div class="w-12 h-12 rounded-xl bg-gradient-to-br from-purple-500 to-pink-600 flex items-center justify-center mb-4"><i class="fas fa-building text-white text-lg"></i></div>
+        <h3 class="text-xl font-semibold text-slate-900">Enterprise</h3>
+        <p class="text-sm text-slate-500 mt-1">For large organizations</p>
+        <div class="mt-6 flex items-baseline gap-1">
+          <span class="text-4xl font-extrabold text-slate-900 pricing-amount" data-monthly="$99" data-yearly="$79">$99</span>
+          <span class="text-slate-400 text-sm pricing-period">/month</span>
+        </div>
+        <ul class="mt-6 space-y-3">
+          <li class="flex items-center gap-2.5 text-sm text-slate-600"><i class="fas fa-check text-teal-500 text-sm"></i>Everything in Pro</li>
+          <li class="flex items-center gap-2.5 text-sm text-slate-600"><i class="fas fa-check text-teal-500 text-sm"></i>Multiple business locations</li>
+          <li class="flex items-center gap-2.5 text-sm text-slate-600"><i class="fas fa-check text-teal-500 text-sm"></i>Custom integrations</li>
+          <li class="flex items-center gap-2.5 text-sm text-slate-600"><i class="fas fa-check text-teal-500 text-sm"></i>Dedicated account manager</li>
+          <li class="flex items-center gap-2.5 text-sm text-slate-600"><i class="fas fa-check text-teal-500 text-sm"></i>99.99% SLA</li>
+        </ul>
+        <a href="/business/register" class="mt-8 w-full inline-flex items-center justify-center px-5 py-3 rounded-xl bg-slate-900 text-white font-medium hover:bg-slate-800 transition-all text-sm">Contact Sales</a>
+      </div>
+    </div>
+  </div>
+</section>
+{{end}}

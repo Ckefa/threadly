@@ -1,57 +1,102 @@
 <!DOCTYPE html>
 <html lang="en">
-
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>{{.Title}}</title>
-  <script src="https://unpkg.com/htmx.org@1.9.10"></script>
-  <script src="https://cdn.tailwindcss.com"></script>
+  <meta name="color-scheme" content="light dark">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-  <style>
-    .unread-badge {
-      background-color: #ef4444; color: white; font-size: 12px; font-weight: bold;
-      min-width: 20px; height: 20px; border-radius: 10px; display: inline-flex;
-      align-items: center; justify-content: center; padding: 0 6px;
-      animation: pulse 2s infinite;
-    }
-    .unread-badge[data-count="1"] { background-color: #f59e0b; }
-    @keyframes pulse { 0%,100% { transform: scale(1); } 50% { transform: scale(1.1); } }
-  </style>
+  <link rel="stylesheet" href="/static/css/dist/styles.css?v=1">
+  <script src="https://unpkg.com/htmx.org@1.9.10"></script>
+  <script src="/static/js/core/theme.js?v=1"></script>
 </head>
-
-<body class="bg-gray-100 h-screen overflow-hidden">
-  <header class="bg-teal-600 text-white p-4 flex items-center justify-between">
-    <div class="flex items-center space-x-4">
-      <i class="fas fa-user text-2xl"></i>
-      <h1 class="text-xl font-semibold">Threadly</h1>
-      <span class="text-sm opacity-90">Customer Portal</span>
-    </div>
-    <div class="flex items-center space-x-4">
-      <span class="text-sm">{{.Email}}</span>
-      <a href="/client/logout" class="hover:bg-teal-700 px-3 py-2 rounded-lg">
-        <i class="fas fa-sign-out-alt"></i>
-      </a>
+<body class="h-screen overflow-hidden flex flex-col">
+  <!-- Header -->
+  <header class="navbar-glass">
+    <div class="px-4 lg:px-6">
+      <div class="flex justify-between items-center h-16">
+        <div class="flex items-center gap-3">
+          <button onclick="toggleClientSidebar()" class="sidebar-mobile-toggle btn btn-icon btn-ghost lg:hidden" id="clientSidebarToggle">
+            <i class="fas fa-bars text-lg"></i>
+          </button>
+          <div class="flex items-center gap-2.5">
+            <div class="w-8 h-8 rounded-lg bg-gradient-to-br from-teal-500 to-cyan-600 flex items-center justify-center shadow-sm">
+              <i class="fas fa-user text-white text-xs"></i>
+            </div>
+            <h1 class="text-lg font-bold text-[var(--color-text)]">Threadly</h1>
+            <span class="badge badge-neutral text-xs">Customer Portal</span>
+          </div>
+        </div>
+        <div class="flex items-center gap-2">
+          <button class="theme-toggle" title="Toggle theme">
+            <i class="fas fa-sun theme-sun"></i>
+            <i class="fas fa-moon theme-moon hidden"></i>
+          </button>
+          <span class="text-sm text-[var(--color-text-secondary)] hide-mobile">{{.Email}}</span>
+          <a href="/client/logout" class="btn btn-ghost btn-icon hover:text-rose-500" title="Logout">
+            <i class="fas fa-sign-out-alt"></i>
+          </a>
+        </div>
+      </div>
     </div>
   </header>
 
-  <div class="flex h-[calc(100vh-72px)]">
+  <div class="flex flex-1 min-h-0">
+    <div id="clientSidebarOverlay" class="fixed inset-0 bg-black/30 backdrop-blur-sm z-30 hidden lg:hidden" onclick="toggleClientSidebar()"></div>
     {{template "business_list" .}}
-    <main class="flex-1 flex flex-col bg-gray-50" id="chat-area">
-      {{template "empty_state" "Select a business to start chatting"}}
+    <main class="flex-1 flex flex-col bg-[var(--color-bg)] min-w-0" id="chat-area">
+      <div id="skeleton-area" class="hidden">
+        {{template "skeleton_chat" .}}
+      </div>
+      <div id="content-area">
+        {{template "empty_state" dict "Title" "Select a business to start chatting" "Description" "Choose a conversation from the sidebar to send messages, place orders, and book services."}}
+      </div>
     </main>
   </div>
+
+  <!-- Mobile Bottom Navigation -->
+  <nav class="bottom-nav hide-desktop hide-tablet">
+    <a href="/client" class="bottom-nav-item active">
+      <i class="fas fa-comments"></i>
+      <span>Chats</span>
+    </a>
+    <a href="/client/discover" class="bottom-nav-item">
+      <i class="fas fa-compass"></i>
+      <span>Discover</span>
+    </a>
+    <a href="/client/connect" class="bottom-nav-item">
+      <i class="fas fa-link"></i>
+      <span>Connect</span>
+    </a>
+    <button class="bottom-nav-item" onclick="ThreadlyTheme.toggle()">
+      <i class="fas fa-adjust"></i>
+      <span>Theme</span>
+    </button>
+  </nav>
 
   {{template "client_order" .}}
   {{template "client_booking" .}}
   {{template "product_picker" .}}
   {{template "service_picker" .}}
 
-  <script src="/static/js/modules/shared.js"></script>
-  <script src="/static/js/modules/product_picker.js"></script>
-  <script src="/static/js/modules/service_picker.js"></script>
-  <script src="/static/js/modules/client.js"></script>
+  <script src="/static/js/modules/shared.js?v=1"></script>
+  <script src="/static/js/modules/client.js?v=1"></script>
+  <script src="/static/js/modules/product_picker.js?v=1"></script>
+  <script src="/static/js/modules/service_picker.js?v=1"></script>
+  <script src="/static/js/core/app.js?v=1"></script>
   <script>
+    function toggleClientSidebar() {
+      var layout = document.getElementById('chat-area');
+      var sidebar = document.getElementById('clientSidebar');
+      var overlay = document.getElementById('clientSidebarOverlay');
+      if (!sidebar) return;
+      var isOpen = sidebar.classList.toggle('sidebar-open');
+      if (overlay) overlay.classList.toggle('hidden', !isOpen);
+    }
+
     document.addEventListener('DOMContentLoaded', function() {
       const params = new URLSearchParams(window.location.search);
       const bizId = params.get('business_id');
@@ -59,8 +104,70 @@
         loadBusiness(bizId);
         history.replaceState({}, '', '/client');
       }
+      updateTimeAgo();
+      setInterval(updateTimeAgo, 30000);
+    });
+
+    function updateTimeAgo() {
+      document.querySelectorAll('.time-ago').forEach(function(el) {
+        var t = el.getAttribute('data-time');
+        if (!t || t === '0001-01-01T00:00:00Z' || t === '<nil>') { el.textContent = ''; return; }
+        var d = new Date(t);
+        if (isNaN(d.getTime())) { el.textContent = ''; return; }
+        var diff = Math.floor((Date.now() - d.getTime()) / 1000);
+        if (diff < 60) { el.textContent = 'now'; }
+        else if (diff < 3600) { el.textContent = Math.floor(diff / 60) + 'm ago'; }
+        else if (diff < 86400) { el.textContent = Math.floor(diff / 3600) + 'h ago'; }
+        else { el.textContent = Math.floor(diff / 86400) + 'd ago'; }
+      });
+    }
+
+    function filterBusinesses() {
+      var q = document.getElementById('businessSearch').value.toLowerCase().trim();
+      document.querySelectorAll('.business-item').forEach(function(el) {
+        var name = el.getAttribute('data-business-name')?.toLowerCase() || '';
+        var type = el.getAttribute('data-business-type')?.toLowerCase() || '';
+        el.style.display = (!q || name.includes(q) || type.includes(q)) ? '' : 'none';
+      });
+    }
+
+    function togglePinBusiness(id) {
+      var pins = JSON.parse(localStorage.getItem('pinned_businesses') || '[]');
+      var idx = pins.indexOf(id);
+      if (idx > -1) { pins.splice(idx, 1); } else { pins.push(id); }
+      localStorage.setItem('pinned_businesses', JSON.stringify(pins));
+      var items = Array.from(document.querySelectorAll('.business-item'));
+      items.sort(function(a, b) {
+        var aPinned = pins.indexOf(parseInt(a.getAttribute('data-business-id'))) > -1;
+        var bPinned = pins.indexOf(parseInt(b.getAttribute('data-business-id'))) > -1;
+        if (aPinned && !bPinned) return -1;
+        if (!aPinned && bPinned) return 1;
+        return 0;
+      });
+      var list = document.getElementById('business-list');
+      items.forEach(function(el) {
+        var isPinned = pins.indexOf(parseInt(el.getAttribute('data-business-id'))) > -1;
+        var star = el.querySelector('.pin-btn i');
+        if (star) star.className = isPinned ? 'fas fa-star text-amber-500' : 'fas fa-star text-[var(--color-text-muted)]';
+        list.appendChild(el);
+      });
+    }
+
+    document.addEventListener('DOMContentLoaded', function() {
+      var pins = JSON.parse(localStorage.getItem('pinned_businesses') || '[]');
+      pins.forEach(function(id) {
+        var item = document.querySelector('.business-item[data-business-id="' + id + '"]');
+        if (item) {
+          var star = item.querySelector('.pin-btn i');
+          if (star) star.className = 'fas fa-star text-amber-500';
+        }
+      });
+      document.querySelector('#clientSidebarOverlay')?.addEventListener('click', function() {
+        var sidebar = document.getElementById('clientSidebar');
+        if (sidebar) sidebar.classList.remove('sidebar-open');
+        this.classList.add('hidden');
+      });
     });
   </script>
 </body>
-
 </html>

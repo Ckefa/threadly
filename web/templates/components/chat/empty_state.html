@@ -1,8 +1,46 @@
 {{define "empty_state"}}
-<div class="flex-1 flex items-center justify-center text-gray-400">
-  <div class="text-center text-gray-500">
-    <i class="fas fa-comments text-6xl mb-4"></i>
-    <p>{{.}}</p>
+<div class="flex-1 flex items-center justify-center empty-state">
+  <div class="empty-state-icon empty-state-icon-primary">
+    <i class="fas fa-comments"></i>
   </div>
+  <h3 class="empty-state-title">{{if $.Title}}{{$.Title}}{{else}}{{.}}{{end}}</h3>
+  <p class="empty-state-text">{{if $.Description}}{{$.Description}}{{else}}Get started by selecting a conversation from the sidebar.{{end}}</p>
+  {{if $.CTA}}
+  <div class="empty-state-cta">
+    <a href="{{$.CTA.URL}}" class="btn btn-primary btn-sm">
+      {{if $.CTA.Icon}}<i class="fas fa-{{$.CTA.Icon}}"></i>{{end}}
+      {{$.CTA.Label}}
+    </a>
+  </div>
+  {{end}}
+</div>
+{{end}}
+
+{{define "empty_state_icon"}}
+<div class="flex-1 flex items-center justify-center empty-state">
+  <div class="empty-state-icon {{if .IconClass}}{{.IconClass}}{{else}}empty-state-icon-primary{{end}}">
+    <i class="fas {{.Icon}}"></i>
+  </div>
+  <h3 class="empty-state-title">{{.Title}}</h3>
+  <p class="empty-state-text">{{.Text}}</p>
+  {{if .Action}}
+  <div class="empty-state-cta">
+    <a href="{{.Action.URL}}" class="btn btn-primary btn-sm">
+      {{if .Action.Icon}}<i class="fas fa-{{.Action.Icon}}"></i>{{end}}
+      {{.Action.Label}}
+    </a>
+  </div>
+  {{end}}
+</div>
+{{end}}
+
+{{define "skeleton_chat"}}
+<div class="flex-1 p-4 space-y-4">
+  <div class="skeleton skeleton-card"></div>
+  <div class="flex justify-end"><div class="skeleton skeleton-card" style="width:60%"></div></div>
+  <div class="flex"><div class="skeleton skeleton-card" style="width:70%"></div></div>
+  <div class="flex justify-end"><div class="skeleton skeleton-card" style="width:45%"></div></div>
+  <div class="flex"><div class="skeleton skeleton-card" style="width:55%"></div></div>
+  <div class="flex justify-end"><div class="skeleton skeleton-card" style="width:65%"></div></div>
 </div>
 {{end}}

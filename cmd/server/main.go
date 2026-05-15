@@ -52,8 +52,26 @@ func main() {
 	if err := r.SetTrustedProxies(nil); err != nil {
 		log.Fatalf("failed to set trusted proxies: %v", err)
 	}
-	// Add template functions
-	r.SetFuncMap(template.FuncMap{
+	// Collect template files
+	var files []string
+
+	err := filepath.Walk("web/templates", func(path string, info os.FileInfo, err error) error {
+		if err != nil {
+			log.Fatal(err)
+		}
+
+		if !info.IsDir() && filepath.Ext(path) == ".html" {
+			files = append(files, path)
+		}
+
+		return nil
+	})
+
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	tmpl := template.Must(template.New("").Funcs(template.FuncMap{
 		"hasPrefix": strings.HasPrefix,
 		"dict": func(values ...interface{}) (map[string]interface{}, error) {
 			dict := make(map[string]interface{})
@@ -78,27 +96,11 @@ func main() {
 		"formatTime": func(t time.Time) string {
 			return t.Format("3:04 PM")
 		},
-	})
-
-	var files []string
-
-	err := filepath.Walk("web/templates", func(path string, info os.FileInfo, err error) error {
-		if err != nil {
-			log.Fatal(err)
-		}
-
-		if !info.IsDir() && filepath.Ext(path) == ".html" {
-			files = append(files, path)
-		}
-
-		return nil
-	})
-
-	if err != nil {
-		log.Fatal(err)
-	}
-
-	tmpl := template.Must(template.ParseFiles(files...))
+		"sub": func(a, b float64) float64 { return a - b },
+		"mul": func(a, b float64) float64 { return a * b },
+		"div": func(a, b float64) float64 { return a / b },
+		"float": func(i int) float64 { return float64(i) },
+	}).ParseFiles(files...))
 	r.SetHTMLTemplate(tmpl)
 
 	// Get Static Path

@@ -150,6 +150,7 @@ func (h *BusinessHandler) GetOrders(c *gin.Context) {
 		"CanceledCount":  canceledCount,
 		"TotalOrders":    len(orders),
 		"TotalRevenue":   totalRevenue,
+		"ActivePage":     "orders",
 	})
 }
 
@@ -317,6 +318,108 @@ func (h *BusinessHandler) ClientCreateOrder(c *gin.Context) {
 		"product_name": firstProductName,
 		"quantity":     len(itemList),
 	})
+}
+
+// UpdateOrder updates an existing order's items, notes, and delivery address
+func (h *BusinessHandler) UpdateOrder(c *gin.Context) {
+	businessID := c.GetUint("business_id")
+	orderIDStr := c.Param("id")
+
+	orderID, err := strconv.ParseUint(orderIDStr, 10, 32)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid order ID"})
+		return
+	}
+
+	var order models.Order
+	if err := h.db.Preload("OrderItems").Where("id = ? AND business_id = ?", orderID, businessID).First(&order).Error; err != nil {
+		c.JSON(http.StatusNotFound, gin.H{"error": "Order not found"})
+		return
+	}
+
+	var request struct {
+		Items []struct {
+			ProductID uint `json:"product_id"`
+			Quantity  int  `json:"quantity"`
+		} `json:"items"`
+		Notes           string `json:"notes"`
+		DeliveryAddress string `json:"delivery_address"`
+	}
+
+	if err := c.ShouldBindJSON(&request); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		return
+	}
+
+	if len(request.Items) == 0 {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "At least one item is required"})
+		return
+	}
+
+	// Restore stock from old items
+	for _, oldItem := range order.OrderItems {
+		var product models.Product
+		h.db.First(&product, oldItem.ProductID)
+		product.Stock += oldItem.Quantity
+		h.db.Save(&product)
+	}
+
+	// Delete old order items
+	h.db.Where("order_id = ?", order.ID).Delete(&models.OrderItem{})
+
+	// Build new items and calculate total
+	var totalAmount float64
+	var orderItems []models.OrderItem
+
+	for _, item := range request.Items {
+		var product models.Product
+		if err := h.db.Where("id = ? AND business_id = ?", item.ProductID, businessID).First(&product).Error; err != nil {
+			c.JSON(http.StatusNotFound, gin.H{"error": fmt.Sprintf("Product %d not found", item.ProductID)})
+			return
+		}
+		if product.Stock < item.Quantity {
+			c.JSON(http.StatusBadRequest, gin.H{"error": fmt.Sprintf("Insufficient stock for %s", product.Name)})
+			return
+		}
+		itemTotal := float64(item.Quantity) * product.Price
+		totalAmount += itemTotal
+		orderItems = append(orderItems, models.OrderItem{
+			OrderID:    order.ID,
+			ProductID:  product.ID,
+			Quantity:   item.Quantity,
+			UnitPrice:  product.Price,
+			TotalPrice: itemTotal,
+		})
+
+		product.Stock -= item.Quantity
+		h.db.Save(&product)
+	}
+
+	// Update order
+	order.TotalAmount = totalAmount
+	order.Quantity = len(request.Items)
+
+	fullNotes := request.Notes
+	if request.DeliveryAddress != "" {
+		fullNotes = "📍 Delivery Address: " + request.DeliveryAddress + "\n" + fullNotes
+	}
+	order.Notes = fullNotes
+	order.UpdatedAt = time.Now()
+
+	if err := h.db.Save(&order).Error; err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to update order"})
+		return
+	}
+
+	// Create new order items
+	for i := range orderItems {
+		if err := h.db.Create(&orderItems[i]).Error; err != nil {
+			c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to create order items"})
+			return
+		}
+	}
+
+	c.JSON(http.StatusOK, gin.H{"success": true, "order": order})
 }
 
 func generateOrderNumber() string {

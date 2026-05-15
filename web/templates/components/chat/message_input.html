@@ -1,39 +1,95 @@
 {{define "message_input"}}
-<div class="bg-white border-t border-gray-200 p-4">
-  <form id="message-form" hx-post="clients/{{.Customer.ID}}/messages" hx-target="#messages-container"
-    hx-swap="beforeend" hx-on::after-request="this.reset()">
-    <div class="flex space-x-3">
-      <div class="relative" data-client-id="{{.Customer.ID}}">
-        <button type="button" onclick="toggleActionButtons()"
-          class="bg-purple-600 hover:bg-purple-700 text-white w-10 h-10 rounded-full flex items-center justify-center">
-          <i class="fas fa-plus" id="action-icon"></i>
-        </button>
-        <div id="action-buttons" class="absolute bottom-12 left-0 space-y-2 hidden">
-          <button onclick="openBusinessProductPicker(this.closest('[data-client-id]').dataset.clientId)"
-            class="bg-teal-500 hover:bg-teal-600 text-white px-3 py-2 rounded-lg shadow-lg flex items-center space-x-1 text-sm whitespace-nowrap">
-            <i class="fas fa-box"></i>
-            <span>Products</span>
-          </button>
-          <button onclick="openServicePicker(this.closest('[data-client-id]').dataset.clientId)"
-            class="bg-purple-500 hover:bg-purple-600 text-white px-3 py-2 rounded-lg shadow-lg flex items-center space-x-1 text-sm whitespace-nowrap">
-            <i class="fas fa-concierge-bell"></i>
-            <span>Services</span>
-          </button>
-          <button onclick="openPaymentModal(this.closest('[data-client-id]').dataset.clientId)"
-            class="bg-yellow-500 hover:bg-yellow-600 text-white px-3 py-2 rounded-lg shadow-lg flex items-center space-x-1 text-sm whitespace-nowrap">
-            <i class="fas fa-credit-card"></i>
-            <span>Payment</span>
-          </button>
-        </div>
+<div class="bg-white border-t border-gray-200">
+  <!-- Smart Suggestions Bar -->
+  <div id="smartSuggestions" class="hidden px-4 pt-2 pb-1 flex items-center gap-2 overflow-x-auto">
+    <span class="text-[10px] text-gray-400 font-medium uppercase tracking-wider shrink-0">Quick actions</span>
+    <button onclick="openBusinessProductPicker({{.Customer.ID}})"
+      class="shrink-0 px-3 py-1 rounded-full bg-teal-50 text-teal-700 text-xs font-medium hover:bg-teal-100 border border-teal-200 transition-colors">
+      <i class="fas fa-box mr-1"></i>Send Order
+    </button>
+    <button onclick="openServicePicker({{.Customer.ID}})"
+      class="shrink-0 px-3 py-1 rounded-full bg-purple-50 text-purple-700 text-xs font-medium hover:bg-purple-100 border border-purple-200 transition-colors">
+      <i class="fas fa-calendar-check mr-1"></i>Book Appointment
+    </button>
+    <button onclick="openPaymentModal({{.Customer.ID}})"
+      class="shrink-0 px-3 py-1 rounded-full bg-yellow-50 text-yellow-700 text-xs font-medium hover:bg-yellow-100 border border-yellow-200 transition-colors">
+      <i class="fas fa-credit-card mr-1"></i>Request Payment
+    </button>
+  </div>
+
+  <!-- Typing Indicator -->
+  <div id="typingIndicator" class="hidden px-4 py-1">
+    <div class="flex items-center gap-2 text-xs text-gray-400">
+      <div class="flex items-center gap-1">
+        <span class="w-1.5 h-1.5 bg-gray-400 rounded-full animate-bounce" style="animation-delay:0ms"></span>
+        <span class="w-1.5 h-1.5 bg-gray-400 rounded-full animate-bounce" style="animation-delay:150ms"></span>
+        <span class="w-1.5 h-1.5 bg-gray-400 rounded-full animate-bounce" style="animation-delay:300ms"></span>
       </div>
-      <input type="text" name="content" placeholder="Type a message..."
-        class="flex-1 px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-teal-500"
-        required>
-      <input type="hidden" name="sender" value="business">
-      <button type="submit" class="bg-teal-600 text-white px-6 py-2 rounded-lg hover:bg-teal-700">
-        <i class="fas fa-paper-plane"></i>
+      <span>{{.Customer.Name}} is typing...</span>
+    </div>
+  </div>
+
+  <!-- Quick Replies Dropdown -->
+  <div id="quickReplies" class="hidden px-4 py-2 border-b border-gray-100 bg-gray-50">
+    <div class="flex items-center gap-2 overflow-x-auto">
+      <span class="text-[10px] text-gray-400 font-medium uppercase tracking-wider shrink-0">Quick replies</span>
+      <button onclick="insertQuickReply('Sure, let me look into that for you.')"
+        class="shrink-0 px-3 py-1 rounded-full bg-white text-gray-700 text-xs font-medium hover:bg-gray-100 border border-gray-200 transition-colors whitespace-nowrap">
+        Let me check
+      </button>
+      <button onclick="insertQuickReply('I\'ll send you a quote shortly.')"
+        class="shrink-0 px-3 py-1 rounded-full bg-white text-gray-700 text-xs font-medium hover:bg-gray-100 border border-gray-200 transition-colors whitespace-nowrap">
+        Send quote
+      </button>
+      <button onclick="insertQuickReply('Thank you for your patience!')"
+        class="shrink-0 px-3 py-1 rounded-full bg-white text-gray-700 text-xs font-medium hover:bg-gray-100 border border-gray-200 transition-colors whitespace-nowrap">
+        Thank you
+      </button>
+      <button onclick="insertQuickReply('Can you provide more details?')"
+        class="shrink-0 px-3 py-1 rounded-full bg-white text-gray-700 text-xs font-medium hover:bg-gray-100 border border-gray-200 transition-colors whitespace-nowrap">
+        More details
       </button>
     </div>
-  </form>
+  </div>
+
+  <div class="p-4">
+    <form id="message-form" hx-post="clients/{{.Customer.ID}}/messages" hx-target="#messages-container"
+      hx-swap="beforeend">
+      <div class="flex space-x-3">
+        <div class="relative" data-client-id="{{.Customer.ID}}">
+          <button type="button" onclick="toggleActionButtons()"
+            class="bg-purple-600 hover:bg-purple-700 text-white w-10 h-10 rounded-full flex items-center justify-center">
+            <i class="fas fa-plus" id="action-icon"></i>
+          </button>
+          <div id="action-buttons" class="absolute bottom-12 left-0 space-y-2 hidden">
+            <button onclick="openBusinessProductPicker(this.closest('[data-client-id]').dataset.clientId)"
+              class="bg-teal-500 hover:bg-teal-600 text-white px-3 py-2 rounded-lg shadow-lg flex items-center space-x-1 text-sm whitespace-nowrap">
+              <i class="fas fa-box"></i>
+              <span>Products</span>
+            </button>
+            <button onclick="openServicePicker(this.closest('[data-client-id]').dataset.clientId)"
+              class="bg-purple-500 hover:bg-purple-600 text-white px-3 py-2 rounded-lg shadow-lg flex items-center space-x-1 text-sm whitespace-nowrap">
+              <i class="fas fa-concierge-bell"></i>
+              <span>Services</span>
+            </button>
+            <button onclick="openPaymentModal(this.closest('[data-client-id]').dataset.clientId)"
+              class="bg-yellow-500 hover:bg-yellow-600 text-white px-3 py-2 rounded-lg shadow-lg flex items-center space-x-1 text-sm whitespace-nowrap">
+              <i class="fas fa-credit-card"></i>
+              <span>Payment</span>
+            </button>
+          </div>
+        </div>
+        <input type="text" name="content" id="messageInput" placeholder="Type a message... (/ for quick replies)"
+          oninput="onMessageInput(this)"
+          onkeydown="onMessageKeydown(event)"
+          class="input flex-1"
+          required>
+        <input type="hidden" name="sender" value="business">
+        <button type="submit" class="bg-teal-600 text-white px-6 py-2 rounded-lg hover:bg-teal-700">
+          <i class="fas fa-paper-plane"></i>
+        </button>
+      </div>
+    </form>
+  </div>
 </div>
 {{end}}

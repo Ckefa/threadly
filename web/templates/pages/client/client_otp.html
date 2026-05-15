@@ -4,13 +4,21 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="color-scheme" content="light dark">
   <title>{{.Title}}</title>
   <script src="https://cdn.tailwindcss.com"></script>
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  <link rel="stylesheet" href="/static/css/dist/styles.css?v=1">
+  <style>
+    .slide-in { animation: slideUp 0.35s ease-out; }
+    @keyframes slideUp { from { opacity: 0; transform: translateY(16px); } to { opacity: 1; transform: translateY(0); } }
+    .shake { animation: shake 0.4s ease-in-out; }
+    @keyframes shake { 0%,100% { transform: translateX(0); } 25% { transform: translateX(-4px); } 75% { transform: translateX(4px); } }
+  </style>
 </head>
 
 <body class="bg-gray-100 min-h-screen flex items-center justify-center">
-  <div class="bg-white rounded-lg shadow-lg p-8 w-full max-w-md">
+  <div class="slide-in bg-white rounded-xl shadow-lg p-8 w-full max-w-md">
     <div class="text-center mb-8">
       <div class="inline-flex items-center justify-center w-16 h-16 bg-teal-100 rounded-full mb-4">
         <i class="fas fa-shield-alt text-2xl text-teal-600"></i>
@@ -22,9 +30,6 @@
     <div class="bg-blue-50 border border-blue-200 text-blue-700 px-4 py-3 rounded-lg mb-6">
       <i class="fas fa-info-circle mr-2"></i>
       We've sent a 6-digit code to <strong>{{.Email}}</strong>
-      {{if .OTP}}
-      <br><small class="text-blue-600">Test OTP: <strong>{{.OTP}}</strong></small>
-      {{end}}
     </div>
 
     {{if .Error}}
@@ -34,7 +39,7 @@
     </div>
     {{end}}
 
-    <form method="POST" action="/client/verify-otp" class="space-y-4">
+    <form method="POST" action="/client/verify-otp" class="space-y-4" id="otpForm">
       <input type="hidden" name="email" value="{{.Email}}">
 
       <div>
@@ -43,31 +48,147 @@
           <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
             <i class="fas fa-key text-gray-400"></i>
           </div>
-          <input type="text" id="otp" name="otp" required maxlength="6" pattern="[0-9]{6}"
-            class="pl-10 w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-teal-500 focus:border-transparent text-center text-lg tracking-widest"
+          <input type="text" id="otp" name="otp" required maxlength="6" pattern="[0-9]{6}" inputmode="numeric" autocomplete="one-time-code"
+            class="input pl-10 text-center text-lg tracking-widest"
             placeholder="000000">
+          <div class="absolute inset-y-0 right-0 pr-3 flex items-center hidden" id="otpSpinner">
+            <i class="fas fa-spinner fa-spin text-teal-600"></i>
+          </div>
         </div>
-        <p class="text-xs text-gray-500 mt-1">Enter the 6-digit code sent to your email</p>
+        <p class="text-xs text-gray-500 mt-1" id="otpHelp">Enter the 6-digit code sent to your email</p>
       </div>
 
-      <button type="submit"
-        class="w-full bg-teal-600 text-white py-2 px-4 rounded-lg hover:bg-teal-700 transition duration-200 font-medium">
-        Verify & Sign In
+      <button type="submit" id="verifyBtn"
+        class="w-full bg-teal-600 text-white py-2 px-4 rounded-lg hover:bg-teal-700 transition-all duration-200 font-medium">
+        <span id="verifyBtnText">Verify & Sign In</span>
+        <i class="fas fa-spinner fa-spin hidden" id="verifySpinner"></i>
       </button>
     </form>
 
-    <div class="text-center mt-6">
-      <a href="/client/login" class="text-teal-600 hover:text-teal-700 font-medium">
-        <i class="fas fa-arrow-left mr-2"></i>Back to login
+    <!-- Resend Timer -->
+    <div class="text-center mt-5">
+      <p class="text-sm text-gray-500" id="resendContainer">
+        <span id="resendTimer">Resend code in <span id="resendCountdown">0:30</span></span>
+        <button onclick="resendCode()" id="resendBtn" class="hidden text-teal-600 hover:text-teal-700 font-medium">
+          <i class="fas fa-redo mr-1"></i>Resend code
+        </button>
+      </p>
+    </div>
+
+    <div class="text-center mt-4">
+      <a href="/client/login" class="text-teal-600 hover:text-teal-700 font-medium text-sm">
+        <i class="fas fa-arrow-left mr-1"></i>Back to login
       </a>
     </div>
   </div>
 
   <script>
-    // Auto-focus OTP input and format as numbers only
+    // Auto-focus OTP input on load
+    document.getElementById('otp').focus();
+
+    // Format as numbers only
     document.getElementById('otp').addEventListener('input', function (e) {
       this.value = this.value.replace(/[^0-9]/g, '');
     });
+
+    // Auto-submit when 6 digits entered
+    document.getElementById('otp').addEventListener('input', function () {
+      if (this.value.length === 6) {
+        document.getElementById('otpForm').requestSubmit();
+      }
+    });
+
+    // Resend timer (30 seconds)
+    var resendSeconds = 30;
+    var resendInterval = setInterval(function() {
+      resendSeconds--;
+      if (resendSeconds <= 0) {
+        clearInterval(resendInterval);
+        document.getElementById('resendCountdown').parentElement.classList.add('hidden');
+        document.getElementById('resendBtn').classList.remove('hidden');
+      } else {
+        var m = Math.floor(resendSeconds / 60);
+        var s = resendSeconds % 60;
+        document.getElementById('resendCountdown').textContent = m + ':' + (s < 10 ? '0' : '') + s;
+      }
+    }, 1000);
+
+    // Loading state on form submit
+    document.getElementById('otpForm').addEventListener('submit', function(e) {
+      var otp = document.getElementById('otp');
+      if (otp.value.length !== 6) {
+        e.preventDefault();
+        otp.classList.add('shake', 'border-red-400');
+        setTimeout(function() { otp.classList.remove('shake', 'border-red-400'); }, 500);
+        return;
+      }
+      var btn = document.getElementById('verifyBtn');
+      var text = document.getElementById('verifyBtnText');
+      var spinner = document.getElementById('verifySpinner');
+      btn.disabled = true;
+      text.classList.add('hidden');
+      spinner.classList.remove('hidden');
+      document.getElementById('otpHelp').textContent = 'Verifying code...';
+    });
+
+    function resendCode() {
+      var btn = document.getElementById('resendBtn');
+      btn.disabled = true;
+      btn.innerHTML = '<i class="fas fa-spinner fa-spin mr-1"></i> Sending...';
+      var formData = new FormData();
+      formData.append('email', document.querySelector('input[name="email"]').value);
+      fetch('/client/send-otp', { method: 'POST', body: formData })
+        .then(function(r) { return r.json(); })
+        .then(function(data) {
+          if (data.redirect) { window.location.href = data.redirect; return; }
+          if (data.success) {
+            showOtpToast('Code resent! Check your email.');
+            resetResendTimer();
+          } else {
+            showOtpToast(data.error || 'Failed to resend code', 'error');
+            btn.disabled = false;
+            btn.innerHTML = '<i class="fas fa-redo mr-1"></i>Resend code';
+          }
+        })
+        .catch(function() {
+          showOtpToast('Failed to resend code', 'error');
+          btn.disabled = false;
+          btn.innerHTML = '<i class="fas fa-redo mr-1"></i>Resend code';
+        });
+    }
+
+    function resetResendTimer() {
+      resendSeconds = 30;
+      document.getElementById('resendBtn').classList.add('hidden');
+      document.getElementById('resendCountdown').parentElement.classList.remove('hidden');
+      document.getElementById('resendCountdown').textContent = '0:30';
+      clearInterval(resendInterval);
+      resendInterval = setInterval(function() {
+        resendSeconds--;
+        if (resendSeconds <= 0) {
+          clearInterval(resendInterval);
+          document.getElementById('resendCountdown').parentElement.classList.add('hidden');
+          document.getElementById('resendBtn').classList.remove('hidden');
+          document.getElementById('resendBtn').disabled = false;
+          document.getElementById('resendBtn').innerHTML = '<i class="fas fa-redo mr-1"></i>Resend code';
+        } else {
+          var m = Math.floor(resendSeconds / 60);
+          var s = resendSeconds % 60;
+          document.getElementById('resendCountdown').textContent = m + ':' + (s < 10 ? '0' : '') + s;
+        }
+      }, 1000);
+    }
+
+    function showOtpToast(msg) {
+      var existing = document.getElementById('otpToast');
+      if (existing) existing.remove();
+      var toast = document.createElement('div');
+      toast.id = 'otpToast';
+      toast.className = 'fixed top-4 right-4 bg-gray-900 text-white px-5 py-3 rounded-xl shadow-xl z-50 flex items-center gap-2.5 text-sm font-medium';
+      toast.innerHTML = '<i class="fas fa-check-circle text-green-400"></i> ' + msg;
+      document.body.appendChild(toast);
+      setTimeout(function() { toast.style.opacity = '0'; toast.style.transition = 'opacity 0.3s'; setTimeout(function() { toast.remove(); }, 300); }, 3000);
+    }
   </script>
 </body>
 

@@ -228,76 +228,7 @@ function saveChatProgress(conversationId, stage) {
     });
 }
 
-function editOrderMessage(messageId) {
-  const messageEl = document.querySelector(`[data-message-id="${messageId}"]`);
-  if (!messageEl) return;
 
-  const currentContent = messageEl.querySelector('.order-details p')?.textContent || '';
-
-  const parts = currentContent.split('|').map(p => p.trim());
-  let notes = '';
-  const notesPart = parts.find(p => p.startsWith('Notes:'));
-  if (notesPart) {
-    notes = notesPart.replace('Notes:', '').trim();
-  }
-
-  const newNotes = prompt('Update order notes:', notes);
-  if (newNotes === null) return;
-
-  let newContent = parts.filter(p => !p.startsWith('Notes:')).join(' | ');
-  if (newNotes.trim()) {
-    newContent += ` | Notes: ${newNotes.trim()}`;
-  }
-
-  updateMessageContent(messageId, newContent);
-}
-
-function editBookingMessage(messageId) {
-  const messageEl = document.querySelector(`[data-message-id="${messageId}"]`);
-  if (!messageEl) return;
-
-  const currentContent = messageEl.querySelector('.booking-details p')?.textContent || '';
-
-  const parts = currentContent.split('|').map(p => p.trim());
-  let notes = '';
-  const notesPart = parts.find(p => p.startsWith('Notes:'));
-  if (notesPart) {
-    notes = notesPart.replace('Notes:', '').trim();
-  }
-
-  const newNotes = prompt('Update booking notes:', notes);
-  if (newNotes === null) return;
-
-  let newContent = parts.filter(p => !p.startsWith('Notes:')).join(' | ');
-  if (newNotes.trim()) {
-    newContent += ` | Notes: ${newNotes.trim()}`;
-  }
-
-  updateMessageContent(messageId, newContent);
-}
-
-function updateMessageContent(messageId, newContent) {
-  fetch(`/business/messages/${messageId}`, {
-    method: 'PUT',
-    headers: {
-      'Content-Type': 'application/json'
-    },
-    body: JSON.stringify({ content: newContent })
-  })
-    .then(response => response.json())
-    .then(data => {
-      if (data.success) {
-        showNotification('Updated successfully!', 'success');
-        fetchMessages();
-      } else {
-        showNotification(data.error || 'Failed to update', 'error');
-      }
-    })
-    .catch(error => {
-      console.error('Error:', error);
-      showNotification('Failed to update', 'error');
-    });
-}
 
 function showNotification(message, type) {
   const notification = document.createElement('div');
@@ -311,213 +242,7 @@ function showNotification(message, type) {
   }, 3000);
 }
 
-function openEditOrderModal(orderId) {
-  const messageEl = document.querySelector(`[data-order-id="${orderId}"]`);
-  if (!messageEl) return;
 
-  const orderIdFromEl = messageEl.getAttribute('data-order-id');
-  if (!orderIdFromEl) {
-    showNotification('Order ID not found', 'error');
-    return;
-  }
-
-  const notesEl = messageEl.querySelector('.order-notes-data');
-  const qtyEl = messageEl.querySelector('.order-quantity-data');
-  const statusEl = messageEl.querySelector('.order-status-badge');
-  const notes = notesEl ? notesEl.textContent.trim() : '';
-  const quantity = qtyEl ? parseInt(qtyEl.textContent.trim()) || 1 : 1;
-  const orderNumber = messageEl.querySelector('h4')?.textContent?.trim() || `#${orderIdFromEl}`;
-  const orderStatus = statusEl ? statusEl.textContent.trim() : 'pending';
-
-  document.getElementById('editOrderId').value = orderIdFromEl;
-  document.getElementById('editOrderNotes').value = notes;
-  document.getElementById('editOrderQuantity').value = quantity;
-
-  const numberEl = document.getElementById('editOrderNumber');
-  if (numberEl) numberEl.textContent = orderNumber;
-
-  const statusBadge = document.getElementById('editOrderStatusBadge');
-  if (statusBadge) {
-    statusBadge.textContent = orderStatus;
-    const statusColors = {
-      draft: 'bg-gray-200 text-gray-600',
-      pending: 'bg-blue-100 text-blue-700',
-      client_confirmed: 'bg-yellow-100 text-yellow-700',
-      confirmed: 'bg-green-100 text-green-700',
-      fulfilled: 'bg-teal-100 text-teal-700',
-      cancelled: 'bg-red-100 text-red-700'
-    };
-    statusBadge.className = 'text-xs font-medium px-2 py-0.5 rounded-full ' + (statusColors[orderStatus] || 'bg-gray-100 text-gray-600');
-  }
-
-  document.getElementById('editOrderModal').classList.remove('hidden');
-}
-
-function hideEditOrderModal() {
-  document.getElementById('editOrderModal').classList.add('hidden');
-}
-
-function openEditBookingModal(bookingId) {
-  const messageEl = document.querySelector(`[data-booking-id="${bookingId}"]`);
-  if (!messageEl) return;
-
-  const bookingIdFromEl = messageEl.getAttribute('data-booking-id');
-  if (!bookingIdFromEl) {
-    showNotification('Booking ID not found', 'error');
-    return;
-  }
-
-  const notesEl = messageEl.querySelector('.booking-notes-data');
-  const dateEl = messageEl.querySelector('.booking-date-data');
-  const timeEl = messageEl.querySelector('.booking-time-data');
-  const numberEl = messageEl.querySelector('.booking-number-data');
-  const statusEl = messageEl.querySelector('.booking-status');
-
-  const notes = notesEl ? notesEl.textContent.trim() : '';
-  const date = dateEl ? dateEl.textContent.trim() : '';
-  const time = timeEl ? timeEl.textContent.trim() : '';
-  const bookingNumber = numberEl ? numberEl.textContent.trim() : `#${bookingIdFromEl}`;
-  const bookingStatus = statusEl ? statusEl.textContent.trim() : 'pending';
-
-  document.getElementById('editBookingId').value = bookingIdFromEl;
-  document.getElementById('editBookingNotes').value = notes;
-  document.getElementById('editBookingDate').value = date;
-  document.getElementById('editBookingTime').value = time;
-
-  const numberElModal = document.getElementById('editBookingNumber');
-  if (numberElModal) numberElModal.textContent = bookingNumber;
-
-  const statusBadge = document.getElementById('editBookingStatusBadge');
-  if (statusBadge) {
-    statusBadge.textContent = bookingStatus;
-    const statusColors = {
-      pending: 'bg-yellow-100 text-yellow-800',
-      confirmed: 'bg-green-100 text-green-800',
-      completed: 'bg-blue-100 text-blue-800',
-      cancelled: 'bg-red-100 text-red-800'
-    };
-    statusBadge.className = 'text-xs font-medium px-2 py-0.5 rounded-full ' + (statusColors[bookingStatus] || 'bg-gray-100 text-gray-800');
-  }
-
-  document.getElementById('editBookingModal').classList.remove('hidden');
-}
-
-function hideEditBookingModal() {
-  document.getElementById('editBookingModal').classList.add('hidden');
-}
-
-function updateOrderCard(orderId, updatedOrder) {
-  const orderCard = document.querySelector(`[data-order-id="${orderId}"]`);
-  if (!orderCard) return;
-
-  const orderDetails = orderCard.querySelector('.order-details p');
-  if (orderDetails) {
-    const quantity = updatedOrder.quantity || 1;
-    const totalAmount = parseFloat(updatedOrder.total_amount).toFixed(2);
-    orderDetails.textContent = `Order #${updatedOrder.order_number} - ${quantity}x - $${totalAmount}`;
-  }
-
-  const notesData = orderCard.querySelector('.order-notes-data');
-  if (notesData) {
-    notesData.textContent = updatedOrder.notes || '';
-  }
-
-  const statusBadge = orderCard.querySelector('.order-status');
-  if (statusBadge && updatedOrder.status) {
-    statusBadge.textContent = updatedOrder.status;
-  }
-}
-
-function updateBookingCard(bookingId, updatedBooking) {
-  const bookingCard = document.querySelector(`[data-booking-id="${bookingId}"]`);
-  if (!bookingCard) return;
-
-  const bookingDetails = bookingCard.querySelector('.booking-details');
-  if (bookingDetails && updatedBooking.scheduled_date) {
-    const date = new Date(updatedBooking.scheduled_date);
-    const dateStr = date.toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' });
-    const timeStr = date.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' });
-    const timeSpan = bookingDetails.querySelector('.flex.items-center.space-x-1 span');
-    if (timeSpan) {
-      timeSpan.textContent = `${dateStr} at ${timeStr}`;
-    }
-  }
-
-  const notesData = bookingCard.querySelector('.booking-notes-data');
-  if (notesData) {
-    notesData.textContent = updatedBooking.notes || '';
-  }
-
-  const dateData = bookingCard.querySelector('.booking-date-data');
-  const timeData = bookingCard.querySelector('.booking-time-data');
-  if (dateData && updatedBooking.scheduled_date) {
-    const date = new Date(updatedBooking.scheduled_date);
-    dateData.textContent = date.toISOString().split('T')[0];
-    timeData.textContent = date.toISOString().split('T')[1].substring(0, 5);
-  }
-
-  const statusBadge = bookingCard.querySelector('.booking-status');
-  if (statusBadge && updatedBooking.status) {
-    const status = updatedBooking.status;
-    statusBadge.textContent = status;
-    const statusColors = {
-      pending: 'bg-yellow-100 text-yellow-800',
-      confirmed: 'bg-green-100 text-green-800',
-      completed: 'bg-blue-100 text-blue-800',
-      cancelled: 'bg-red-100 text-red-800'
-    };
-    statusBadge.className = 'text-xs font-medium px-2 py-0.5 rounded-full booking-status ' + (statusColors[status] || 'bg-gray-100 text-gray-800');
-  }
-
-  const actionBtns = bookingCard.querySelector('.flex.items-center.space-x-2.mt-2');
-  if (actionBtns) {
-    const status = updatedBooking.status;
-    if (status === 'pending') {
-      actionBtns.innerHTML = `
-        <button onclick="updateBookingStatusFromCard(${bookingId}, 'confirmed')" class="flex-1 text-xs bg-green-100 text-green-700 hover:bg-green-200 px-2 py-1 rounded font-medium"><i class="fas fa-check mr-1"></i>Confirm</button>
-        <button onclick="updateBookingStatusFromCard(${bookingId}, 'cancelled')" class="flex-1 text-xs bg-red-100 text-red-700 hover:bg-red-200 px-2 py-1 rounded font-medium"><i class="fas fa-times mr-1"></i>Cancel</button>`;
-    } else if (status === 'confirmed') {
-      actionBtns.innerHTML = `
-        <button onclick="updateBookingStatusFromCard(${bookingId}, 'completed')" class="flex-1 text-xs bg-blue-100 text-blue-700 hover:bg-blue-200 px-2 py-1 rounded font-medium"><i class="fas fa-check-double mr-1"></i>Complete</button>
-        <button onclick="updateBookingStatusFromCard(${bookingId}, 'cancelled')" class="flex-1 text-xs bg-red-100 text-red-700 hover:bg-red-200 px-2 py-1 rounded font-medium"><i class="fas fa-times mr-1"></i>Cancel</button>`;
-    } else {
-      actionBtns.remove();
-    }
-  }
-}
-
-function submitEditOrder() {
-  const orderId = document.getElementById('editOrderId').value;
-  const notes = document.getElementById('editOrderNotes').value;
-  const quantity = document.getElementById('editOrderQuantity').value;
-
-  const formData = new URLSearchParams();
-  formData.append('notes', notes);
-  formData.append('quantity', quantity);
-
-  fetch(`/business/client/orders/${orderId}/update`, {
-    method: 'POST',
-    headers: {
-      'Content-Type': 'application/x-www-form-urlencoded'
-    },
-    body: formData
-  })
-    .then(response => response.json())
-    .then(data => {
-      if (data.success) {
-        showNotification('Order updated successfully!', 'success');
-        hideEditOrderModal();
-        updateOrderCard(orderId, data.order);
-        fetchMessages();
-      } else {
-        showNotification(data.error || 'Failed to update order', 'error');
-      }
-    })
-    .catch(error => {
-      console.error('Error:', error);
-      showNotification('Failed to update order', 'error');
-    });
-}
 
 // ========== Order Lifecycle Functions ==========
 
@@ -620,38 +345,91 @@ function updateBookingStatusFromCard(bookingId, newStatus) {
     .catch(e => { console.error(e); showNotification(`Failed to ${action} booking`, 'error'); });
 }
 
-function submitEditBooking() {
-  const bookingId = document.getElementById('editBookingId').value;
-  const notes = document.getElementById('editBookingNotes').value;
-  const date = document.getElementById('editBookingDate').value;
-  const time = document.getElementById('editBookingTime').value;
+// ========== Message Search ==========
 
-  const requestData = {
-    notes: notes,
-    booking_date: `${date}T${time}:00Z`
-  };
+function toggleMessageSearch() {
+  var bar = document.getElementById('messageSearchBar');
+  if (bar) bar.classList.toggle('hidden');
+  if (!bar.classList.contains('hidden')) {
+    setTimeout(function() {
+      document.getElementById('messageSearchInput')?.focus();
+    }, 100);
+  } else {
+    clearMessageSearch();
+  }
+}
 
-  fetch(`/business/bookings/${bookingId}`, {
-    method: 'PUT',
-    headers: {
-      'Content-Type': 'application/json'
-    },
-    body: JSON.stringify(requestData)
-  })
-    .then(response => response.json())
-    .then(data => {
-      if (data.success) {
-        showNotification('Booking updated successfully!', 'success');
-        hideEditBookingModal();
-        updateBookingCard(bookingId, data.booking);
-      } else {
-        showNotification(data.error || 'Failed to update booking', 'error');
-      }
-    })
-    .catch(error => {
-      console.error('Error:', error);
-      showNotification('Failed to update booking', 'error');
+function filterMessages(query) {
+  var q = query.toLowerCase().trim();
+  var container = document.getElementById('messages-container');
+  var messages = container.querySelectorAll(':scope > div');
+  var count = 0;
+  messages.forEach(function(el) {
+    var text = el.getAttribute('data-message-text') || el.textContent.toLowerCase();
+    if (!q || text.toLowerCase().includes(q)) {
+      el.style.display = '';
+      count++;
+    } else {
+      el.style.display = 'none';
+    }
+  });
+  var countEl = document.getElementById('searchResultCount');
+  if (countEl) countEl.textContent = count;
+}
+
+function clearMessageSearch() {
+  var input = document.getElementById('messageSearchInput');
+  if (input) input.value = '';
+  var container = document.getElementById('messages-container');
+  if (container) {
+    container.querySelectorAll(':scope > div').forEach(function(el) {
+      el.style.display = '';
     });
+  }
+  var countEl = document.getElementById('searchResultCount');
+  if (countEl) countEl.textContent = '0';
+}
+
+// ========== Customer Info Panel ==========
+
+function toggleCustomerInfo() {
+  var panel = document.getElementById('customerInfoPanel');
+  if (panel) panel.classList.toggle('hidden');
+}
+
+// ========== Quick Replies & Input Handling ==========
+
+function onMessageInput(input) {
+  var val = input.value;
+
+  // Show quick replies when typing /
+  var qr = document.getElementById('quickReplies');
+  if (qr) {
+    if (val === '/') {
+      qr.classList.remove('hidden');
+    } else if (qr && !qr.classList.contains('hidden') && val.charAt(0) !== '/') {
+      qr.classList.add('hidden');
+    }
+  }
+}
+
+function onMessageKeydown(event) {
+  var qr = document.getElementById('quickReplies');
+  if (event.key === 'Escape' && qr && !qr.classList.contains('hidden')) {
+    qr.classList.add('hidden');
+    var input = document.getElementById('messageInput');
+    if (input) input.value = input.value.replace(/\/$/, '');
+  }
+}
+
+function insertQuickReply(text) {
+  var input = document.getElementById('messageInput');
+  if (input) {
+    input.value = text;
+    input.focus();
+  }
+  var qr = document.getElementById('quickReplies');
+  if (qr) qr.classList.add('hidden');
 }
 
 

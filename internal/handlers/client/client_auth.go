@@ -57,7 +57,7 @@ func SendClientOTP(c *gin.Context) {
 		}
 	}
 
-	otp, err := services.SendClientOTP(email)
+	_, err = services.SendClientOTP(email)
 	if err != nil {
 		c.HTML(400, "client_login.html", gin.H{
 			"Title": "Client Login - Threadly",
@@ -69,7 +69,6 @@ func SendClientOTP(c *gin.Context) {
 	c.HTML(200, "client_otp.html", gin.H{
 		"Title": "Enter OTP - Threadly",
 		"Email": email,
-		"OTP":   otp, // For testing only
 	})
 }
 
@@ -125,34 +124,32 @@ func VerifyClientOTP(c *gin.Context) {
 }
 
 func ClientDashboard(c *gin.Context) {
-	token := c.GetHeader("Authorization")
-	if token == "" {
-		token, _ = c.Cookie("client_token")
-	}
+	clientID := c.GetUint("client_id")
+	email := c.GetString("client_email")
+	log.Printf("[ClientDashboard] clientID=%d, email=%s", clientID, email)
 
-	if token == "" {
-		c.Redirect(http.StatusFound, "/client/login")
-		return
+	// If business_id is provided, ensure a conversation exists
+	if businessIDStr := c.Query("business_id"); businessIDStr != "" {
+		log.Printf("[ClientDashboard] business_id query param: %s", businessIDStr)
+		if businessID, err := strconv.ParseUint(businessIDStr, 10, 32); err == nil {
+			log.Printf("[ClientDashboard] parsed businessID=%d, calling getOrCreateConversation", businessID)
+			conv, client, err := getOrCreateConversation(clientID, uint(businessID))
+			if err != nil {
+				log.Printf("[ClientDashboard] getOrCreateConversation error: %v", err)
+			} else {
+				log.Printf("[ClientDashboard] getOrCreateConversation result: conversationID=%d, clientID=%d", conv.ID, client.ID)
+			}
+		} else {
+			log.Printf("[ClientDashboard] ERROR parsing business_id=%s: %v", businessIDStr, err)
+		}
 	}
-
-	if strings.HasPrefix(token, "Bearer ") {
-		token = strings.TrimPrefix(token, "Bearer ")
-	}
-
-	claims, err := services.ValidateToken(token)
-	if err != nil || claims.Subject != "client" {
-		c.Redirect(http.StatusFound, "/client/login")
-		return
-	}
-
-	var client models.Client
-	db.DB.Where("email = ?", claims.Email).First(&client)
 
 	type BusinessWithUnread struct {
 		models.Business
 		ConversationID uint       `json:"conversation_id"`
 		UnreadCount    int        `json:"unread_count"`
 		LastMessageAt  *time.Time `json:"last_message_at"`
+		LastMessage    *string    `json:"last_message"`
 	}
 
 	var businesses []BusinessWithUnread
@@ -161,24 +158,40 @@ func ClientDashboard(c *gin.Context) {
 			businesses.*,
 			conversations.id as conversation_id,
 			COUNT(CASE WHEN messages.sender = 'business' AND messages.created_at > COALESCE(conversations.last_read_by_client_at, '1970-01-01') THEN 1 END) as unread_count,
-			MAX(messages.created_at) as last_message_at
+			MAX(messages.created_at) as last_message_at,
+			(SELECT content FROM messages WHERE conversation_id = conversations.id ORDER BY created_at DESC LIMIT 1) as last_message
 		FROM businesses
 		JOIN conversations ON conversations.business_id = businesses.id AND conversations.client_id = ?
 		LEFT JOIN messages ON messages.conversation_id = conversations.id
 		GROUP BY businesses.id, conversations.id
 		ORDER BY unread_count DESC, last_message_at DESC
 	`
-	if err := db.DB.Raw(query, client.ID).Scan(&businesses).Error; err != nil {
+	if err := db.DB.Raw(query, clientID).Scan(&businesses).Error; err != nil {
+		log.Printf("[ClientDashboard] ERROR running businesses query: %v", err)
 		c.HTML(500, "client.html", gin.H{
 			"Title": "Client Dashboard - Threadly",
 			"Error": "Failed to load businesses",
 		})
 		return
 	}
+	log.Printf("[ClientDashboard] query returned %d businesses for clientID=%d", len(businesses), clientID)
+	for i, b := range businesses {
+		log.Printf("[ClientDashboard] business[%d]: ID=%d, Name=%s, ConversationID=%d", i, b.ID, b.Name, b.ConversationID)
+	}
+
+	// Debug: check conversations table directly
+	var convCount int64
+	db.DB.Model(&models.Conversation{}).Where("client_id = ?", clientID).Count(&convCount)
+	log.Printf("[ClientDashboard] total conversations for clientID=%d: %d", clientID, convCount)
+	var allConvs []models.Conversation
+	db.DB.Where("client_id = ?", clientID).Find(&allConvs)
+	for _, c := range allConvs {
+		log.Printf("[ClientDashboard] conversation DB row: ID=%d, ClientID=%d, BusinessID=%d", c.ID, c.ClientID, c.BusinessID)
+	}
 
 	c.HTML(200, "client.html", gin.H{
 		"Title":      "Client Dashboard - Threadly",
-		"Email":      claims.Email,
+		"Email":      email,
 		"Businesses": businesses,
 	})
 }
@@ -371,22 +384,29 @@ func GetClientMessages(c *gin.Context) {
 		db.DB.Where("booking_id = ?", booking.ID).Find(&bookingItems)
 
 		var serviceNames []string
+		var firstServiceID uint
 		for _, item := range bookingItems {
 			var service models.Service
 			db.DB.First(&service, item.ServiceID)
 			serviceNames = append(serviceNames, service.Name)
+			if firstServiceID == 0 {
+				firstServiceID = item.ServiceID
+			}
 		}
 
 		bookingData := map[string]interface{}{
-			"id":             booking.ID,
-			"booking_number": booking.BookingNumber,
-			"status":         booking.Status,
-			"scheduled_date": booking.ScheduledDate.Format("Jan 2, 2006 3:04 PM"),
-			"duration":       booking.Duration,
-			"total_amount":   booking.TotalAmount,
-			"notes":          booking.Notes,
-			"created_at":     booking.CreatedAt,
-			"service_names":  serviceNames,
+			"id":                booking.ID,
+			"booking_number":    booking.BookingNumber,
+			"service_id":        firstServiceID,
+			"status":            booking.Status,
+			"scheduled_date":    booking.ScheduledDate.Format("Jan 2, 2006 3:04 PM"),
+			"scheduled_date_iso": booking.ScheduledDate.Format("2006-01-02"),
+			"scheduled_time_iso": booking.ScheduledDate.Format("15:04"),
+			"duration":          booking.Duration,
+			"total_amount":      booking.TotalAmount,
+			"notes":             booking.Notes,
+			"created_at":        booking.CreatedAt,
+			"service_names":     serviceNames,
 		}
 
 		messageObjs = append(messageObjs, MessageObj{
@@ -562,7 +582,8 @@ func ClientLogout(c *gin.Context) {
 	c.Redirect(http.StatusFound, "/client/login")
 }
 
-// ClientUpdateOrder allows clients to update their order notes and quantity
+// ClientUpdateOrder allows clients to update their order items, notes, and address
+// Supports both JSON (new multi-item format) and form-encoded (legacy) payloads
 func ClientUpdateOrder(c *gin.Context) {
 	clientID := c.GetUint("client_id")
 	orderID := c.Param("id")
@@ -573,26 +594,85 @@ func ClientUpdateOrder(c *gin.Context) {
 		return
 	}
 
-	// Update notes if provided
+	// Try JSON first (new multi-item format)
+	var jsonRequest struct {
+		Items           []struct {
+			ProductID uint `json:"product_id"`
+			Quantity  int  `json:"quantity"`
+		} `json:"items"`
+		Notes           string `json:"notes"`
+		DeliveryAddress string `json:"delivery_address"`
+	}
+
+	if c.GetHeader("Content-Type") == "application/json" {
+		if err := c.ShouldBindJSON(&jsonRequest); err == nil && len(jsonRequest.Items) > 0 {
+			// Multi-item JSON update: replace all items
+			var oldItems []models.OrderItem
+			db.DB.Where("order_id = ?", order.ID).Find(&oldItems)
+
+			// Restore stock for old items
+			for _, oldItem := range oldItems {
+				var product models.Product
+				db.DB.First(&product, oldItem.ProductID)
+				product.Stock += oldItem.Quantity
+				db.DB.Save(&product)
+			}
+
+			// Delete old items
+			db.DB.Where("order_id = ?", order.ID).Delete(&models.OrderItem{})
+
+			// Create new items
+			var totalAmount float64
+			for _, item := range jsonRequest.Items {
+				var product models.Product
+				if err := db.DB.First(&product, item.ProductID).Error; err != nil {
+					continue
+				}
+				if product.Stock < item.Quantity {
+					continue
+				}
+				itemTotal := float64(item.Quantity) * product.Price
+				totalAmount += itemTotal
+				db.DB.Create(&models.OrderItem{
+					OrderID:    order.ID,
+					ProductID:  product.ID,
+					Quantity:   item.Quantity,
+					UnitPrice:  product.Price,
+					TotalPrice: itemTotal,
+				})
+				product.Stock -= item.Quantity
+				db.DB.Save(&product)
+			}
+
+			fullNotes := jsonRequest.Notes
+			if jsonRequest.DeliveryAddress != "" {
+				fullNotes = "📍 Delivery Address: " + jsonRequest.DeliveryAddress + "\n" + fullNotes
+			}
+			order.TotalAmount = totalAmount
+			order.Quantity = len(jsonRequest.Items)
+			order.Notes = fullNotes
+			db.DB.Save(&order)
+			c.JSON(http.StatusOK, gin.H{"success": true, "order": order})
+			return
+		}
+	}
+
+	// Fallback: form-encoded legacy update (notes + quantity)
 	notes := c.PostForm("notes")
 	if notes != "" {
 		order.Notes = notes
 	}
 
-	// Update quantity if provided
 	quantityStr := c.PostForm("quantity")
 	if quantityStr != "" {
 		if quantity, err := strconv.Atoi(quantityStr); err == nil && quantity > 0 {
-			// Get the order item to find product price
 			var orderItem models.OrderItem
 			if err := db.DB.Where("order_id = ?", order.ID).First(&orderItem).Error; err == nil {
-				// Recalculate total amount
 				order.TotalAmount = float64(quantity) * orderItem.UnitPrice
 				orderItem.Quantity = quantity
 				orderItem.TotalPrice = order.TotalAmount
 				db.DB.Save(&orderItem)
 			}
-			// Update the main order quantity field
 			order.Quantity = quantity
 		}
 	}
@@ -730,7 +810,7 @@ func ClientCancelOrder(c *gin.Context) {
 	})
 }
 
-// ClientUpdateBooking allows clients to update their booking notes and date
+// ClientUpdateBooking allows clients to update their booking date, notes, and service
 func ClientUpdateBooking(c *gin.Context) {
 	clientID := c.GetUint("client_id")
 	bookingID := c.Param("id")
@@ -741,6 +821,42 @@ func ClientUpdateBooking(c *gin.Context) {
 		return
 	}
 
+	if c.GetHeader("Content-Type") == "application/json" {
+		var req struct {
+			ServiceID       uint   `json:"service_id"`
+			ScheduledDate   string `json:"scheduled_date"`
+			Notes           string `json:"notes"`
+		}
+		if err := c.ShouldBindJSON(&req); err == nil {
+			if req.Notes != "" {
+				booking.Notes = req.Notes
+			}
+			if req.ScheduledDate != "" {
+				if newDate, err := time.Parse(time.RFC3339, req.ScheduledDate); err == nil {
+					booking.ScheduledDate = newDate
+				}
+			}
+			if req.ServiceID > 0 {
+				var bookingItems []models.BookingItem
+				db.DB.Where("booking_id = ?", booking.ID).Find(&bookingItems)
+				if len(bookingItems) > 0 {
+					var service models.Service
+					if err := db.DB.First(&service, req.ServiceID).Error; err == nil {
+						bookingItems[0].ServiceID = req.ServiceID
+						bookingItems[0].UnitPrice = service.MaxPrice
+						bookingItems[0].TotalPrice = service.MaxPrice
+						db.DB.Save(&bookingItems[0])
+						booking.TotalAmount = service.MaxPrice
+					}
+				}
+			}
+			db.DB.Save(&booking)
+			c.JSON(http.StatusOK, gin.H{"success": true, "booking": booking})
+			return
+		}
+	}
+
+	// Fallback: form-encoded legacy update
 	notes := c.PostForm("notes")
 	scheduledDate := c.PostForm("scheduled_date")
 

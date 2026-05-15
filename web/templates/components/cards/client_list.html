@@ -1,58 +1,57 @@
 {{ define "client-list" }}
-
-<div class="flex-1 overflow-y-auto" id="client-list">
+<div class="flex-1 overflow-y-auto scrollbar-thin" id="client-list">
   {{range .Clients}}
-  <div class="client-item px-4 py-3 hover:bg-gray-50 cursor-pointer border-b border-gray-100"
-    onclick="loadClient('{{.ID}}')" data-client-id="{{.ID}}">
-    <div class="flex items-center space-x-3">
-      <div class="w-12 h-12 bg-teal-100 rounded-full flex items-center justify-center">
-        <i class="fas fa-user text-teal-600"></i>
-      </div>
-      <div class="flex-1">
-        <h3 class="font-semibold text-gray-900">{{.Name}}</h3>
-        <p class="text-sm text-gray-500 truncate">{{.Email}}</p>
-      </div>
-
-
-      <div class="flex flex-col items-end space-y-1">
-        <div class="flex items-center space-x-1">
-          {{if .IsOnline}}
-          <div class="w-2 h-2 bg-green-500 rounded-full"></div>
-          <span class="text-xs text-green-600">Online</span>
-          {{else}}
-          <div class="w-2 h-2 bg-gray-400 rounded-full"></div>
-          <span class="text-xs text-gray-500">Offline</span>
-          {{end}}
-
-          <!-- UNREAD BADGE -->
-          {{template "unread-badge" .}}
+  <div class="stagger-item client-item group px-3 py-2.5 hover:bg-[var(--color-surface-secondary)] cursor-pointer border-b border-[var(--color-border-light)] transition-colors"
+    onclick="loadClient('{{.ID}}')" data-client-id="{{.ID}}" data-last-message-at="{{.LastMessageAt}}">
+    <div class="flex items-center gap-3">
+      <div class="relative">
+        <div class="avatar avatar-placeholder">
+          <i class="fas fa-user text-white text-sm"></i>
         </div>
-
-        <!-- STATUS -->
-        {{ $status := .Status }}
-        <span class="status-badge inline-block px-2 py-1 text-xs rounded-full
-      {{if eq $status " new"}}bg-blue-100 text-blue-800 {{else if eq $status "active" }}bg-green-100 text-green-800
-          {{else if eq $status "awaiting_payment" }}bg-yellow-100 text-yellow-800 {{else}}bg-gray-100
-          text-gray-800{{end}}">
-          {{$status}}
-        </span>
-
+        {{if .IsOnline}}
+        <div class="absolute -bottom-0.5 -right-0.5 w-3.5 h-3.5 bg-[var(--color-surface)] rounded-full flex items-center justify-center">
+          <div class="w-2.5 h-2.5 bg-green-500 rounded-full border-2 border-[var(--color-surface)]"></div>
+        </div>
+        {{end}}
       </div>
-      <button onclick="deleteClient('{{.ID}}', '{{.Name}}')" class="text-red-500 hover:text-red-700 text-base"
-        title="Delete Customer">
-        <i class="fas fa-trash"></i>
+      <div class="flex-1 min-w-0">
+        <div class="flex items-center gap-2">
+          <h3 class="font-medium text-sm text-[var(--color-text)] truncate">{{.Name}}</h3>
+          {{if .IsOnline}}<span class="w-1.5 h-1.5 rounded-full bg-green-500 shrink-0"></span>{{end}}
+        </div>
+        <p class="text-xs text-[var(--color-text-muted)] truncate">{{.Email}}</p>
+        <p class="text-xs text-[var(--color-text-muted)] truncate mt-0.5 last-message-preview">
+          {{if .LastMessage}}{{.LastMessage}}{{else}}<span class="italic opacity-60">No messages yet</span>{{end}}
+        </p>
+      </div>
+      <div class="flex flex-col items-end gap-1 shrink-0">
+        <span class="time-ago text-[10px] text-[var(--color-text-muted)]" data-time="{{.LastMessageAt}}"></span>
+        {{template "unread-badge" .}}
+        <span class="badge badge-{{if eq .Status "new"}}info{{else if eq .Status "active"}}success{{else if eq .Status "awaiting_payment"}}warning{{else}}neutral{{end}}">
+          {{.Status}}
+        </span>
+      </div>
+      <button onclick="event.stopPropagation(); deleteClient('{{.ID}}', '{{.Name}}')"
+        class="btn btn-icon btn-icon-sm btn-ghost opacity-0 group-hover:opacity-100 text-rose-400 hover:text-rose-500 hover:bg-rose-50 dark:hover:bg-rose-950/30 transition-all shrink-0"
+        title="Delete conversation">
+        <i class="fas fa-trash-alt text-xs"></i>
       </button>
     </div>
   </div>
   {{else}}
-  <div class="p-8 text-center text-gray-500">
-    <i class="fas fa-users text-4xl mb-4"></i>
-    <p>No clients yet</p>
-    <button onclick="showNewClientModal()" class="mt-4 text-teal-600 hover:text-teal-700">
-      <i class="fas fa-plus mr-2"></i>Add your first client
-    </button>
+  <div class="empty-state">
+    <div class="empty-state-icon empty-state-icon-primary">
+      <i class="fas fa-users"></i>
+    </div>
+    <h3 class="empty-state-title">No clients yet</h3>
+    <p class="empty-state-text">Share your business link so clients can discover and connect with you.</p>
+    <div class="empty-state-cta">
+      <a href="/business/share" class="btn btn-primary btn-sm">
+        <i class="fas fa-share-alt"></i>
+        Share Your Business
+      </a>
+    </div>
   </div>
   {{end}}
 </div>
-
 {{end}}

@@ -4,9 +4,11 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="color-scheme" content="light dark">
   <title>Orders - Business Dashboard</title>
   <script src="https://cdn.tailwindcss.com"></script>
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  <link rel="stylesheet" href="/static/css/dist/styles.css?v=1">
   <style>
     .table-row-hover:hover {
       background-color: #f9fafb;
@@ -33,7 +35,7 @@
 
 <body class="bg-gray-50">
   <!-- Header -->
-  <header class="bg-white shadow-sm border-b border-gray-200">
+  <header class="navbar-glass">
     <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
       <div class="flex justify-between items-center h-16">
         <div class="flex items-center">
@@ -78,39 +80,7 @@
   </header>
 
   <div class="flex h-screen pt-16">
-    <!-- Sidebar -->
-    <aside class="w-64 bg-white shadow-lg">
-      <nav class="mt-8">
-        <div class="px-4 space-y-2">
-          <a href="/business/dashboard"
-            class="sidebar-item flex items-center px-4 py-2 text-sm font-medium rounded-md text-gray-700 hover:bg-gray-100">
-            <i class="fas fa-chart-line mr-3"></i>
-            Dashboard Overview
-          </a>
-          <a href="/business/products"
-            class="sidebar-item flex items-center px-4 py-2 text-sm font-medium rounded-md text-gray-700 hover:bg-gray-100">
-            <i class="fas fa-box mr-3"></i>
-            Products
-          </a>
-          <a href="/business/services"
-            class="sidebar-item flex items-center px-4 py-2 text-sm font-medium rounded-md text-gray-700 hover:bg-gray-100">
-            <i class="fas fa-concierge-bell mr-3"></i>
-            Services
-          </a>
-          <a href="/business/orders"
-            class="sidebar-item flex items-center px-4 py-2 text-sm font-medium rounded-md bg-teal-50 text-teal-700">
-            <i class="fas fa-shopping-cart mr-3"></i>
-            Orders
-            <span class="ml-auto bg-teal-200 text-teal-700 text-xs px-2 py-1 rounded-full">{{len .Orders}}</span>
-          </a>
-          <a href="/business/bookings"
-            class="sidebar-item flex items-center px-4 py-2 text-sm font-medium rounded-md text-gray-700 hover:bg-gray-100">
-            <i class="fas fa-calendar-check mr-3"></i>
-            Bookings
-          </a>
-        </div>
-      </nav>
-    </aside>
+{{template "dashboard_sidebar" .}}
 
     <!-- Main Content -->
     <main class="flex-1 p-6">
@@ -256,7 +226,7 @@
                   <td class="px-6 py-4 whitespace-nowrap text-sm font-medium">
                     <div class="flex space-x-2">
                       <select data-order-id="{{.ID}}" onchange="updateOrderStatus(this)"
-                        class="text-sm border border-gray-300 rounded px-2 py-1">
+                        class="input text-sm">
                         <option value="pending" {{if eq .Status "pending" }}selected{{end}}>Pending</option>
                         <option value="confirmed" {{if eq .Status "confirmed" }}selected{{end}}>Confirmed</option>
                         <option value="completed" {{if eq .Status "completed" }}selected{{end}}>Completed</option>
@@ -291,39 +261,39 @@
           <div>
             <label class="block text-sm font-medium text-gray-700">Select Product</label>
             <select id="orderProduct" required
-              class="mt-1 block w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-teal-500 focus:border-teal-500">
+              class="input mt-1">
               <option value="">Choose a product...</option>
             </select>
           </div>
           <div>
             <label class="block text-sm font-medium text-gray-700">Quantity</label>
             <input type="number" id="orderQuantity" min="1" required
-              class="mt-1 block w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-teal-500 focus:border-teal-500">
+              class="input mt-1">
           </div>
           <div>
             <label class="block text-sm font-medium text-gray-700">Customer Name</label>
             <input type="text" id="orderCustomerName" required
-              class="mt-1 block w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-teal-500 focus:border-teal-500">
+              class="input mt-1">
           </div>
           <div>
             <label class="block text-sm font-medium text-gray-700">Customer Email</label>
             <input type="email" id="orderCustomerEmail"
-              class="mt-1 block w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-teal-500 focus:border-teal-500">
+              class="input mt-1">
           </div>
           <div>
             <label class="block text-sm font-medium text-gray-700">Customer Phone</label>
             <input type="tel" id="orderCustomerPhone"
-              class="mt-1 block w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-teal-500 focus:border-teal-500">
+              class="input mt-1">
           </div>
           <div>
             <label class="block text-sm font-medium text-gray-700">Delivery Address</label>
             <textarea id="orderDeliveryAddress" rows="2"
-              class="mt-1 block w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-teal-500 focus:border-teal-500"></textarea>
+              class="input mt-1"></textarea>
           </div>
           <div>
             <label class="block text-sm font-medium text-gray-700">Notes</label>
             <textarea id="orderNotes" rows="2"
-              class="mt-1 block w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-teal-500 focus:border-teal-500"></textarea>
+              class="input mt-1"></textarea>
           </div>
           <div class="flex justify-end space-x-3 pt-4">
             <button type="button" onclick="hideQuickOrderModal()"
@@ -348,34 +318,34 @@
           <div>
             <label class="block text-sm font-medium text-gray-700">Select Service</label>
             <select id="bookingService" required
-              class="mt-1 block w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-teal-500 focus:border-teal-500">
+              class="input mt-1">
               <option value="">Choose a service...</option>
             </select>
           </div>
           <div>
             <label class="block text-sm font-medium text-gray-700">Customer Name</label>
             <input type="text" id="bookingCustomerName" required
-              class="mt-1 block w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-teal-500 focus:border-teal-500">
+              class="input mt-1">
           </div>
           <div>
             <label class="block text-sm font-medium text-gray-700">Customer Email</label>
             <input type="email" id="bookingCustomerEmail"
-              class="mt-1 block w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-teal-500 focus:border-teal-500">
+              class="input mt-1">
           </div>
           <div>
             <label class="block text-sm font-medium text-gray-700">Customer Phone</label>
             <input type="tel" id="bookingCustomerPhone"
-              class="mt-1 block w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-teal-500 focus:border-teal-500">
+              class="input mt-1">
           </div>
           <div>
             <label class="block text-sm font-medium text-gray-700">Booking Date & Time</label>
             <input type="datetime-local" id="bookingDateTime" required
-              class="mt-1 block w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-teal-500 focus:border-teal-500">
+              class="input mt-1">
           </div>
           <div>
             <label class="block text-sm font-medium text-gray-700">Notes</label>
             <textarea id="bookingNotes" rows="2"
-              class="mt-1 block w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-teal-500 focus:border-teal-500"></textarea>
+              class="input mt-1"></textarea>
           </div>
           <div class="flex justify-end space-x-3 pt-4">
             <button type="button" onclick="hideQuickBookingModal()"

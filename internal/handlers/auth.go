@@ -102,7 +102,17 @@ func Register(c *gin.Context) {
 		return
 	}
 
-	c.Redirect(http.StatusFound, "/business/login")
+	token, err := services.GenerateToken(user.ID, user.Email)
+	if err != nil {
+		c.HTML(500, "register.html", gin.H{
+			"Title": "Register - Threadly",
+			"Error": "Account created but login failed. Please sign in manually.",
+		})
+		return
+	}
+
+	c.SetCookie("token", token, 86400, "/business", "", false, true)
+	c.Redirect(http.StatusFound, "/business")
 }
 
 func Login(c *gin.Context) {
@@ -111,7 +121,7 @@ func Login(c *gin.Context) {
 
 	var user models.Business
 	if err := db.DB.Where("email = ?", email).First(&user).Error; err != nil {
-		c.HTML(401, "login.html", gin.H{
+		c.HTML(401, "business_login.html", gin.H{
 			"Title": "Login - Threadly",
 			"Error": "Invalid email or password",
 		})
@@ -119,7 +129,7 @@ func Login(c *gin.Context) {
 	}
 
 	if !services.Check(user.Password, password) {
-		c.HTML(401, "login.html", gin.H{
+		c.HTML(401, "business_login.html", gin.H{
 			"Title": "Login - Threadly",
 			"Error": "Invalid email or password",
 		})
@@ -128,7 +138,7 @@ func Login(c *gin.Context) {
 
 	token, err := services.GenerateToken(user.ID, user.Email)
 	if err != nil {
-		c.HTML(500, "login.html", gin.H{
+		c.HTML(500, "business_login.html", gin.H{
 			"Title": "Login - Threadly",
 			"Error": "Failed to generate token",
 		})

@@ -7,13 +7,27 @@ let pickerClientId = null;
 let pickerCart = [];
 let pickerCurrentStep = 1;
 
-function showProductPicker(mode, convId, bizId, clientId) {
+// Edit mode state
+let pickerEditMode = false;
+let pickerEditOrderId = null;
+let pickerEditItems = [];
+let pickerEditNotes = '';
+let pickerEditAddress = '';
+
+function showProductPicker(mode, convId, bizId, clientId, editOrderId, editItems, editNotes, editAddress) {
   pickerMode = mode || 'business';
   pickerConversationId = convId;
   pickerBusinessId = bizId;
   pickerClientId = clientId;
   pickerCart = [];
   pickerCurrentStep = 1;
+
+  // Edit mode setup
+  pickerEditMode = !!editOrderId;
+  pickerEditOrderId = editOrderId || null;
+  pickerEditItems = editItems || [];
+  pickerEditNotes = editNotes || '';
+  pickerEditAddress = editAddress || '';
 
   const modal = document.getElementById('productPickerModal');
   if (!modal) { showNotification('Product picker not loaded yet', 'error'); return; }
@@ -25,7 +39,10 @@ function showProductPicker(mode, convId, bizId, clientId) {
       : 'The order will be sent as a draft to the client';
   }
   const btnText = document.getElementById('pickerSubmitBtnText');
-  if (btnText) btnText.textContent = mode === 'client' ? 'Place Order' : 'Create Order';
+  if (btnText) {
+    btnText.textContent = pickerEditMode ? 'Update Order'
+      : (mode === 'client' ? 'Place Order' : 'Create Order');
+  }
 
   modal.classList.remove('hidden');
   document.body.style.overflow = 'hidden';
@@ -40,6 +57,11 @@ function hideProductPicker() {
   pickerCart = [];
   pickerProducts = [];
   pickerCurrentStep = 1;
+  pickerEditMode = false;
+  pickerEditOrderId = null;
+  pickerEditItems = [];
+  pickerEditNotes = '';
+  pickerEditAddress = '';
 }
 
 function pickerGoToStep(step) {
@@ -198,6 +220,9 @@ async function loadPickerProducts() {
     const countEl = document.getElementById('pickerProductCount');
     if (countEl) countEl.textContent = `${products.length} product${products.length !== 1 ? 's' : ''} available`;
     pickerRenderProducts();
+    if (pickerEditMode && pickerEditItems.length > 0) {
+      pickerPrepopulateFromEditItems();
+    }
   } catch (e) {
     console.error('Picker: Failed to load products:', e);
     grid.innerHTML = '<div class="text-center py-12 text-red-400"><i class="fas fa-exclamation-triangle text-3xl mb-3"></i><p>Failed to load products</p></div>';
@@ -449,6 +474,103 @@ function pickerRenderCheckout() {
   }
 }
 
+// ========== EDIT MODE ==========
+
+function pickerPrepopulateFromEditItems() {
+  pickerEditItems.forEach(editItem => {
+    const product = pickerProducts.find(p => (p.id || p.ID) === editItem.product_id);
+    if (!product) return;
+    const productObj = {
+      id: product.id || product.ID,
+      name: product.name || product.Name || 'Product',
+      price: parseFloat(product.price || product.Price || 0),
+      stock: product.stock || product.Stock || 0,
+      sku: product.sku || product.SKU || '',
+      description: product.description || product.Description || '',
+      imgUrl: product.image_url || product.ImageURL || ''
+    };
+    pickerAddToCart(productObj, editItem.quantity);
+  });
+
+  // Pre-fill step 3 fields
+  if (pickerEditAddress) {
+    const addrInput = document.getElementById('pickerDeliveryAddress');
+    if (addrInput) addrInput.value = pickerEditAddress;
+  }
+  if (pickerEditNotes) {
+    const notesInput = document.getElementById('pickerNotes');
+    if (notesInput) notesInput.value = pickerEditNotes;
+  }
+
+  // Show notification
+  showNotification('Cart pre-populated from existing order', 'info');
+}
+
+function openBusinessEditOrderPicker(orderId) {
+  const card = document.querySelector(`[data-order-id="${orderId}"]`);
+  if (!card) { showNotification('Order not found', 'error'); return; }
+
+  if (!conversationId) { showNotification('No conversation found', 'error'); return; }
+  if (!clientId) { showNotification('No client selected', 'error'); return; }
+
+  // Extract items from DOM
+  const items = [];
+  card.querySelectorAll('[data-item-product-id]').forEach(el => {
+    const pid = parseInt(el.dataset.itemProductId);
+    const qtyText = el.querySelector('.text-sm.font-semibold')?.textContent || '1';
+    const qty = parseInt(qtyText.replace('x', '')) || 1;
+    if (pid) items.push({ product_id: pid, quantity: qty });
+  });
+
+  // Extract notes and address
+  const notesEl = card.querySelector('.order-notes-data');
+  let notes = notesEl ? notesEl.textContent.trim() : '';
+  let address = '';
+
+  // Parse delivery address from notes (stored as "📍 Delivery Address: ...")
+  const addrMatch = notes.match(/📍 Delivery Address:\s*([^\n]*)/);
+  if (addrMatch) {
+    address = addrMatch[1].trim();
+    notes = notes.replace(/📍 Delivery Address:\s*[^\n]*\n?/, '').trim();
+  }
+
+  // Strip delivery/contact prefixes added by the picker
+  notes = notes.replace(/^📅 Delivery:.*\n?/m, '').trim();
+  notes = notes.replace(/^📞 Contact:.*\n?/m, '').trim();
+
+  showProductPicker('business', conversationId, null, clientId, orderId, items, notes, address);
+}
+
+function openClientEditOrderPicker(orderId) {
+  const card = document.querySelector(`[data-order-id="${orderId}"]`);
+  if (!card) { showNotification('Order not found', 'error'); return; }
+
+  if (!businessId) { showNotification('No business selected', 'error'); return; }
+
+  // Extract items from DOM
+  const items = [];
+  card.querySelectorAll('[data-item-product-id]').forEach(el => {
+    const pid = parseInt(el.dataset.itemProductId);
+    const qtyText = el.querySelector('.text-sm.font-semibold')?.textContent || '1';
+    const qty = parseInt(qtyText.replace('x', '')) || 1;
+    if (pid) items.push({ product_id: pid, quantity: qty });
+  });
+
+  const notesEl = card.querySelector('.order-notes-data');
+  let notes = notesEl ? notesEl.textContent.trim() : '';
+  let address = '';
+
+  const addrMatch = notes.match(/📍 Delivery Address:\s*([^\n]*)/);
+  if (addrMatch) {
+    address = addrMatch[1].trim();
+    notes = notes.replace(/📍 Delivery Address:\s*[^\n]*\n?/, '').trim();
+  }
+  notes = notes.replace(/^📅 Delivery:.*\n?/m, '').trim();
+  notes = notes.replace(/^📞 Contact:.*\n?/m, '').trim();
+
+  showProductPicker('client', null, businessId, clientId, orderId, items, notes, address);
+}
+
 // ========== SUBMIT ORDER ==========
 
 async function submitProductOrder() {
@@ -493,7 +615,51 @@ async function submitProductOrder() {
   try {
     let resp, data;
 
-    if (pickerMode === 'client') {
+    if (pickerEditMode) {
+      // ---------- EDIT MODE ----------
+      const body = {
+        items,
+        notes: fullNotes,
+        delivery_address: deliveryAddress
+      };
+      if (pickerMode === 'client') {
+        resp = await fetch(`/client/orders/${pickerEditOrderId}/update`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          credentials: 'same-origin',
+          body: JSON.stringify(body)
+        });
+      } else {
+        resp = await fetch(`/business/orders/${pickerEditOrderId}`, {
+          method: 'PUT',
+          headers: { 'Content-Type': 'application/json' },
+          credentials: 'same-origin',
+          body: JSON.stringify(body)
+        });
+      }
+      data = await resp.json();
+      if (data.success) {
+        hideProductPicker();
+        showNotification('Order updated successfully!', 'success');
+        if (typeof fetchMessages === 'function') {
+          setTimeout(() => fetchMessages(), 500);
+        } else if (typeof startMessagePolling === 'function') {
+          setTimeout(() => {
+            fetch(`/client/businesses/${pickerBusinessId}/messages`)
+              .then(r => r.text())
+              .then(html => {
+                const parser = new DOMParser();
+                const doc = parser.parseFromString(html, 'text/html');
+                const newMsgs = doc.getElementById('messages-container');
+                const curMsgs = document.getElementById('messages-container');
+                if (newMsgs && curMsgs) curMsgs.innerHTML = newMsgs.innerHTML;
+              }).catch(console.error);
+          }, 500);
+        }
+      } else {
+        showNotification(data.error || 'Failed to update order', 'error');
+      }
+    } else if (pickerMode === 'client') {
       resp = await fetch('/client/orders', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -554,8 +720,9 @@ async function submitProductOrder() {
 
   if (submitBtn) {
     submitBtn.disabled = false;
-    submitBtn.innerHTML = '<i class="fas fa-paper-plane mr-1"></i> ' +
+    const btnLabel = pickerEditMode ? 'Update Order' :
       (pickerMode === 'client' ? 'Place Order' : 'Create Order');
+    submitBtn.innerHTML = '<i class="fas fa-paper-plane mr-1"></i> ' + btnLabel;
   }
 }
 

@@ -1,0 +1,76 @@
+{{define "dashboard_sidebar"}}
+{{$active := .ActivePage}}
+<aside
+  class="w-64 bg-[var(--color-surface)] border-r border-[var(--color-border)] overflow-y-auto hide-mobile scrollbar-thin">
+  <nav class="mt-4 px-3 space-y-1">
+    <a href="/business/dashboard" class="flex items-center gap-3 px-4 py-2.5 text-sm font-medium rounded-xl 
+      {{if eq $active `dashboard`}}bg-[var(--color-primary-light)]
+      text-[var(--color-primary-dark)]{{else}}text-[var(--color-text-secondary)]
+      hover:bg-[var(--color-surface-secondary)] transition-colors{{end}}">
+      <i class="fas fa-chart-line w-4"></i>
+      Dashboard Overview
+    </a>
+    <a href="/business/products" class="flex items-center gap-3 px-4 py-2.5 text-sm font-medium rounded-xl 
+      {{if eq $active `products`}}bg-[var(--color-primary-light)]
+      text-[var(--color-primary-dark)]{{else}}text-[var(--color-text-secondary)]
+      hover:bg-[var(--color-surface-secondary)] transition-colors{{end}}">
+      <i class="fas fa-box w-4"></i>
+      Products
+      {{if .ProductCount}}<span class="ml-auto badge badge-neutral">{{.ProductCount}}</span>{{end}}
+    </a>
+    <a href="/business/services" class="flex items-center gap-3 px-4 py-2.5 text-sm font-medium rounded-xl 
+      {{if eq $active `services`}}bg-[var(--color-primary-light)]
+      text-[var(--color-primary-dark)]{{else}}text-[var(--color-text-secondary)]
+      hover:bg-[var(--color-surface-secondary)] transition-colors{{end}}">
+      <i class="fas fa-concierge-bell w-4"></i>
+      Services
+      {{if .ServiceCount}}<span class="ml-auto badge badge-neutral">{{.ServiceCount}}</span>{{end}}
+    </a>
+    <a href="/business/orders" class="flex items-center gap-3 px-4 py-2.5 text-sm font-medium rounded-xl 
+      {{if eq $active `orders`}}bg-[var(--color-primary-light)]
+      text-[var(--color-primary-dark)]{{else}}text-[var(--color-text-secondary)]
+      hover:bg-[var(--color-surface-secondary)] transition-colors{{end}}">
+      <i class="fas fa-shopping-cart w-4"></i>
+      Orders
+      {{if .PendingOrderCount}}<span class="ml-auto badge badge-warning">{{.PendingOrderCount}}</span>{{end}}
+    </a>
+    <a href="/business/bookings" class="flex items-center gap-3 px-4 py-2.5 text-sm font-medium rounded-xl 
+      {{if eq $active `bookings`}}bg-[var(--color-primary-light)]
+      text-[var(--color-primary-dark)]{{else}}text-[var(--color-text-secondary)]
+      hover:bg-[var(--color-surface-secondary)] transition-colors{{end}}">
+      <i class="fas fa-calendar-check w-4"></i>
+      Bookings
+      {{if .PendingBookingCount}}<span class="ml-auto badge badge-info">{{.PendingBookingCount}}</span>{{end}}
+    </a>
+    <a href="/business/payments" class="flex items-center gap-3 px-4 py-2.5 text-sm font-medium rounded-xl {{if eq $active `payments`}}bg-[var(--color-primary-light)]
+      text-[var(--color-primary-dark)]{{else}}text-[var(--color-text-secondary)]
+      hover:bg-[var(--color-surface-secondary)] transition-colors{{end}}">
+      <i class="fas fa-credit-card w-4"></i>
+      Payments
+    </a>
+    <a href="/business/inventory" class="flex items-center gap-3 px-4 py-2.5 text-sm font-medium rounded-xl {{if eq $active `inventory`}}bg-[var(--color-primary-light)]
+      text-[var(--color-primary-dark)]{{else}}text-[var(--color-text-secondary)]
+      hover:bg-[var(--color-surface-secondary)] transition-colors{{end}}">
+      <i class="fas fa-warehouse w-4"></i>
+      Inventory
+    </a>
+    <a href="/business/analytics" class="flex items-center gap-3 px-4 py-2.5 text-sm font-medium rounded-xl {{if eq $active `analytics`}}bg-[var(--color-primary-light)]
+      text-[var(--color-primary-dark)]{{else}}text-[var(--color-text-secondary)]
+      hover:bg-[var(--color-surface-secondary)] transition-colors{{end}}">
+      <i class="fas fa-chart-bar w-4"></i>
+      Analytics
+    </a>
+    <a href="/business/share" class="flex items-center gap-3 px-4 py-2.5 text-sm font-medium rounded-xl {{if eq $active `share`}}bg-[var(--color-primary-light)] text-[var(--color-primary-dark)]{{else}}text-[var(--color-text-secondary)]
+      hover:bg-[var(--color-surface-secondary)] transition-colors{{end}}">
+      <i class="fas fa-share-alt w-4"></i>
+      Share
+    </a>
+    <a href="/business" class="flex items-center gap-3 px-4 py-2.5 text-sm font-medium rounded-xl {{if eq $active `customers`}}bg-[var(--color-primary-light)]
+      text-[var(--color-primary-dark)]{{else}}text-[var(--color-text-secondary)]
+      hover:bg-[var(--color-surface-secondary)] transition-colors{{end}}">
+      <i class="fas fa-users w-4"></i>
+      Customers
+    </a>
+  </nav>
+</aside>
+{{end}}

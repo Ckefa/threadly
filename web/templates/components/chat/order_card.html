@@ -43,7 +43,7 @@
           {{else if eq $actionRequired "business"}}
           <span class="text-xs font-bold text-orange-600 animate-pulse">ACTION NEEDED</span>
           {{end}}
-          <button onclick="openEditOrderModal({{$order.id}})" class="text-gray-400 hover:text-blue-600 text-xs p-1" title="Edit Order">
+          <button onclick="openBusinessEditOrderPicker({{$order.id}})" class="text-gray-400 hover:text-blue-600 text-xs p-1" title="Edit Order">
             <i class="fas fa-edit"></i>
           </button>
         </div>
@@ -52,7 +52,8 @@
       <!-- Items -->
       <div class="space-y-2 mb-3">
         {{range $order.items}}
-        <div class="flex items-center justify-between py-2 border-b border-gray-100 last:border-0">
+        <div class="flex items-center justify-between py-2 border-b border-gray-100 last:border-0"
+          data-item-product-id="{{.product_id}}" data-item-unit-price="{{printf "%.2f" .unit_price}}">
           <div class="flex items-center gap-2 min-w-0 flex-1">
             {{if .image_url}}
             <img src="{{.image_url}}" class="w-8 h-8 rounded-lg object-cover flex-shrink-0" alt="">

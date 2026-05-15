@@ -1,4 +1,7 @@
 .env
-threadly.db
-tmp
+node_modules
 .aider*
+tmp
+threadly.db
+node_modules
+web/static/css/dist/
