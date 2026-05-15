@@ -271,7 +271,7 @@
 
     function editService(serviceId) {
       // Fetch service data and populate form
-      fetch(`/services/${serviceId}`)
+      fetch(`/business/services/${serviceId}`)
         .then(response => response.json())
         .then(data => {
           if (data.success) {
@@ -323,7 +323,7 @@
 
     function deleteService(serviceId) {
       if (confirm('Are you sure you want to delete this service?')) {
-        fetch(`/services/${serviceId}`, {
+        fetch(`/business/services/${serviceId}`, {
           method: 'DELETE',
           headers: {
             'Content-Type': 'application/json',
@@ -453,7 +453,7 @@
         is_active: document.getElementById('serviceIsActive').checked
       };
 
-      const url = isEdit ? `/services/${serviceId}` : '/services';
+      const url = isEdit ? `/business/services/${serviceId}` : '/business/services';
       const method = isEdit ? 'PUT' : 'POST';
 
       fetch(url, {

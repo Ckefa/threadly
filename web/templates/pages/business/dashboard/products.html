@@ -250,7 +250,7 @@
 
     function editProduct(productId) {
       // Fetch product data and populate form
-      fetch(`/products/${productId}`)
+      fetch(`/business/products/${productId}`)
         .then(response => response.json())
         .then(data => {
           if (data.success) {
@@ -280,7 +280,7 @@
 
     function deleteProduct(productId) {
       if (confirm('Are you sure you want to delete this product?')) {
-        fetch(`/products/${productId}`, {
+        fetch(`/business/products/${productId}`, {
           method: 'DELETE',
           headers: {
             'Content-Type': 'application/json',
@@ -319,7 +319,7 @@
         is_active: document.getElementById('productIsActive').checked
       };
 
-      const url = isEdit ? `/products/${productId}` : '/products';
+      const url = isEdit ? `/business/products/${productId}` : '/business/products';
       const method = isEdit ? 'PUT' : 'POST';
 
       fetch(url, {

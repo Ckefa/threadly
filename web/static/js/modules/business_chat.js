@@ -706,25 +706,10 @@ function toggleCustomerInfo() {
   if (panel) panel.classList.toggle('hidden');
 }
 
-// ========== Smart Suggestions ==========
-
-function hideSmartSuggestions() {
-  var bar = document.getElementById('smartSuggestions');
-  if (bar) bar.classList.add('hidden');
-}
-
 // ========== Quick Replies & Input Handling ==========
 
 function onMessageInput(input) {
   var val = input.value;
-  var suggestions = document.getElementById('smartSuggestions');
-  if (suggestions) {
-    if (val.length > 0) {
-      suggestions.classList.remove('hidden');
-    } else {
-      suggestions.classList.add('hidden');
-    }
-  }
 
   // Show quick replies when typing /
   var qr = document.getElementById('quickReplies');
@@ -754,8 +739,6 @@ function insertQuickReply(text) {
   }
   var qr = document.getElementById('quickReplies');
   if (qr) qr.classList.add('hidden');
-  var suggestions = document.getElementById('smartSuggestions');
-  if (suggestions) suggestions.classList.remove('hidden');
 }
 
 
