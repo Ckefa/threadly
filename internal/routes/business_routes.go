@@ -19,9 +19,13 @@ func SetupBusinessRoutes(r *gin.Engine) {
 
 	// PUBLIC - Business Auth Routes
 	r.GET("/business/login", handlers.ShowLogin)
-	r.GET("/business/register", handlers.ShowRegister)
+	r.GET("/business/register", handlers.ShowRegisterStep1)
+	r.POST("/business/register", handlers.RegisterStep1)
+	r.GET("/business/register/step2", handlers.ShowRegisterStep2)
+	r.POST("/business/register/step2", handlers.RegisterStep2)
+	r.GET("/business/register/step3", handlers.ShowRegisterStep3)
+	r.POST("/business/register/step3", handlers.RegisterStep3)
 	r.POST("/business/login", handlers.Login)
-	r.POST("/business/register", handlers.Register)
 	r.GET("/business/logout", handlers.Logout)
 
 	// PROTECTED BUSINESS ROUTES
